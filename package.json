@@ -12,7 +12,7 @@
   "scripts": {
     "coverage": "yarn -s test --coverage",
     "debug": "INDEBUGGER=1 ./node_modules/nodemon/bin/nodemon.js --no-lazy --legacy-watch --watch ./src --watch ./test --exec 'node --inspect=9229 --experimental-vm-modules ./node_modules/jest/bin/jest.js --config=./jest.config.json --runInBand'",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --ext js,jsx --ignore-pattern 'src/grammar-generated.js' --report-unused-disable-directives --max-warnings 0",
     "setup": "yarn install --frozen-lockfile",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config=./jest.config.json",
     "watch": "yarn -s test --watch"
