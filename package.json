@@ -40,6 +40,8 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.0.0",
     "jest": "^29.7.0",
+    "moo": "^0.5.2",
+    "nearley": "^2.20.1",
     "nodemon": "^3.0.3",
     "standard": "^17.1.0",
     "webpack": "^5.89.0"
