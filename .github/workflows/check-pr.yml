@@ -1,0 +1,23 @@
+name: Check PR
+on:
+  pull_request
+jobs:
+  check_pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+      - run: yarn install --frozen-lockfile
+        shell: bash
+      - run: yarn lint
+        shell: bash
+      - name: 'Run unit tests'
+        run: |
+          yarn lint
+          yarn test
+        shell: bash

@@ -1,0 +1,50 @@
+{
+    "root": true,
+    "env": {
+        "es2023": true,
+        "browser": false,
+        "commonjs": true,
+        "jest": true,
+        "node": true
+    },
+    "extends": [
+        "eslint:recommended",
+        "standard",
+        "plugin:import/recommended",
+        "plugin:import/errors",
+        "plugin:import/warnings"
+    ],
+    "plugins": [
+        "import"
+    ],
+    "parser": "@babel/eslint-parser",
+    "rules": {
+        "import/extensions": ["error", "ignorePackages"],
+        "import/order": [
+            "error",
+            {
+                "groups": [
+                    "builtin",
+                    "external",
+                    "parent",
+                    "sibling",
+                    "index"
+                ],
+                "alphabetize": {
+                    "order": "asc",
+                    "caseInsensitive": true
+                },
+                "newlines-between": "always"
+            }
+        ],
+        "no-var": "error",
+        "multiline-ternary": 1,
+        "object-shorthand": "error"
+    },
+    "settings": {
+        "import/resolver": {
+            "node": {},
+            "webpack": {}
+        }
+    }
+}
