@@ -1,0 +1,115 @@
+# NL → PBQL example corpus. Each example starts with a "# Q:" line holding
+# the natural-language question; the query follows. These feed docs/llms.txt
+# (via `yarn docs`) and the parser corpus tests, so every example must parse.
+
+# Q: Show me all my drop shots
+FROM video("83gyqyc10y8f")
+WHERE shot.type = "drop" AND hitter = me
+
+# Q: My highest-quality shots, best first, top 20
+FROM video("83gyqyc10y8f")
+WHERE hitter = me AND shot.quality.overall >= 0.8
+ORDER BY shot.quality.overall DESC
+LIMIT 20
+
+# Q: Every dink or drop across my whole folder
+FROM folder(92)
+WHERE shot.type IN ("dink", "drop")
+
+# Q: Third shots from game 2 of this video
+FROM video("83gyqyc10y8f", 2)
+WHERE shot.num = 3
+
+# Q: Serves that landed deep
+FROM video("83gyqyc10y8f")
+WHERE shot.sequence = "serve" AND shot.to.zone = "deep"
+
+# Q: Shots faster than 40 mph with a bit of lead-in video
+FROM video("83gyqyc10y8f")
+WHERE shot.speed > 40
+SHOT CONTEXT BEFORE 2secs
+SHOT CONTEXT AFTER 1.5secs
+
+# Q: Anna's winners, with the shot before each one for context
+FROM video("83gyqyc10y8f")
+WHERE shot.taggedWith("Anna*") AND exists(shot.winnerType)
+SHOT CONTEXT BEFORE 1 shots
+
+# Q: Every shot of every rally I won, whole rallies as clips
+FROM video("83gyqyc10y8f")
+WHERE rally.winner = me.team
+SHOT CONTEXT BEFORE rally
+SHOT CONTEXT AFTER rally
+
+# Q: My unforced errors
+FROM video("83gyqyc10y8f")
+WHERE hitter = me AND shot.errors.unforced
+
+# Q: Balls I hit out that the other team played anyway
+FROM video("83gyqyc10y8f")
+WHERE hitter = me AND shot.errors.faults.out.outcome = "intercepted"
+
+# Q: Clean shots — exclude anything with a detected error
+FROM video("83gyqyc10y8f")
+WHERE hitter = me AND NOT shot.hasError
+
+# Q: Volleys my opponents hit while I was at the kitchen line
+FROM video("83gyqyc10y8f")
+WHERE hitter.team != me.team AND shot.isVolley AND me.feetToKitchen = 0
+
+# Q: Backhand speedups by either player on my team
+FROM video("83gyqyc10y8f")
+WHERE hitter.team = me.team AND shot.isSpeedup AND shot.strokeType = "backhand"
+
+# Q: Around-the-post highlights
+FROM video("83gyqyc10y8f")
+WHERE shot.inHighlight("atp")
+SHOT CONTEXT BEFORE min(2 shots, 4secs)
+SHOT CONTEXT AFTER 2secs
+
+# Q: Long rallies (12+ shots) that my team lost
+FROM video("83gyqyc10y8f")
+WHERE rally.numShots >= 12 AND rally.winner != me.team
+
+# Q: Dinks that popped up and got punished
+FROM video("83gyqyc10y8f")
+WHERE shot.type = "dink" AND shot.errors.popup = "exploited"
+
+# Q: Shots where the ball traveled more than 15 feet sideways
+FROM video("83gyqyc10y8f")
+WHERE abs(shot.to.absX - shot.from.absX) > 15
+
+# Q: Serves hit from within 2 feet of the right sideline
+FROM video("83gyqyc10y8f")
+WHERE shot.num = 1 AND shot.from.feetFromNearestSideline <= 2 AND shot.from.x > 10
+
+# Q: The shot right before every one of my resets, in the first ten rallies
+FROM video("83gyqyc10y8f")
+WHERE hitter = me AND shot.isReset AND shot[-1].speed > 30 AND rally.num <= 10
+
+# Q: Shots by the player with email pat@example.com in either of two videos
+FROM video("83gyqyc10y8f"), video("jhc3t8h8b5cj")
+WHERE shot.taggedWith("pat@example.com")
+
+# Q: What speed and quality did each of my drives have? (spreadsheet)
+SELECT shot.hitTime AS "when (s)", shot.speed AS "mph", shot.quality.overall
+FROM video("83gyqyc10y8f")
+WHERE hitter = me AND shot.type = "drive"
+ORDER BY shot.speed DESC
+
+# Q: How many shots did I hit in this game?
+SELECT count()
+FROM video("83gyqyc10y8f")
+WHERE hitter = me
+
+# Q: Shots where my whole team was at the kitchen but we still lost the rally
+FROM video("83gyqyc10y8f")
+WHERE me.feetToKitchen = 0 AND myTeammate.feetToKitchen = 0 AND rally.winner != me.team
+
+# Q: Third-shot drops that landed short of the kitchen with low pace
+FROM video("83gyqyc10y8f")
+WHERE shot.num = 3 AND shot.type = "drop" AND shot.to.zone IN ("kitchen", "short") AND shot.speed < 25
+
+# Q: Every ball hit at my left-side opponent's feet
+FROM video("83gyqyc10y8f")
+WHERE hitter.team = me.team AND myOpponentLHS.distanceToNet <= 14 AND shot.to.zone != "out"

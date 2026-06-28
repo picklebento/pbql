@@ -1,0 +1,276 @@
+# PBQL (Pickleball Query Language) — guide for LLMs
+
+<!-- GENERATED FILE — do not edit. Run `yarn docs`. -->
+
+PBQL selects shots from pickleball games analyzed by PB Vision.
+
+## Query shape (clauses in this order)
+
+    [SELECT expr [AS "label"], ...]      -- optional projection
+    FROM video("vid")|video("vid", n)|folder(fid), ...
+    WHERE condition                      -- required
+    [SHOT CONTEXT BEFORE duration]       -- widen each clip backward
+    [SHOT CONTEXT AFTER duration]        -- widen each clip forward
+    [ORDER BY expr [ASC|DESC], ...]
+    [LIMIT n]
+
+## Rules that matter
+
+- Keywords are case-insensitive; property names are case-sensitive.
+- Operators (loosest to tightest): OR, AND, NOT, comparisons
+  (= != < <= > >=, x IN (a, b)), + -, * /, unary -.
+- Strings are double-quoted. Comments start with #.
+- Missing data is "unknown" (SQL NULL-like): comparisons with unknown
+  are unknown and WHERE keeps only true. exists(x) tests presence.
+- Durations: `2secs`, `1 shots`, `rally` (= to the rally boundary), or
+  min(a, b)/max(a, b) of two durations (min = cap, max = floor).
+  `N shots` also adds those shots to the results as context.
+- Subject predicates are methods: shot.taggedWith("Alex*"),
+  shot.inHighlight("atp"). Utilities are functions: min, max, exists, abs.
+- Times are seconds; distances feet; speeds mph; quality 0-1 (1 best).
+- Players: hitter, me, myTeammate, myOpponent1/2, myOpponentLHS/RHS,
+  hittersTeammate, … Compare with = (hitter = me). team is 0|1.
+
+## Data dictionary
+
+- shot.num (number [1-based]): which shot of the rally this is (the serve is 1)
+- shot.sequence (string ["serve"|"return"|"3"|"4"|"5"]): the common name for this shot's position in the rally; unknown from the 6th shot on
+- shot.isFinal (boolean): whether this is the rally's last shot
+- shot.isVolley (boolean): whether the ball was hit out of the air
+- shot.isSpeedup (boolean): whether the shot added significant pace near the kitchen
+- shot.isReset (boolean): whether the shot took significant pace off the ball
+- shot.isPoach (boolean): whether the hitter took a ball on their partner's side
+- shot.isPassing (boolean): whether the shot passed the nearest opponent untouched
+- shot.isPutaway (boolean): whether the shot was a putaway
+- shot.type (string ["smash"|"lob"|"dink"|"drop"|"drive"|"volley"|"reset"|"speedup"]): the shot classification
+- shot.verticalType (string ["dig"|"topspin"|"slice"|"lob"|"neutral"]): the vertical character of the stroke
+- shot.strokeType (string ["forehand"|"backhand"|"two-handed"]): the stroke used
+- shot.strokeSide (string ["left"|"right"]): which side of the body the stroke was made on
+- shot.winnerType (string ["winner"|"ace"|"forced_fault"|"unforced_fault"]): how this shot won the rally; unknown if it did not
+- shot.quality.overall (number [0-1]): combined execution + selection quality (1 is best)
+- shot.quality.execution (number [0-1]): how well the shot was executed
+- shot.quality.selection (number [0-1]): how good a choice this shot was
+- shot.speed (number [mph]): ball speed after the hit
+- shot.spin.class (string ["topspin"|"backspin"|"sidespin"|"minimal_spin"]): dominant spin after the hit
+- shot.spin.rpm (number [rpm]): spin magnitude after the hit
+- shot.direction (string ["DownTheMiddle"|"DownTheLineLeft"|…]): named direction the ball traveled
+- shot.yaw (number [degrees]): horizontal launch angle (0 = toward the hitter's left sideline, 90 = straight at the net)
+- shot.pitch (number [degrees]): vertical launch angle (0 = flat, 90 = straight up)
+- shot.distance (number [feet]): how far the ball flew before contact with anything
+- shot.distanceFromBaseline (number [feet]): where the ball landed relative to the opponent's baseline
+- shot.heightOverNet (number [feet]): ball height when crossing the net plane
+- shot.crossedNet (boolean): whether the ball crossed the plane of the net
+- shot.confidence (number [0-1]): confidence in the reconstructed trajectory
+- shot.hitTime (number [seconds]): when in the video the ball was struck
+- shot.endTime (number [seconds]): when in the video the shot's flight ended
+- shot.hasError (boolean): whether any error was detected on this shot (never unknown)
+- shot.errors.unforced (boolean): whether the error was unforced
+- shot.errors.popup (string ["exploited"|"potential"]): whether the shot popped the ball up (and whether opponents capitalized)
+- shot.errors.deadDink (string ["exploited"|"potential"]): whether the dink sat up attackably
+- shot.hasFault (boolean): whether this shot committed a rule fault (never unknown)
+- shot.errors.faults.net (boolean): whether the net stopped the ball
+- shot.errors.faults.kitchen (boolean): whether the hitter volleyed while in the kitchen
+- shot.errors.faults.paddleHitNet (boolean): whether the paddle touched the net
+- shot.errors.faults.doubleBounce (boolean): whether the ball bounced twice before the hit
+- shot.errors.faults.short (boolean): whether the serve/shot came up short
+- shot.errors.faults.out.outcome (string ["landed"|"intercepted"]): whether the out ball landed or was played anyway
+- shot.errors.faults.out.direction (string ["left"|"right"|"long"]): which way the ball went out
+- shot.from.x (number [feet]): where the ball was struck — hitter-frame x (0-20, grows to the hitter's right)
+- shot.from.y (number [feet]): where the ball was struck — hitter-frame y (own baseline 0, net 22)
+- shot.from.z (number [feet]): where the ball was struck — height above the ground
+- shot.from.absX (number [feet]): where the ball was struck — raw court x (far-left corner origin)
+- shot.from.absY (number [feet]): where the ball was struck — raw court y (far-left corner origin)
+- shot.from.absZ (number [feet]): where the ball was struck — height above the ground
+- shot.from.feetFromNearestSideline (number [feet]): where the ball was struck — distance to the nearest sideline
+- shot.from.feetFromNearestBaseline (number [feet]): where the ball was struck — distance to the nearest baseline
+- shot.from.distanceToNet (number [feet]): where the ball was struck — distance to the plane of the net
+- shot.from.zone (string ["deep"|"mid"|"short"|"kitchen"|"net"|"out"]): depth zone the ball was struck from
+- shot.to.x (number [feet]): where the ball's flight ended — hitter-frame x (0-20, grows to the hitter's right)
+- shot.to.y (number [feet]): where the ball's flight ended — hitter-frame y (own baseline 0, net 22)
+- shot.to.z (number [feet]): where the ball's flight ended — height above the ground
+- shot.to.absX (number [feet]): where the ball's flight ended — raw court x (far-left corner origin)
+- shot.to.absY (number [feet]): where the ball's flight ended — raw court y (far-left corner origin)
+- shot.to.absZ (number [feet]): where the ball's flight ended — height above the ground
+- shot.to.feetFromNearestSideline (number [feet]): where the ball's flight ended — distance to the nearest sideline
+- shot.to.feetFromNearestBaseline (number [feet]): where the ball's flight ended — distance to the nearest baseline
+- shot.to.distanceToNet (number [feet]): where the ball's flight ended — distance to the plane of the net
+- shot.to.zone (string ["deep"|"mid"|"short"|"kitchen"|"net"|"out"]): depth zone where the ball's flight ended
+- shot.peak.x (number [feet]): the highest point of the ball's flight — hitter-frame x (0-20, grows to the hitter's right)
+- shot.peak.y (number [feet]): the highest point of the ball's flight — hitter-frame y (own baseline 0, net 22)
+- shot.peak.z (number [feet]): the highest point of the ball's flight — height above the ground
+- shot.peak.absX (number [feet]): the highest point of the ball's flight — raw court x (far-left corner origin)
+- shot.peak.absY (number [feet]): the highest point of the ball's flight — raw court y (far-left corner origin)
+- shot.peak.absZ (number [feet]): the highest point of the ball's flight — height above the ground
+- shot.peak.feetFromNearestSideline (number [feet]): the highest point of the ball's flight — distance to the nearest sideline
+- shot.peak.feetFromNearestBaseline (number [feet]): the highest point of the ball's flight — distance to the nearest baseline
+- shot.peak.distanceToNet (number [feet]): the highest point of the ball's flight — distance to the plane of the net
+- shot.taggedWith(pattern) (boolean): whether the hitter is the player tagged with this name pattern (case-insensitive, * wildcard) or exact email
+- shot.inHighlight(kind) (boolean): whether the shot falls inside a highlight of the given kind ("atp", "erne", "hands_battle", "long_rally", "poach", "sequence")
+- rally.num (number [1-based]): which rally of the game this is
+- rally.numShots (number): how many shots the rally contains
+- rally.startTime (number [seconds]): when in the video the rally starts
+- rally.endTime (number [seconds]): when in the video the rally ends
+- rally.duration (number [seconds]): how long the rally lasted
+- rally.winner (number [team (0|1)]): which team won the rally
+- rally.allPlayersReachedKitchen (boolean): whether every player reached the kitchen line this rally
+- game.vid (string): the video ID this game is from
+- game.sessionNum (number [1-based]): which game of the video this is
+- game.name (string): the video/session name, if any
+- game.numRallies (number): how many rallies the game contains
+- game.duration (number [seconds]): first rally start to last rally end
+- game.avgShots (number): average shots per rally
+- game.winner (number [team (0|1)]): which team won the game (from the recorded outcome)
+- player.id (number [0-3]): the player's index within this game
+- player.team (number [0|1]): the player's team
+- player.name (string): the player's tagged name (host-supplied; falls back to the insights default)
+- player.startedOnLeftSide (boolean): whether the player started this rally on the left side
+- player.reachedKitchen (boolean): whether the player reached the kitchen line this rally
+- player.pos.x (number [feet]): court x at the current shot, in the player's own frame
+- player.pos.y (number [feet]): court y at the current shot, in the player's own frame (own baseline 0)
+- player.pos.absX (number [feet]): raw court x at the current shot
+- player.pos.absY (number [feet]): raw court y at the current shot
+- player.feetToKitchen (number [feet]): distance still to cover to reach their kitchen line (0 at/inside it)
+- player.feetFromNearestSideline (number [feet]): distance to the nearest sideline at the current shot
+- player.feetFromNearestBaseline (number [feet]): distance to the nearest baseline at the current shot
+- player.distanceToNet (number [feet]): distance to the net plane at the current shot
+- player.taggedWith(pattern) (boolean): whether this player is the one tagged with this name pattern (case-insensitive, * wildcard) or exact email
+
+## Examples
+
+Q: Show me all my drop shots
+
+    FROM video("83gyqyc10y8f")
+    WHERE shot.type = "drop" AND hitter = me
+
+Q: My highest-quality shots, best first, top 20
+
+    FROM video("83gyqyc10y8f")
+    WHERE hitter = me AND shot.quality.overall >= 0.8
+    ORDER BY shot.quality.overall DESC
+    LIMIT 20
+
+Q: Every dink or drop across my whole folder
+
+    FROM folder(92)
+    WHERE shot.type IN ("dink", "drop")
+
+Q: Third shots from game 2 of this video
+
+    FROM video("83gyqyc10y8f", 2)
+    WHERE shot.num = 3
+
+Q: Serves that landed deep
+
+    FROM video("83gyqyc10y8f")
+    WHERE shot.sequence = "serve" AND shot.to.zone = "deep"
+
+Q: Shots faster than 40 mph with a bit of lead-in video
+
+    FROM video("83gyqyc10y8f")
+    WHERE shot.speed > 40
+    SHOT CONTEXT BEFORE 2secs
+    SHOT CONTEXT AFTER 1.5secs
+
+Q: Anna's winners, with the shot before each one for context
+
+    FROM video("83gyqyc10y8f")
+    WHERE shot.taggedWith("Anna*") AND exists(shot.winnerType)
+    SHOT CONTEXT BEFORE 1 shots
+
+Q: Every shot of every rally I won, whole rallies as clips
+
+    FROM video("83gyqyc10y8f")
+    WHERE rally.winner = me.team
+    SHOT CONTEXT BEFORE rally
+    SHOT CONTEXT AFTER rally
+
+Q: My unforced errors
+
+    FROM video("83gyqyc10y8f")
+    WHERE hitter = me AND shot.errors.unforced
+
+Q: Balls I hit out that the other team played anyway
+
+    FROM video("83gyqyc10y8f")
+    WHERE hitter = me AND shot.errors.faults.out.outcome = "intercepted"
+
+Q: Clean shots — exclude anything with a detected error
+
+    FROM video("83gyqyc10y8f")
+    WHERE hitter = me AND NOT shot.hasError
+
+Q: Volleys my opponents hit while I was at the kitchen line
+
+    FROM video("83gyqyc10y8f")
+    WHERE hitter.team != me.team AND shot.isVolley AND me.feetToKitchen = 0
+
+Q: Backhand speedups by either player on my team
+
+    FROM video("83gyqyc10y8f")
+    WHERE hitter.team = me.team AND shot.isSpeedup AND shot.strokeType = "backhand"
+
+Q: Around-the-post highlights
+
+    FROM video("83gyqyc10y8f")
+    WHERE shot.inHighlight("atp")
+    SHOT CONTEXT BEFORE min(2 shots, 4secs)
+    SHOT CONTEXT AFTER 2secs
+
+Q: Long rallies (12+ shots) that my team lost
+
+    FROM video("83gyqyc10y8f")
+    WHERE rally.numShots >= 12 AND rally.winner != me.team
+
+Q: Dinks that popped up and got punished
+
+    FROM video("83gyqyc10y8f")
+    WHERE shot.type = "dink" AND shot.errors.popup = "exploited"
+
+Q: Shots where the ball traveled more than 15 feet sideways
+
+    FROM video("83gyqyc10y8f")
+    WHERE abs(shot.to.absX - shot.from.absX) > 15
+
+Q: Serves hit from within 2 feet of the right sideline
+
+    FROM video("83gyqyc10y8f")
+    WHERE shot.num = 1 AND shot.from.feetFromNearestSideline <= 2 AND shot.from.x > 10
+
+Q: The shot right before every one of my resets, in the first ten rallies
+
+    FROM video("83gyqyc10y8f")
+    WHERE hitter = me AND shot.isReset AND shot[-1].speed > 30 AND rally.num <= 10
+
+Q: Shots by the player with email pat@example.com in either of two videos
+
+    FROM video("83gyqyc10y8f"), video("jhc3t8h8b5cj")
+    WHERE shot.taggedWith("pat@example.com")
+
+Q: What speed and quality did each of my drives have? (spreadsheet)
+
+    SELECT shot.hitTime AS "when (s)", shot.speed AS "mph", shot.quality.overall
+    FROM video("83gyqyc10y8f")
+    WHERE hitter = me AND shot.type = "drive"
+    ORDER BY shot.speed DESC
+
+Q: How many shots did I hit in this game?
+
+    SELECT count()
+    FROM video("83gyqyc10y8f")
+    WHERE hitter = me
+
+Q: Shots where my whole team was at the kitchen but we still lost the rally
+
+    FROM video("83gyqyc10y8f")
+    WHERE me.feetToKitchen = 0 AND myTeammate.feetToKitchen = 0 AND rally.winner != me.team
+
+Q: Third-shot drops that landed short of the kitchen with low pace
+
+    FROM video("83gyqyc10y8f")
+    WHERE shot.num = 3 AND shot.type = "drop" AND shot.to.zone IN ("kitchen", "short") AND shot.speed < 25
+
+Q: Every ball hit at my left-side opponent's feet
+
+    FROM video("83gyqyc10y8f")
+    WHERE hitter.team = me.team AND myOpponentLHS.distanceToNet <= 14 AND shot.to.zone != "out"
+

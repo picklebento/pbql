@@ -1,0 +1,86 @@
+// Wraps one (video, session)'s insights JSON plus host-supplied metadata
+// into the indexed, memoized shape the engine evaluates against.
+//
+// Supported input: PB Vision insights, latest major version (4.x), augmented
+// field names. Older majors are rejected (the caller should skip-and-report
+// per D13).
+
+export const SUPPORTED_MAJOR = 4
+
+export class UnsupportedInsightsError extends Error {
+  constructor (version) {
+    super(`unsupported insights version "${version}" (supported: ${SUPPORTED_MAJOR}.x); ` +
+      'reprocess the video to query it')
+    this.name = 'UnsupportedInsightsError'
+    this.version = version
+  }
+}
+
+export class Game {
+  /**
+   * @param {object} args
+   * @param {string} args.vid the video ID
+   * @param {number} args.sessionIdx 0-based session index within the video
+   * @param {object} args.insights parsed insights JSON (augmented names)
+   * @param {object} [args.meta] host-supplied metadata: players
+   *   ([{uid, name}] by player index), myPlayerIdx, videoName
+   */
+  constructor ({ vid, sessionIdx, insights, meta }) {
+    const version = insights.version ?? insights.serverMetadata?.version
+    const major = parseInt(version)
+    if (isNaN(major) || major !== SUPPORTED_MAJOR) {
+      throw new UnsupportedInsightsError(version)
+    }
+    this.vid = vid
+    this.sessionIdx = sessionIdx
+    this.insights = insights
+    this.meta = meta ?? {}
+    // one flat entry per shot, in video order — the engine's iteration unit
+    this.shotRefs = []
+    insights.rallies.forEach((rally, rallyIdx) => {
+      (rally.shots ?? []).forEach((shot, shotIdx) => {
+        this.shotRefs.push({ game: this, rally, rallyIdx, shot, shotIdx })
+      })
+    })
+  }
+
+  get rallies () {
+    return this.insights.rallies
+  }
+
+  // when the ball was struck (ms); trajectory timing is the precise source,
+  // shot.start_ms the fallback (same fallback the web app uses)
+  hitMs (shot) {
+    return shot.resulting_ball_movement?.trajectory?.start?.ms ?? shot.start_ms
+  }
+
+  // when the shot's flight ended (ms)
+  endMs (shot) {
+    return shot.resulting_ball_movement?.trajectory?.end?.ms ?? shot.end_ms
+  }
+
+  // the hitter's court position when the shot was hit, or undefined
+  playerPosAtShot (shot, playerIdx) {
+    return shot.player_positions?.[playerIdx] ?? undefined
+  }
+
+  playerName (playerIdx) {
+    return this.meta.players?.[playerIdx]?.name ??
+      this.insights.player_data?.[playerIdx]?.name
+  }
+
+  playerTeam (playerIdx) {
+    // convention: players 0-1 are team 0, players 2-3 are team 1
+    return this.insights.player_data?.[playerIdx]?.team ?? (playerIdx < 2 ? 0 : 1)
+  }
+
+  get myPlayerIdx () {
+    return this.meta.myPlayerIdx
+  }
+
+  // last video ms of the game (for clamping context windows)
+  get endOfGameMs () {
+    const { rallies } = this
+    return rallies[rallies.length - 1].end_ms
+  }
+}

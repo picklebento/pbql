@@ -17,6 +17,7 @@
     "build": "bash scripts/compile-parser.sh",
     "coverage": "yarn -s test --coverage",
     "debug": "INDEBUGGER=1 ./node_modules/nodemon/bin/nodemon.js --no-lazy --legacy-watch --watch ./src --watch ./test --exec 'node --inspect=9229 --experimental-vm-modules ./node_modules/jest/bin/jest.js --config=./jest.config.json --runInBand'",
+    "docs": "node scripts/gen-docs.js",
     "lint": "eslint . --ext js,jsx --ignore-pattern 'src/lang/grammar-generated.js' --report-unused-disable-directives --max-warnings 0",
     "prepack": "yarn -s build",
     "pretest": "yarn -s build",
