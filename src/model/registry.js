@@ -445,7 +445,7 @@ const GAME_PROPS = [
     path: 'name',
     type: 'string',
     doc: 'the video/session name, if any',
-    extract: ctx => ctx.game.meta.videoName ?? ctx.game.insights.session?.name ?? undefined
+    extract: ctx => ctx.game.meta.videoName ?? ctx.game.insights.session?.name
   },
   {
     path: 'numRallies',

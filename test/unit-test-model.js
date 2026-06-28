@@ -1,0 +1,254 @@
+import { Game, UnsupportedInsightsError } from '../src/model/game.js'
+import * as geometry from '../src/model/geometry.js'
+import { REGISTRY, playerMatchesTag } from '../src/model/registry.js'
+
+import { makeDoublesGame, makeSinglesGame } from './fixtures/make-insights.js'
+
+const game = new Game(makeDoublesGame())
+// rally 0, shot 1: hit by p2 from the far side at abs (15, 40)
+const farShotCtx = { game, rally: game.rallies[0], rallyIdx: 0, shot: game.rallies[0].shots[1], shotIdx: 1 }
+// rally 1, shot 1: the sparse shot (no trajectory/ball movement at all)
+const sparseCtx = { game, rally: game.rallies[1], rallyIdx: 1, shot: game.rallies[1].shots[1], shotIdx: 1 }
+
+describe('geometry', () => {
+  test('near-side positions are already in the player frame', () => {
+    expect(geometry.toPlayerFrame({ x: 5, y: 2, z: 1 }, false))
+      .toEqual({ x: 5, y: 2, z: 1 })
+  })
+
+  test('far-side positions mirror both axes', () => {
+    expect(geometry.toPlayerFrame({ x: 15, y: 40, z: 3 }, true))
+      .toEqual({ x: 5, y: 4, z: 3 })
+    expect(geometry.toPlayerFrame({ x: 15, y: 40 }, true)).toEqual({ x: 5, y: 4 })
+  })
+
+  test('distances to lines', () => {
+    expect(geometry.feetFromNearestSideline({ x: 3, y: 10 })).toBe(3)
+    expect(geometry.feetFromNearestSideline({ x: 18, y: 10 })).toBe(2)
+    expect(geometry.feetFromNearestBaseline({ x: 3, y: 40 })).toBe(4)
+    expect(geometry.distanceToNet({ x: 3, y: 15 })).toBe(7)
+  })
+
+  test('feetToKitchen clamps to 0 at/inside the kitchen', () => {
+    expect(geometry.feetToKitchen({ x: 5, y: 2 })).toBe(13) // near side
+    expect(geometry.feetToKitchen({ x: 5, y: 16 })).toBe(0) // inside kitchen
+    expect(geometry.feetToKitchen({ x: 5, y: 40 })).toBe(11) // far side
+    expect(geometry.feetToKitchen({ x: 5, y: 27 })).toBe(0) // inside far kitchen
+  })
+})
+
+describe('Game', () => {
+  test('rejects unsupported insights majors with a helpful error', () => {
+    for (const version of ['2.9.0', '1.0.2', undefined]) {
+      expect(() => new Game({
+        vid: 'x',
+        sessionIdx: 0,
+        insights: { version, rallies: [] }
+      })).toThrow(UnsupportedInsightsError)
+    }
+  })
+
+  test('indexes every shot in video order', () => {
+    expect(game.shotRefs.map(r => [r.rallyIdx, r.shotIdx])).toEqual([
+      [0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [2, 0], [2, 1], [2, 2], [2, 3]])
+  })
+
+  test('hit/end times prefer trajectory timing, then start/end_ms', () => {
+    expect(game.hitMs(game.rallies[0].shots[0])).toBe(12000)
+    expect(game.endMs(game.rallies[0].shots[0])).toBe(13000)
+    // the sparse shot has no trajectory
+    expect(game.hitMs(sparseCtx.shot)).toBe(35000)
+    expect(game.endMs(sparseCtx.shot)).toBe(35600)
+  })
+
+  test('player names prefer host-supplied tags over insights defaults', () => {
+    expect(game.playerName(0)).toBe('Alice')
+    const untagged = new Game({ ...makeDoublesGame(), meta: {} })
+    expect(untagged.playerName(0)).toBe('Player 1')
+    expect(untagged.myPlayerIdx).toBeUndefined()
+  })
+
+  test('team falls back to the id convention without player_data', () => {
+    const bare = makeDoublesGame()
+    delete bare.insights.player_data
+    const bareGame = new Game(bare)
+    expect([0, 1, 2, 3].map(i => bareGame.playerTeam(i))).toEqual([0, 0, 1, 1])
+  })
+
+  test('exposes game end and per-shot player positions', () => {
+    expect(game.endOfGameMs).toBe(64000)
+    expect(game.playerPosAtShot(game.rallies[0].shots[0], 2)).toEqual({ x: 4, y: 41 })
+    expect(game.playerPosAtShot(sparseCtx.shot, 0)).toBeUndefined()
+  })
+})
+
+describe('registry', () => {
+  test('every property extractor tolerates rich, sparse, and bare shots', () => {
+    // a pathological context: empty shot in an empty rally
+    const bareCtx = { game, rally: {}, rallyIdx: 0, shot: {}, shotIdx: 9 }
+    for (const [objName, { propList }] of Object.entries(REGISTRY)) {
+      for (const prop of propList) {
+        for (const ctx of [farShotCtx, sparseCtx, bareCtx]) {
+          // player props take an index; others ignore the extra arg
+          const value = prop.extract(ctx, 1)
+          if (value !== undefined) {
+            const expected = { string: 'string', boolean: 'boolean' }[prop.type] ?? 'number'
+            expect([objName, prop.path, typeof value].join(':'))
+              .toBe([objName, prop.path, expected].join(':'))
+          }
+        }
+      }
+    }
+  })
+
+  test('hitter-frame coordinates mirror for far-side hitters', () => {
+    const props = REGISTRY.shot.props
+    expect(props.get('from.x').extract(farShotCtx)).toBe(5)
+    expect(props.get('from.y').extract(farShotCtx)).toBe(4)
+    expect(props.get('from.absX').extract(farShotCtx)).toBe(15)
+    expect(props.get('from.absY').extract(farShotCtx)).toBe(40)
+    expect(props.get('from.z').extract(farShotCtx)).toBe(3)
+  })
+
+  test('num/sequence/times derive from position and timing', () => {
+    const props = REGISTRY.shot.props
+    expect(props.get('num').extract(farShotCtx)).toBe(2)
+    expect(props.get('sequence').extract(farShotCtx)).toBe('return')
+    expect(props.get('hitTime').extract(farShotCtx)).toBe(15)
+    expect(props.get('endTime').extract(farShotCtx)).toBe(16)
+    // 6th shot and beyond has no sequence name
+    expect(props.get('sequence').extract({ ...farShotCtx, shotIdx: 5 })).toBeUndefined()
+  })
+
+  test('error properties, presence flags never unknown', () => {
+    const props = REGISTRY.shot.props
+    expect(props.get('hasError').extract(farShotCtx)).toBe(true) // popup
+    expect(props.get('hasFault').extract(farShotCtx)).toBe(false)
+    expect(props.get('hasError').extract(sparseCtx)).toBe(true)
+    expect(props.get('hasFault').extract(sparseCtx)).toBe(true)
+    expect(props.get('errors.faults.net').extract(sparseCtx)).toBe(true)
+    expect(props.get('errors.popup').extract(farShotCtx)).toBe('potential')
+  })
+
+  test('rally properties', () => {
+    const props = REGISTRY.rally.props
+    expect(props.get('num').extract(farShotCtx)).toBe(1)
+    expect(props.get('numShots').extract(farShotCtx)).toBe(3)
+    expect(props.get('duration').extract(farShotCtx)).toBe(14)
+    expect(props.get('winner').extract(farShotCtx)).toBe(0)
+    // rally 0: p1 never reached the kitchen; rally 2: everyone did
+    expect(props.get('allPlayersReachedKitchen').extract(farShotCtx)).toBe(false)
+    const r2 = { ...farShotCtx, rally: game.rallies[2], rallyIdx: 2 }
+    expect(props.get('allPlayersReachedKitchen').extract(r2)).toBe(true)
+  })
+
+  test('game properties, including outcome interpretation', () => {
+    const props = REGISTRY.game.props
+    expect(props.get('vid').extract(farShotCtx)).toBe('testvid00001')
+    expect(props.get('sessionNum').extract(farShotCtx)).toBe(1)
+    expect(props.get('name').extract(farShotCtx)).toBe('Test Game')
+    const named = makeDoublesGame()
+    named.meta = {}
+    named.insights.session.name = 'Game X'
+    expect(props.get('name').extract({ ...farShotCtx, game: new Game(named) }))
+      .toBe('Game X')
+    const sessionless = makeDoublesGame()
+    sessionless.meta = {}
+    delete sessionless.insights.session
+    expect(props.get('name').extract({ ...farShotCtx, game: new Game(sessionless) }))
+      .toBeUndefined()
+    expect(props.get('numRallies').extract(farShotCtx)).toBe(3)
+    expect(props.get('duration').extract(farShotCtx)).toBe(54)
+    expect(props.get('winner').extract(farShotCtx)).toBe(0) // 11 > 9
+    const singles = new Game(makeSinglesGame())
+    const sctx = { game: singles, rally: singles.rallies[0], rallyIdx: 0, shot: singles.rallies[0].shots[0], shotIdx: 0 }
+    expect(props.get('winner').extract(sctx)).toBe(1) // ['lost', 'won']
+    for (const outcome of [[7, 7], [null, null], undefined]) {
+      const g = makeDoublesGame()
+      if (outcome === undefined) {
+        delete g.insights.game_data
+      } else {
+        g.insights.game_data.game_outcome = outcome
+      }
+      const ctx = { ...farShotCtx, game: new Game(g) }
+      expect(props.get('winner').extract(ctx)).toBeUndefined()
+    }
+  })
+
+  test('player properties measure at the current shot', () => {
+    const props = REGISTRY.player.props
+    // at rally 0 shot 1, p1 stands at (15, 8): near side
+    expect(props.get('pos.absX').extract(farShotCtx, 1)).toBe(15)
+    expect(props.get('pos.x').extract(farShotCtx, 1)).toBe(15)
+    expect(props.get('feetToKitchen').extract(farShotCtx, 1)).toBe(7)
+    // p2 stands at (15, 40): far side, own frame mirrors
+    expect(props.get('pos.x').extract(farShotCtx, 2)).toBe(5)
+    expect(props.get('pos.y').extract(farShotCtx, 2)).toBe(4)
+    expect(props.get('feetToKitchen').extract(farShotCtx, 2)).toBe(11)
+    expect(props.get('name').extract(farShotCtx, 3)).toBe('Dan')
+    expect(props.get('team').extract(farShotCtx, 3)).toBe(1)
+    expect(props.get('id').extract(farShotCtx, 3)).toBe(3)
+    expect(props.get('startedOnLeftSide').extract(farShotCtx, 0)).toBe(true)
+    expect(props.get('reachedKitchen').extract(farShotCtx, 0)).toBe(true)
+    expect(props.get('reachedKitchen').extract(farShotCtx, 1)).toBe(false)
+    expect(props.get('reachedKitchen').extract(farShotCtx, 2)).toBe(true) // legacy ms_to_kitchen
+    // no position data on the sparse shot
+    expect(props.get('pos.x').extract(sparseCtx, 0)).toBeUndefined()
+    expect(props.get('feetToKitchen').extract(sparseCtx, 0)).toBeUndefined()
+  })
+
+  test('edge branches: missing rally players, outcome forms, null slots', () => {
+    const props = REGISTRY.rally.props
+    expect(props.get('allPlayersReachedKitchen')
+      .extract({ ...farShotCtx, rally: { shots: [] } })).toBeUndefined()
+    for (const [outcome, winner] of [
+      [['lost', null], 1], [[null, 'lost'], 0], [[null, 'won'], 1], [[3, 7], 1]
+    ]) {
+      const g = makeDoublesGame()
+      g.insights.game_data.game_outcome = outcome
+      expect(REGISTRY.game.props.get('winner')
+        .extract({ ...farShotCtx, game: new Game(g) })).toBe(winner)
+    }
+    const singles = new Game(makeSinglesGame())
+    const sctx = { game: singles, rally: singles.rallies[0], rallyIdx: 0, shot: singles.rallies[0].shots[0], shotIdx: 0 }
+    expect(REGISTRY.player.props.get('reachedKitchen').extract(sctx, 1)).toBeUndefined()
+    expect(REGISTRY.player.props.get('startedOnLeftSide').extract(sctx, 1)).toBeUndefined()
+  })
+
+  test('Game accepts serverMetadata versions, missing meta, shotless rallies', () => {
+    const insights = makeDoublesGame().insights
+    delete insights.version
+    insights.serverMetadata = { version: '4.2.0' }
+    insights.rallies.push({ start_ms: 70000, end_ms: 71000 }) // no shots array
+    const game = new Game({ vid: 'v', sessionIdx: 0, insights })
+    expect(game.meta).toEqual({})
+    expect(game.shotRefs).toHaveLength(9)
+  })
+
+  test('playerMatchesTag: email exact, name glob, unknowns', () => {
+    expect(playerMatchesTag(farShotCtx, 0, 'ALICE@example.com')).toBe(true)
+    expect(playerMatchesTag(farShotCtx, 0, 'bob@example.com')).toBe(false)
+    expect(playerMatchesTag(farShotCtx, 1, 'bob@example.com')).toBeUndefined() // no addr
+    expect(playerMatchesTag(farShotCtx, 0, 'ali*')).toBe(true)
+    expect(playerMatchesTag(farShotCtx, 0, 'Al*e')).toBe(true)
+    expect(playerMatchesTag(farShotCtx, 0, 'Bob')).toBe(false)
+    expect(playerMatchesTag(farShotCtx, undefined, 'x')).toBeUndefined()
+    const noTags = new Game({ ...makeDoublesGame(), meta: {} })
+    delete noTags.insights.player_data
+    const ctx = { ...farShotCtx, game: noTags }
+    expect(playerMatchesTag(ctx, 0, 'Alice')).toBeUndefined()
+  })
+
+  test('shot methods: inHighlight matches kind + rally + time window', () => {
+    const inHighlight = REGISTRY.shot.methods.get('inHighlight')
+    const smashCtx = { ...farShotCtx, shot: game.rallies[0].shots[2], shotIdx: 2 }
+    expect(inHighlight.apply(smashCtx, undefined, ['atp'])).toBe(true)
+    expect(inHighlight.apply(smashCtx, undefined, ['erne'])).toBe(false)
+    expect(inHighlight.apply(farShotCtx, undefined, ['atp'])).toBe(false) // outside s..e
+    expect(inHighlight.apply(sparseCtx, undefined, ['atp'])).toBe(false)
+    const bare = makeDoublesGame()
+    delete bare.insights.highlights
+    const ctx = { ...smashCtx, game: new Game(bare) }
+    expect(inHighlight.apply(ctx, undefined, ['atp'])).toBeUndefined()
+  })
+})
