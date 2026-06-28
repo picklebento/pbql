@@ -31,6 +31,8 @@ const lexer = moo.compile({
     ...makePlayers('hitter'), // player who hit the ball and players relative to them
     ...makePlayers('me') // myself and players relative to me
   ],
+  // emit an error token instead of throwing so parse errors carry positions
+  error: moo.error,
   identifier: {
     match: /[a-zA-Z_]+/,
     type: moo.keywords(Object.fromEntries([

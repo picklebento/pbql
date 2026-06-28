@@ -43,8 +43,7 @@
     },
     "settings": {
         "import/resolver": {
-            "node": {},
-            "webpack": {}
+            "node": {}
         }
     }
 }

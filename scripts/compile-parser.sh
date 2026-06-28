@@ -1,14 +1,15 @@
 #!/bin/bash
+# Compiles the nearley grammar (src/lang/pbql.ne) into src/lang/grammar-generated.js.
 set -o errexit
 set -o nounset
 
-cd "`dirname \"$0\"`"
+cd "$(dirname "$0")/.."
 
-outputFile=../src/grammar-generated.js
-tmpFile=/tmp/body.js
-rm -f $outputFile
-yarn nearleyc ./src/pbql.ne -o $tmpFile
-# change generated grammar to use module rather than require()
-echo "import pbqlLexer from './lexer.js'" > $outputFile
-cat $tmpFile | fgrep -v 'const pbqlLexer =' >> $outputFile
-rm $tmpFile
+outputFile=src/lang/grammar-generated.js
+tmpFile="$(mktemp)"
+rm -f "$outputFile"
+yarn -s nearleyc src/lang/pbql.ne -o "$tmpFile"
+# the grammar header loads the lexer with require(); rewrite it as an ESM import
+echo "import pbqlLexer from './lexer.js'" > "$outputFile"
+grep -Fv 'const pbqlLexer =' "$tmpFile" >> "$outputFile"
+rm "$tmpFile"

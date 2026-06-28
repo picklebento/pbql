@@ -1,14 +1,14 @@
 import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import pbqlLexer from '../src/lexer.js'
+import lexer from '../src/lang/lexer.js'
 
-const testText = fs.readFileSync('../test/demo.pbql').toString()
+const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
+const file = process.argv[2] ?? path.join(repoRoot, 'test', 'demo.pbql')
 
-pbqlLexer.reset(testText)
-while (true) {
-  const token = pbqlLexer.next()
-  if (token === undefined) {
-    break
-  }
-  console.log({ type: token.type, value: token.value })
+lexer.reset(fs.readFileSync(file, 'utf8'))
+let token
+while ((token = lexer.next()) !== undefined) {
+  console.log(`${token.line}:${token.col} ${token.type} ${JSON.stringify(token.value)}`)
 }
