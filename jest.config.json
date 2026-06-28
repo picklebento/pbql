@@ -1,5 +1,6 @@
 {
   "collectCoverageFrom": ["<rootDir>/src/**/*.js"],
+  "coveragePathIgnorePatterns": ["node_modules", "grammar-generated"],
   "coverageDirectory": "/tmp/coverage",
   "coverageReporters": ["lcov", "text", "json"],
   "coverageThreshold": {
