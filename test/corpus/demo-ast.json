@@ -1,453 +1,669 @@
 {
+  "kind": "query",
+  "select": [
+    {
+      "expr": {
+        "kind": "prop",
+        "base": {
+          "object": "player",
+          "name": "hitter",
+          "loc": {
+            "line": 2,
+            "col": 8
+          }
+        },
+        "path": [
+          "name"
+        ],
+        "loc": {
+          "line": 2,
+          "col": 8
+        }
+      },
+      "label": "who"
+    },
+    {
+      "expr": {
+        "kind": "prop",
+        "base": {
+          "object": "shot",
+          "offset": 0,
+          "loc": {
+            "line": 2,
+            "col": 30
+          }
+        },
+        "path": [
+          "speed"
+        ],
+        "loc": {
+          "line": 2,
+          "col": 30
+        }
+      },
+      "label": "mph"
+    },
+    {
+      "expr": {
+        "kind": "arith",
+        "op": "-",
+        "lhs": {
+          "kind": "prop",
+          "base": {
+            "object": "shot",
+            "offset": 0,
+            "loc": {
+              "line": 2,
+              "col": 51
+            }
+          },
+          "path": [
+            "to",
+            "x"
+          ],
+          "loc": {
+            "line": 2,
+            "col": 51
+          }
+        },
+        "rhs": {
+          "kind": "prop",
+          "base": {
+            "object": "shot",
+            "offset": 0,
+            "loc": {
+              "line": 2,
+              "col": 63
+            }
+          },
+          "path": [
+            "from",
+            "x"
+          ],
+          "loc": {
+            "line": 2,
+            "col": 63
+          }
+        }
+      },
+      "label": null
+    }
+  ],
   "sources": [
     {
+      "kind": "video",
       "vid": "jko65sx8kalj"
     },
     {
+      "kind": "folder",
       "fid": 92
     },
     {
-      "vid": "xysdfnkdsafd"
+      "kind": "video",
+      "vid": "xysdfnkdsafd",
+      "sessionNum": 2
     }
   ],
   "where": {
-    "junction": {
-      "op1": {
-        "junction": {
-          "op1": {
-            "junction": {
-              "op1": {
-                "junction": {
-                  "op1": {
-                    "junction": {
-                      "op1": {
-                        "junction": {
-                          "op1": {
-                            "junction": {
-                              "op1": {
-                                "junction": {
-                                  "op1": {
-                                    "junction": {
-                                      "op1": {
-                                        "junction": {
-                                          "op1": {
-                                            "junction": {
-                                              "op1": {
-                                                "junction": {
-                                                  "op1": {
-                                                    "junction": {
-                                                      "op1": {
-                                                        "junction": {
-                                                          "op1": {
-                                                            "junction": {
-                                                              "op1": {
-                                                                "junction": {
-                                                                  "op1": {
-                                                                    "junction": {
-                                                                      "op1": {
-                                                                        "compare": {
-                                                                          "op1": {
-                                                                            "value": {
-                                                                              "player": "hitter",
-                                                                              "path": [
-                                                                                "id"
-                                                                              ]
-                                                                            }
-                                                                          },
-                                                                          "op2": {
-                                                                            "value": {
-                                                                              "player": "me",
-                                                                              "path": [
-                                                                                "id"
-                                                                              ]
-                                                                            }
-                                                                          },
-                                                                          "op": "="
-                                                                        }
-                                                                      },
-                                                                      "op2": {
-                                                                        "compare": {
-                                                                          "op1": {
-                                                                            "value": {
-                                                                              "player": "myTeammate",
-                                                                              "path": [
-                                                                                "name"
-                                                                              ]
-                                                                            }
-                                                                          },
-                                                                          "op2": {
-                                                                            "value": "Anna Leigh Waters"
-                                                                          },
-                                                                          "op": "="
-                                                                        }
-                                                                      },
-                                                                      "op": "AND"
-                                                                    }
-                                                                  },
-                                                                  "op2": {
-                                                                    "compare": {
-                                                                      "op1": {
-                                                                        "value": {
-                                                                          "player": "hitter",
-                                                                          "path": [
-                                                                            "feetToKitchen"
-                                                                          ]
-                                                                        }
-                                                                      },
-                                                                      "op2": {
-                                                                        "value": 2.5
-                                                                      },
-                                                                      "op": "<="
-                                                                    }
-                                                                  },
-                                                                  "op": "AND"
-                                                                }
-                                                              },
-                                                              "op2": {
-                                                                "compare": {
-                                                                  "op1": {
-                                                                    "value": {
-                                                                      "player": "hitter",
-                                                                      "path": [
-                                                                        "feetToKitchen"
-                                                                      ]
-                                                                    }
-                                                                  },
-                                                                  "op2": {
-                                                                    "value": 0
-                                                                  },
-                                                                  "op": ">"
-                                                                }
-                                                              },
-                                                              "op": "AND"
-                                                            }
-                                                          },
-                                                          "op2": {
-                                                            "junction": {
-                                                              "op1": {
-                                                                "compare": {
-                                                                  "op1": {
-                                                                    "value": {
-                                                                      "shotOffset": 0,
-                                                                      "path": [
-                                                                        "num"
-                                                                      ]
-                                                                    }
-                                                                  },
-                                                                  "op2": {
-                                                                    "value": 3
-                                                                  },
-                                                                  "op": "="
-                                                                }
-                                                              },
-                                                              "op2": {
-                                                                "compare": {
-                                                                  "op1": {
-                                                                    "value": {
-                                                                      "shotOffset": 0,
-                                                                      "path": [
-                                                                        "num"
-                                                                      ]
-                                                                    }
-                                                                  },
-                                                                  "op2": {
-                                                                    "value": 5
-                                                                  },
-                                                                  "op": "="
-                                                                }
-                                                              },
-                                                              "op": "OR"
-                                                            }
-                                                          },
-                                                          "op": "AND"
-                                                        }
-                                                      },
-                                                      "op2": {
-                                                        "value": {
-                                                          "shotOffset": 0,
-                                                          "path": [
-                                                            "trajectory",
-                                                            "isHitOnSide"
-                                                          ],
-                                                          "call": [
-                                                            "right"
-                                                          ]
-                                                        }
-                                                      },
-                                                      "op": "AND"
-                                                    }
-                                                  },
-                                                  "op2": {
-                                                    "value": {
-                                                      "shotOffset": 0,
-                                                      "path": [
-                                                        "isVolley"
-                                                      ]
-                                                    }
-                                                  },
-                                                  "op": "AND"
-                                                }
-                                              },
-                                              "op2": {
-                                                "compare": {
-                                                  "op1": {
-                                                    "not": {
-                                                      "value": {
-                                                        "shotOffset": -1,
-                                                        "path": [
-                                                          "isVolley"
-                                                        ]
-                                                      }
-                                                    }
-                                                  },
-                                                  "op2": {
-                                                    "value": false
-                                                  },
-                                                  "op": "="
-                                                }
-                                              },
-                                              "op": "AND"
-                                            }
-                                          },
-                                          "op2": {
-                                            "compare": {
-                                              "op1": {
-                                                "value": {
-                                                  "shotOffset": 2,
-                                                  "path": [
-                                                    "isVolley"
-                                                  ]
-                                                }
-                                              },
-                                              "op2": {
-                                                "value": true
-                                              },
-                                              "op": "="
-                                            }
-                                          },
-                                          "op": "AND"
-                                        }
-                                      },
-                                      "op2": {
-                                        "compare": {
-                                          "op1": {
-                                            "value": {
-                                              "kind": "functionCall",
-                                              "name": "min",
-                                              "argsList": [
-                                                {
-                                                  "shotOffset": 0,
-                                                  "path": [
-                                                    "end",
-                                                    "x"
-                                                  ]
-                                                },
-                                                {
-                                                  "shotOffset": 0,
-                                                  "path": [
-                                                    "start",
-                                                    "x"
-                                                  ]
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "op2": {
-                                            "value": 11
-                                          },
-                                          "op": "<"
-                                        }
-                                      },
-                                      "op": "AND"
-                                    }
-                                  },
-                                  "op2": {
-                                    "compare": {
-                                      "op1": {
-                                        "value": {
-                                          "rallyOffset": 0,
-                                          "path": [
-                                            "num"
-                                          ]
-                                        }
-                                      },
-                                      "op2": {
-                                        "value": 10
-                                      },
-                                      "op": "<"
-                                    }
-                                  },
-                                  "op": "AND"
-                                }
-                              },
-                              "op2": {
-                                "compare": {
-                                  "op1": {
-                                    "value": {
-                                      "rallyOffset": 1,
-                                      "path": [
-                                        "winner"
-                                      ]
-                                    }
-                                  },
-                                  "op2": {
-                                    "value": {
-                                      "player": "me",
-                                      "path": [
-                                        "team"
-                                      ]
-                                    }
-                                  },
-                                  "op": "="
-                                }
-                              },
-                              "op": "AND"
-                            }
-                          },
-                          "op2": {
-                            "compare": {
-                              "op1": {
-                                "value": {
-                                  "game": true,
-                                  "path": [
-                                    "duration"
-                                  ]
-                                }
-                              },
-                              "op2": {
-                                "value": 300.1
-                              },
-                              "op": "<"
-                            }
-                          },
-                          "op": "AND"
-                        }
-                      },
-                      "op2": {
-                        "compare": {
-                          "op1": {
-                            "value": {
-                              "player": "myOpponent1",
-                              "path": [
-                                "name"
-                              ]
-                            }
-                          },
-                          "op2": {
-                            "value": "Ben Johns"
-                          },
-                          "op": "!="
-                        }
-                      },
-                      "op": "AND"
-                    }
-                  },
-                  "op2": {
-                    "compare": {
-                      "op1": {
-                        "value": {
-                          "player": "hittersOpponent2",
-                          "path": [
-                            "name"
-                          ]
-                        }
-                      },
-                      "op2": {
-                        "value": "Ben Johns"
-                      },
-                      "op": "!="
-                    }
-                  },
-                  "op": "AND"
+    "kind": "and",
+    "args": [
+      {
+        "kind": "or",
+        "args": [
+          {
+            "kind": "cmp",
+            "op": "=",
+            "lhs": {
+              "kind": "prop",
+              "base": {
+                "object": "player",
+                "name": "hitter",
+                "loc": {
+                  "line": 7,
+                  "col": 6
                 }
               },
-              "op2": {
-                "compare": {
-                  "op1": {
-                    "value": {
-                      "player": "myOpponentLHS",
-                      "path": [
-                        "name"
-                      ]
-                    }
-                  },
-                  "op2": {
-                    "value": "Ben Johns"
-                  },
-                  "op": "!="
+              "path": [],
+              "loc": {
+                "line": 7,
+                "col": 6
+              }
+            },
+            "rhs": {
+              "kind": "prop",
+              "base": {
+                "object": "player",
+                "name": "me",
+                "loc": {
+                  "line": 7,
+                  "col": 15
                 }
               },
-              "op": "AND"
+              "path": [],
+              "loc": {
+                "line": 7,
+                "col": 15
+              }
+            },
+            "loc": {
+              "line": 7,
+              "col": 13
             }
           },
-          "op2": {
-            "compare": {
-              "op1": {
-                "value": {
-                  "player": "hittersOpponentRHS",
-                  "path": [
-                    "name"
-                  ]
+          {
+            "kind": "cmp",
+            "op": "=",
+            "lhs": {
+              "kind": "prop",
+              "base": {
+                "object": "player",
+                "name": "myTeammate",
+                "loc": {
+                  "line": 7,
+                  "col": 21
                 }
               },
-              "op2": {
-                "value": "Ben Johns"
-              },
-              "op": "!="
+              "path": [
+                "name"
+              ],
+              "loc": {
+                "line": 7,
+                "col": 21
+              }
+            },
+            "rhs": {
+              "kind": "lit",
+              "value": "Anna \"AL\" Waters"
+            },
+            "loc": {
+              "line": 7,
+              "col": 37
             }
-          },
-          "op": "AND"
-        }
-      },
-      "op2": {
-        "value": {
-          "shotOffset": 0,
-          "path": [
-            "taggedWith"
-          ],
-          "call": [
-            "BJ4"
-          ]
-        }
-      },
-      "op": "AND"
-    }
-  },
-  "context": {
-    "before": {
-      "durationExpr": {
-        "kind": "functionCall",
-        "name": "max",
-        "argsList": [
-          {
-            "durationExpr": -1,
-            "isSeconds": false
-          },
-          {
-            "durationExpr": -2,
-            "isSeconds": true
           }
         ]
       },
-      "isSeconds": false
-    },
-    "after": {
-      "durationExpr": 3,
-      "isSeconds": true
-    }
-  },
-  "order": [
-    {
-      "value": {
-        "shotOffset": 0,
+      {
+        "kind": "cmp",
+        "op": "<=",
+        "lhs": {
+          "kind": "prop",
+          "base": {
+            "object": "player",
+            "name": "hitter",
+            "loc": {
+              "line": 8,
+              "col": 5
+            }
+          },
+          "path": [
+            "feetToKitchen"
+          ],
+          "loc": {
+            "line": 8,
+            "col": 5
+          }
+        },
+        "rhs": {
+          "kind": "lit",
+          "value": 2.5
+        },
+        "loc": {
+          "line": 8,
+          "col": 26
+        }
+      },
+      {
+        "kind": "in",
+        "lhs": {
+          "kind": "prop",
+          "base": {
+            "object": "shot",
+            "offset": 0,
+            "loc": {
+              "line": 9,
+              "col": 5
+            }
+          },
+          "path": [
+            "num"
+          ],
+          "loc": {
+            "line": 9,
+            "col": 5
+          }
+        },
+        "list": [
+          3,
+          5
+        ],
+        "loc": {
+          "line": 9,
+          "col": 14
+        }
+      },
+      {
+        "kind": "prop",
+        "base": {
+          "object": "shot",
+          "offset": 0,
+          "loc": {
+            "line": 10,
+            "col": 5
+          }
+        },
         "path": [
-          "hitTime"
+          "isVolley"
+        ],
+        "loc": {
+          "line": 10,
+          "col": 5
+        }
+      },
+      {
+        "kind": "not",
+        "arg": {
+          "kind": "cmp",
+          "op": "=",
+          "lhs": {
+            "kind": "prop",
+            "base": {
+              "object": "shot",
+              "offset": -1,
+              "loc": {
+                "line": 11,
+                "col": 9
+              }
+            },
+            "path": [
+              "isVolley"
+            ],
+            "loc": {
+              "line": 11,
+              "col": 9
+            }
+          },
+          "rhs": {
+            "kind": "lit",
+            "value": false
+          },
+          "loc": {
+            "line": 11,
+            "col": 27
+          }
+        }
+      },
+      {
+        "kind": "prop",
+        "base": {
+          "object": "shot",
+          "offset": 2,
+          "loc": {
+            "line": 12,
+            "col": 5
+          }
+        },
+        "path": [
+          "isPoach"
+        ],
+        "loc": {
+          "line": 12,
+          "col": 5
+        }
+      },
+      {
+        "kind": "cmp",
+        "op": "!=",
+        "lhs": {
+          "kind": "prop",
+          "base": {
+            "object": "rally",
+            "offset": 1,
+            "loc": {
+              "line": 13,
+              "col": 5
+            }
+          },
+          "path": [
+            "winner"
+          ],
+          "loc": {
+            "line": 13,
+            "col": 5
+          }
+        },
+        "rhs": {
+          "kind": "prop",
+          "base": {
+            "object": "player",
+            "name": "me",
+            "loc": {
+              "line": 13,
+              "col": 24
+            }
+          },
+          "path": [
+            "team"
+          ],
+          "loc": {
+            "line": 13,
+            "col": 24
+          }
+        },
+        "loc": {
+          "line": 13,
+          "col": 21
+        }
+      },
+      {
+        "kind": "cmp",
+        "op": "<",
+        "lhs": {
+          "kind": "call",
+          "name": "min",
+          "args": [
+            {
+              "kind": "prop",
+              "base": {
+                "object": "shot",
+                "offset": 0,
+                "loc": {
+                  "line": 14,
+                  "col": 9
+                }
+              },
+              "path": [
+                "to",
+                "x"
+              ],
+              "loc": {
+                "line": 14,
+                "col": 9
+              }
+            },
+            {
+              "kind": "prop",
+              "base": {
+                "object": "shot",
+                "offset": 0,
+                "loc": {
+                  "line": 14,
+                  "col": 20
+                }
+              },
+              "path": [
+                "from",
+                "x"
+              ],
+              "loc": {
+                "line": 14,
+                "col": 20
+              }
+            }
+          ],
+          "loc": {
+            "line": 14,
+            "col": 5
+          }
+        },
+        "rhs": {
+          "kind": "lit",
+          "value": 11
+        },
+        "loc": {
+          "line": 14,
+          "col": 33
+        }
+      },
+      {
+        "kind": "cmp",
+        "op": ">",
+        "lhs": {
+          "kind": "arith",
+          "op": "+",
+          "lhs": {
+            "kind": "neg",
+            "arg": {
+              "kind": "prop",
+              "base": {
+                "object": "shot",
+                "offset": 0,
+                "loc": {
+                  "line": 15,
+                  "col": 6
+                }
+              },
+              "path": [
+                "yaw"
+              ],
+              "loc": {
+                "line": 15,
+                "col": 6
+              }
+            }
+          },
+          "rhs": {
+            "kind": "arith",
+            "op": "*",
+            "lhs": {
+              "kind": "lit",
+              "value": 3
+            },
+            "rhs": {
+              "kind": "lit",
+              "value": 2
+            }
+          }
+        },
+        "rhs": {
+          "kind": "neg",
+          "arg": {
+            "kind": "lit",
+            "value": 90
+          }
+        },
+        "loc": {
+          "line": 15,
+          "col": 23
+        }
+      },
+      {
+        "kind": "prop",
+        "base": {
+          "object": "shot",
+          "offset": 0,
+          "loc": {
+            "line": 16,
+            "col": 5
+          }
+        },
+        "path": [
+          "taggedWith"
+        ],
+        "loc": {
+          "line": 16,
+          "col": 5
+        },
+        "args": [
+          {
+            "kind": "lit",
+            "value": "BJ*"
+          }
         ]
       },
-      "direction": "ASC"
+      {
+        "kind": "cmp",
+        "op": "<",
+        "lhs": {
+          "kind": "arith",
+          "op": "/",
+          "lhs": {
+            "kind": "prop",
+            "base": {
+              "object": "game",
+              "loc": {
+                "line": 17,
+                "col": 5
+              }
+            },
+            "path": [
+              "duration"
+            ],
+            "loc": {
+              "line": 17,
+              "col": 5
+            }
+          },
+          "rhs": {
+            "kind": "lit",
+            "value": 60
+          }
+        },
+        "rhs": {
+          "kind": "lit",
+          "value": 20
+        },
+        "loc": {
+          "line": 17,
+          "col": 24
+        }
+      },
+      {
+        "kind": "cmp",
+        "op": "!=",
+        "lhs": {
+          "kind": "prop",
+          "base": {
+            "object": "player",
+            "name": "hittersOpponentRHS",
+            "loc": {
+              "line": 18,
+              "col": 5
+            }
+          },
+          "path": [
+            "name"
+          ],
+          "loc": {
+            "line": 18,
+            "col": 5
+          }
+        },
+        "rhs": {
+          "kind": "lit",
+          "value": "Ben Johns"
+        },
+        "loc": {
+          "line": 18,
+          "col": 29
+        }
+      },
+      {
+        "kind": "call",
+        "name": "exists",
+        "args": [
+          {
+            "kind": "prop",
+            "base": {
+              "object": "shot",
+              "offset": 0,
+              "loc": {
+                "line": 19,
+                "col": 12
+              }
+            },
+            "path": [
+              "winnerType"
+            ],
+            "loc": {
+              "line": 19,
+              "col": 12
+            }
+          }
+        ],
+        "loc": {
+          "line": 19,
+          "col": 5
+        }
+      }
+    ]
+  },
+  "context": {
+    "before": {
+      "kind": "durfn",
+      "fn": "max",
+      "args": [
+        {
+          "kind": "dur",
+          "unit": "shots",
+          "value": 1
+        },
+        {
+          "kind": "dur",
+          "unit": "secs",
+          "value": 2
+        }
+      ]
+    },
+    "after": {
+      "kind": "durfn",
+      "fn": "min",
+      "args": [
+        {
+          "kind": "dur",
+          "unit": "secs",
+          "value": 3
+        },
+        {
+          "kind": "dur",
+          "unit": "shots",
+          "value": 1
+        }
+      ]
+    }
+  },
+  "orderBy": [
+    {
+      "expr": {
+        "kind": "prop",
+        "base": {
+          "object": "shot",
+          "offset": 0,
+          "loc": {
+            "line": 22,
+            "col": 10
+          }
+        },
+        "path": [
+          "hitTime"
+        ],
+        "loc": {
+          "line": 22,
+          "col": 10
+        }
+      },
+      "dir": "asc"
+    },
+    {
+      "expr": {
+        "kind": "prop",
+        "base": {
+          "object": "shot",
+          "offset": 0,
+          "loc": {
+            "line": 22,
+            "col": 28
+          }
+        },
+        "path": [
+          "speed"
+        ],
+        "loc": {
+          "line": 22,
+          "col": 28
+        }
+      },
+      "dir": "desc"
     }
   ],
-  "limit": {
-    "n": 1000
-  }
+  "limit": 1000
 }

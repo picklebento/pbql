@@ -4,11 +4,22 @@ import { fileURLToPath } from 'node:url'
 
 import { parse } from '../src/index.js'
 
+import { stripLoc } from './helpers.js'
+
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 function read (...parts) {
   return fs.readFileSync(path.join(repoRoot, ...parts), 'utf8')
 }
+
+// parses a WHERE-clause expression via a tiny query wrapper
+function parseWhere (expr) {
+  const { ast, errors } = parse(`FROM folder(1) WHERE ${expr}`)
+  expect(errors).toBeUndefined()
+  return stripLoc(ast.where)
+}
+
+const ZERO = { kind: 'dur', unit: 'secs', value: 0 }
 
 describe('parse()', () => {
   test('parses the kitchen-sink demo query to exactly the golden AST', () => {
@@ -21,15 +32,134 @@ describe('parse()', () => {
   test('parses a minimal query and applies defaults', () => {
     const { ast, errors } = parse('FROM folder(1) WHERE true')
     expect(errors).toBeUndefined()
-    expect(ast.sources).toEqual([{ fid: 1 }])
-    expect(ast.where).toEqual({ value: true })
-    // omitted clauses default to no context, no ordering, no limit
-    expect(ast.context).toEqual({
-      before: { durationExpr: 0, isSeconds: true },
-      after: { durationExpr: 0, isSeconds: true }
-    })
-    expect(ast.order).toBeNull()
+    expect(ast.select).toBeNull()
+    expect(ast.sources).toEqual([{ kind: 'folder', fid: 1 }])
+    expect(stripLoc(ast.where)).toEqual({ kind: 'lit', value: true })
+    expect(ast.context).toEqual({ before: ZERO, after: ZERO })
+    expect(ast.orderBy).toBeNull()
     expect(ast.limit).toBeNull()
+  })
+
+  test('FROM accepts videos, sessioned videos, and folders', () => {
+    const { ast } = parse('FROM video("abc123def456"), video("abc123def456", 2), folder(92) WHERE true')
+    expect(ast.sources).toEqual([
+      { kind: 'video', vid: 'abc123def456' },
+      { kind: 'video', vid: 'abc123def456', sessionNum: 2 },
+      { kind: 'folder', fid: 92 }
+    ])
+  })
+
+  test('AND binds tighter than OR; junctions flatten n-ary', () => {
+    expect(parseWhere('shot.a = 1 OR shot.b = 2 AND shot.c = 3 AND shot.d = 4'))
+      .toMatchObject({
+        kind: 'or',
+        args: [
+          { kind: 'cmp' },
+          { kind: 'and', args: [{ kind: 'cmp' }, { kind: 'cmp' }, { kind: 'cmp' }] }
+        ]
+      })
+  })
+
+  test('comparison binds tighter than NOT (D1)', () => {
+    expect(parseWhere('NOT shot.isVolley = false')).toEqual({
+      kind: 'not',
+      arg: {
+        kind: 'cmp',
+        op: '=',
+        lhs: {
+          kind: 'prop',
+          base: { object: 'shot', offset: 0 },
+          path: ['isVolley']
+        },
+        rhs: { kind: 'lit', value: false }
+      }
+    })
+  })
+
+  test('arithmetic precedence and unary minus', () => {
+    expect(parseWhere('-shot.yaw + 3 * 2 > 1')).toMatchObject({
+      kind: 'cmp',
+      op: '>',
+      lhs: {
+        kind: 'arith',
+        op: '+',
+        lhs: { kind: 'neg', arg: { kind: 'prop' } },
+        rhs: { kind: 'arith', op: '*' }
+      }
+    })
+  })
+
+  test('alias operators canonicalize in the AST (D15)', () => {
+    expect(parseWhere('shot.speed <> 3').op).toBe('!=')
+    expect(parseWhere('shot.speed == 3').op).toBe('=')
+  })
+
+  test('IN keeps its literal list', () => {
+    expect(parseWhere('shot.num IN (3, 5, "x")')).toMatchObject({
+      kind: 'in',
+      lhs: { kind: 'prop', path: ['num'] },
+      list: [3, 5, 'x']
+    })
+  })
+
+  test('relative shot/rally references carry offsets', () => {
+    expect(parseWhere('shot[-1].isVolley').base).toEqual({ object: 'shot', offset: -1 })
+    expect(parseWhere('rally[2].winner = 1').lhs.base).toEqual({ object: 'rally', offset: 2 })
+  })
+
+  test('player references canonicalize their spelling', () => {
+    expect(parseWhere('MYTEAMMATE.name = "x"').lhs.base)
+      .toEqual({ object: 'player', name: 'myTeammate' })
+  })
+
+  test('keywords are legal path segments (research-notes issue 5)', () => {
+    expect(parseWhere('shot.video.true.min = 1').lhs.path)
+      .toEqual(['video', 'true', 'min'])
+  })
+
+  test('methods attach args to the last path segment; empty args allowed', () => {
+    expect(parseWhere('shot.taggedWith("BJ*")')).toEqual({
+      kind: 'prop',
+      base: { object: 'shot', offset: 0 },
+      path: ['taggedWith'],
+      args: [{ kind: 'lit', value: 'BJ*' }]
+    })
+    const { ast } = parse('SELECT count() FROM folder(1) WHERE true')
+    expect(stripLoc(ast.select)).toEqual([
+      { expr: { kind: 'call', name: 'count', args: [] }, label: null }])
+  })
+
+  test('string escapes resolve in the AST', () => {
+    expect(parseWhere('hitter.name = "say \\"hi\\" \\\\"').rhs.value)
+      .toBe('say "hi" \\')
+  })
+
+  test('durations: units, aliases, rally, min/max', () => {
+    const q = 'FROM folder(1) WHERE true SHOT CONTEXT BEFORE max(1 shot, 2.5secs) SHOT CONTEXT AFTER rally'
+    const { ast, errors } = parse(q)
+    expect(errors).toBeUndefined()
+    expect(ast.context.before).toEqual({
+      kind: 'durfn',
+      fn: 'max',
+      args: [
+        { kind: 'dur', unit: 'shots', value: 1 },
+        { kind: 'dur', unit: 'secs', value: 2.5 }
+      ]
+    })
+    expect(ast.context.after).toEqual({ kind: 'dur', unit: 'rally' })
+  })
+
+  test('ORDER BY supports directions per key; LIMIT parses', () => {
+    const { ast } = parse(
+      'FROM folder(1) WHERE true ORDER BY shot.speed DESC, shot.hitTime LIMIT 25')
+    expect(ast.orderBy.map(o => o.dir)).toEqual(['desc', 'asc'])
+    expect(ast.limit).toBe(25)
+  })
+
+  test('SELECT items take optional AS labels', () => {
+    const { ast } = parse(
+      'SELECT shot.speed AS "mph", hitter.name FROM folder(1) WHERE true')
+    expect(ast.select.map(s => s.label)).toEqual(['mph', null])
   })
 
   test('reports unrecognized text with its position', () => {
@@ -64,5 +194,12 @@ describe('parse()', () => {
       col: 6,
       length: 0
     }])
+  })
+
+  test('rejects calling an object or a non-min/max duration function', () => {
+    expect(parse('FROM folder(1) WHERE shot("x")').errors[0].code)
+      .toBe('PBQL_UNEXPECTED_END')
+    expect(parse('FROM folder(1) WHERE true SHOT CONTEXT BEFORE avg(1 shots, 2secs)')
+      .errors[0].code).toBe('PBQL_UNEXPECTED_END')
   })
 })

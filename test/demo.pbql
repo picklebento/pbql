@@ -1,25 +1,23 @@
-# can choose multiple sources
+# kitchen-sink query exercising every grammar feature (not a useful query)
+SELECT hitter.name AS "who", shot.speed AS "mph", shot.to.x - shot.from.x
 FROM video("jko65sx8kalj"),
      folder(92),
-     video("xysdfnkdsafd")
+     video("xysdfnkdsafd", 2)
 WHERE
-    (hitter.id = me.id AND myTeammate.name = "Anna Leigh Waters") AND
-    hitter.feetToKitchen <= 2.5 AND hitter.feetToKitchen > 0 AND
-    (shot.num = 3 OR shot.num = 5) AND
-    shot.trajectory.isHitOnSide("right") AND
+    (hitter = me OR myTeammate.name = "Anna \"AL\" Waters") AND
+    hitter.feetToKitchen <= 2.5 AND
+    shot.num IN (3, 5) AND
     shot.isVolley AND
-    NOT shot[-1].isVolley = false AND
-    shot[2].isVolley = true AND
-    min(shot.end.x, shot.start.x) < 11 AND
-    rally.num < 10 AND
-    rally[1].winner = me.team AND
-    game.duration < 300.1 AND
-    myOpponent1.name != "Ben Johns" AND
-    hittersOpponent2.name != "Ben Johns" AND
-    myOpponentLHS.name != "Ben Johns" AND
+    NOT shot[-1].isVolley = false AND  # NOT binds looser than the comparison
+    shot[2].isPoach AND
+    rally[1].winner != me.team AND
+    min(shot.to.x, shot.from.x) < 11 AND
+    -shot.yaw + 3 * 2 > -90 AND
+    shot.taggedWith("BJ*") AND
+    game.duration / 60 < 20 AND
     hittersOpponentRHS.name != "Ben Johns" AND
-    shot.taggedWith("BJ4") # can add tags to shot or range of shots
-SHOT CONTEXT BEFORE max(-1 shots, -2secs)  # can have whitespace before unit or not
-SHOT CONTEXT AFTER 3secs
-ORDER BY shot.hitTime
+    exists(shot.winnerType)
+SHOT CONTEXT BEFORE max(1 shots, 2secs)
+SHOT CONTEXT AFTER min(3secs, 1 shots)
+ORDER BY shot.hitTime ASC, shot.speed DESC
 LIMIT 1000
