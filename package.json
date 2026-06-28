@@ -10,7 +10,11 @@
   "exports": {
     ".": "./src/index.js"
   },
+  "bin": {
+    "pbql": "./bin/pbql.js"
+  },
   "files": [
+    "bin",
     "src"
   ],
   "scripts": {
