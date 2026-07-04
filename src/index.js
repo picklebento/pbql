@@ -7,6 +7,7 @@ export { validate } from './validate.js'
 
 // Shot Explorer bridge
 export { filtersToPbql } from './se/filters-to-pbql.js'
+export { toShotExplorerParams, toShotExplorerURLs } from './se/to-shot-explorer.js'
 
 // data model
 export { Game, UnsupportedInsightsError, SUPPORTED_MAJOR } from './model/game.js'

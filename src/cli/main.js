@@ -12,6 +12,7 @@ import { shotsToCSV } from '../output/csv.js'
 import { toEDL } from '../output/edl.js'
 import { ffmpegCommands } from '../output/ffmpeg.js'
 import { toSelectedShotsJSON } from '../output/json.js'
+import { toShotExplorerURLs } from '../se/to-shot-explorer.js'
 
 export const USAGE = `usage: pbql [QUERY | -f query.pbql] --insights a.json[,b.json] [options]
   -f, --file <path>       read the query from a file
@@ -19,7 +20,9 @@ export const USAGE = `usage: pbql [QUERY | -f query.pbql] --insights a.json[,b.j
   --vid <ids>             comma-separated video ids (default: file basenames)
   --session <nums>        comma-separated 0-based session indexes (default 0)
   --me <playerIdx>        which player (0-3) "me" refers to
-  --out <format>          json (default) | csv | edl | ffmpeg
+  --out <format>          json (default) | csv | edl | ffmpeg | se
+                          (se = Shot Explorer deep links, one per game)
+  --host <url>            web app host for --out se (default https://pb.vision)
   --video-file <path>     source video path (required for --out ffmpeg)
   --output-file <path>    cut video path for --out ffmpeg (default cut.mp4)
   --fast                  ffmpeg stream-copy mode (keyframe-accurate only)
@@ -34,6 +37,7 @@ const OPTIONS = {
   session: { type: 'string' },
   me: { type: 'string' },
   out: { type: 'string', default: 'json' },
+  host: { type: 'string', default: 'https://pb.vision' },
   'video-file': { type: 'string' },
   'output-file': { type: 'string', default: 'cut.mp4' },
   fast: { type: 'boolean', default: false },
@@ -107,6 +111,9 @@ export function main (argv, io) {
       return 0
     case 'csv':
       io.stdout(shotsToCSV(result))
+      return 0
+    case 'se':
+      io.stdout(toShotExplorerURLs(result, { host: values.host }).join('\n'))
       return 0
     case 'edl':
       io.stdout(toEDL({

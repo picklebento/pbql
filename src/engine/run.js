@@ -178,7 +178,9 @@ export function runQuery ({ text, ast, games, options = {} }) {
     }
   })
 
-  const result = { shots, warnings }
+  // the normalized context durations ride along so output adapters (e.g.
+  // the Shot Explorer's numBefore/numAfter) can translate them
+  const result = { shots, warnings, context: query.context }
   if (query.select) {
     const projected = project(query, selected)
     if (projected.errors) {

@@ -1,6 +1,6 @@
-import { filtersToPbql, runQuery, validate } from '../src/index.js'
+import { filtersToPbql, runQuery, toShotExplorerParams, toShotExplorerURLs, validate } from '../src/index.js'
 
-import { makeDoublesGame } from './fixtures/make-insights.js'
+import { makeDoublesGame, makeSinglesGame } from './fixtures/make-insights.js'
 
 function shotsWhere (expr) {
   const result = runQuery({
@@ -41,6 +41,53 @@ describe('M6 built-ins', () => {
     expect(shotsWhere('shot.isHitOnSide("up")')).toEqual([]) // bad side: unknown
     expect(shotsWhere('rally.num = 2 AND shot.num = 2 AND shot.isHitOnSide("left")'))
       .toEqual([]) // no trajectory on the sparse shot
+  })
+})
+
+describe('toShotExplorerParams/URLs', () => {
+  test('emits SE 1-based rally.shot refs with translated windows', () => {
+    const result = runQuery({
+      text: 'FROM video("v") WHERE shot.isFinal SHOT CONTEXT BEFORE 2 shots SHOT CONTEXT AFTER rally',
+      games: [makeDoublesGame(), makeSinglesGame()]
+    })
+    expect(toShotExplorerParams(result)).toEqual([
+      {
+        vid: 'testvid00001',
+        sessionIdx: 0,
+        params: { shots: '1.3,2.2,3.4', numBefore: 2, numAfter: 999 }
+      },
+      {
+        vid: 'testvid00002',
+        sessionIdx: 0,
+        params: { shots: '1.2', numBefore: 2, numAfter: 999 }
+      }
+    ])
+  })
+
+  test('default context maps to 0/0; secs and min/max are omitted', () => {
+    const run = ctx => runQuery({
+      text: `FROM video("v") WHERE shot.speed = 50 ${ctx}`,
+      games: [makeDoublesGame()]
+    })
+    expect(toShotExplorerParams(run(''))[0].params)
+      .toEqual({ shots: '3.3', numBefore: 0, numAfter: 0 })
+    expect(toShotExplorerParams(run('SHOT CONTEXT BEFORE 2secs'))[0].params)
+      .toEqual({ shots: '3.3', numAfter: 0 })
+    expect(toShotExplorerParams(
+      run('SHOT CONTEXT AFTER min(1 shots, 2secs)'))[0].params)
+      .toEqual({ shots: '3.3', numBefore: 0 })
+  })
+
+  test('builds explore deep links per game with a configurable host', () => {
+    const result = runQuery({
+      text: 'FROM video("v") WHERE shot.speed = 50 SHOT CONTEXT BEFORE 1 shots SHOT CONTEXT AFTER 1 shots',
+      games: [makeDoublesGame()]
+    })
+    expect(toShotExplorerURLs(result)).toEqual([
+      'https://pb.vision/video/testvid00001/0/explore?shots=3.3&numBefore=1&numAfter=1'
+    ])
+    expect(toShotExplorerURLs(result, { host: 'https://pbv-dev.web.app' })[0])
+      .toContain('https://pbv-dev.web.app/video/')
   })
 })
 

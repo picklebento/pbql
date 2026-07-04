@@ -186,6 +186,13 @@ describe('CLI main()', () => {
     expect(json.selectedShots[0]).toMatchObject({ vid: 'customvid001', sessionIdx: 1 })
   })
 
+  test('se output prints explore deep links', () => {
+    expect(main([QUERY, '--insights', insightsFile, '--out', 'se',
+      '--host', 'https://pbv-dev.web.app'], io)).toBe(0)
+    expect(out[0]).toBe(
+      'https://pbv-dev.web.app/video/testvid00001/0/explore?shots=3.3&numAfter=0')
+  })
+
   test('csv and edl outputs', () => {
     expect(main([QUERY, '--insights', insightsFile, '--out', 'csv'], io)).toBe(0)
     expect(out[0]).toContain('vid,sessionIdx,rallyIdx')
