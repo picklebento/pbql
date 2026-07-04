@@ -85,6 +85,7 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.peak.feetFromNearestSideline` | number | feet | the highest point of the ball's flight — distance to the nearest sideline |
 | `shot.peak.feetFromNearestBaseline` | number | feet | the highest point of the ball's flight — distance to the nearest baseline |
 | `shot.peak.distanceToNet` | number | feet | the highest point of the ball's flight — distance to the plane of the net |
+| `shot.isHitOnSide(side)` | boolean | | whether the ball was struck on the given half ("left"|"right") of the court in the hitter's frame (right = x >= 10) |
 | `shot.taggedWith(pattern)` | boolean | | whether the hitter is the player tagged with this name pattern (case-insensitive, * wildcard) or exact email |
 | `shot.inHighlight(kind)` | boolean | | whether the shot falls inside a highlight of the given kind ("atp", "erne", "hands_battle", "long_rally", "poach", "sequence") |
 

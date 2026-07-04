@@ -3,6 +3,10 @@ export { default as lexer } from './lang/lexer.js'
 export { parse } from './lang/parse.js'
 export { print, printExpr, printDuration } from './lang/print.js'
 export { analyze, normalize } from './analyze/analyze.js'
+export { validate } from './validate.js'
+
+// Shot Explorer bridge
+export { filtersToPbql } from './se/filters-to-pbql.js'
 
 // data model
 export { Game, UnsupportedInsightsError, SUPPORTED_MAJOR } from './model/game.js'

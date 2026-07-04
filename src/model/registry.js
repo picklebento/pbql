@@ -615,6 +615,19 @@ function framedPlayerPos (ctx, playerIdx) {
 // undefined for shot subjects), and the literal arguments.
 const SHOT_METHODS = [
   {
+    name: 'isHitOnSide',
+    args: [{ name: 'side', type: 'string' }],
+    doc: 'whether the ball was struck on the given half ("left"|"right") of the court in the hitter\'s frame (right = x >= 10)',
+    apply: (ctx, subject, [side]) => {
+      const struck = trajectory(ctx)?.start?.location
+      if (struck === undefined || (side !== 'left' && side !== 'right')) {
+        return undefined
+      }
+      const { x } = toPlayerFrame(struck, isOnFarSide(struck))
+      return side === 'right' ? x >= 10 : x < 10
+    }
+  },
+  {
     name: 'taggedWith',
     args: [{ name: 'pattern', type: 'string' }],
     doc: 'whether the hitter is the player tagged with this name pattern (case-insensitive, * wildcard) or exact email',

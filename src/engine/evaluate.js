@@ -155,6 +155,9 @@ function evalCall (node, ctx) {
     case 'min': return Math.min(...args)
     case 'max': return Math.max(...args)
     case 'abs': return Math.abs(args[0])
+    case 'kph': return args[0] * 1.609344
+    case 'toMs': return args[0] * 1000
+    case 'toSecs': return args[0] / 1000
     default: return UNKNOWN // unknown functions never reach here via runQuery
   }
 }

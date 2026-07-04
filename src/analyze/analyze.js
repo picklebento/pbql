@@ -9,7 +9,12 @@ export const SCALAR_FNS = new Map([
   ['min', { minArgs: 2, maxArgs: Infinity }],
   ['max', { minArgs: 2, maxArgs: Infinity }],
   ['abs', { minArgs: 1, maxArgs: 1 }],
-  ['exists', { minArgs: 1, maxArgs: 1 }]
+  ['exists', { minArgs: 1, maxArgs: 1 }],
+  // unit conversions (M6): mph→km/h, seconds→ms, ms→seconds ("secs"/"ms"
+  // themselves are duration-unit keywords, hence the to- prefix)
+  ['kph', { minArgs: 1, maxArgs: 1 }],
+  ['toMs', { minArgs: 1, maxArgs: 1 }],
+  ['toSecs', { minArgs: 1, maxArgs: 1 }]
 ])
 export const AGGREGATE_FNS = new Map([
   ['count', { minArgs: 0, maxArgs: 0 }],
