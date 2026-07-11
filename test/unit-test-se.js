@@ -212,3 +212,25 @@ describe('filtersToPbql()', () => {
     expect(result.shots[0].contextShots).toEqual([{ rallyIdx: 0, shotIdx: 1 }])
   })
 })
+
+describe('filtersToPbql player readability', () => {
+  const gen = args => {
+    const result = filtersToPbql({ vid: 'abc123def456', ...args })
+    expect(validate(result.text).errors).toEqual([])
+    return result.text
+  }
+
+  test('renders me and tagged names instead of raw indexes', () => {
+    const players = [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Carol' }, { name: 'Player 4' }]
+    expect(gen({ filters: { players: [0, 2] }, players, myPlayerIdx: 0 }))
+      .toContain('(hitter = me OR hitter.name = "Carol")')
+    expect(gen({ filters: { players: ['self', 3] }, players, myPlayerIdx: 0 }))
+      .toContain('(hitter = me OR hitter.name = "Player 4")')
+  })
+
+  test('falls back to hitter.id without name info', () => {
+    expect(gen({ filters: { players: [1] } })).toContain('hitter.id = 1')
+    expect(gen({ filters: { players: [1] }, players: [{ name: 'Alice' }], myPlayerIdx: 0 }))
+      .toContain('hitter.id = 1') // index 1 has no name entry
+  })
+})

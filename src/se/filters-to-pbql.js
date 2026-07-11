@@ -54,16 +54,27 @@ function has (values) {
  * @param {object} [args.filters] the SE filters object (subset supported)
  * @param {object} [args.shotWindow] { numBefore, numAfter } (999 = to the
  *   rally boundary)
+ * @param {Array} [args.players] display names by player index ([{name}]),
+ *   used to render player filters readably (hitter.name = "Carol")
+ * @param {number} [args.myPlayerIdx] the current user's player index, so
+ *   their own filter renders as `hitter = me`
  * @returns {{text: string, unsupported: Array<string>}} the query and any
  *   filter fields that could not be translated
  */
-export function filtersToPbql ({ vid, sessionNum, filters = {}, shotWindow }) {
+export function filtersToPbql ({
+  vid, sessionNum, filters = {}, shotWindow, players, myPlayerIdx
+}) {
   const groups = []
   const unsupported = []
 
   const handlers = {
-    players: values => orGroup(values.map(p =>
-      p === 'self' ? 'hitter = me' : `hitter.id = ${p}`)),
+    players: values => orGroup(values.map(p => {
+      if (p === 'self' || (myPlayerIdx !== undefined && Number(p) === myPlayerIdx)) {
+        return 'hitter = me'
+      }
+      const name = players?.[p]?.name
+      return name === undefined ? `hitter.id = ${p}` : `hitter.name = ${quote(name)}`
+    })),
     quality: ({ min, max }) => {
       const terms = []
       if (min !== undefined && min > 0) {
