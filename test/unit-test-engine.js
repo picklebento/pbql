@@ -324,8 +324,104 @@ describe('runQuery: inputs and errors', () => {
     expect(result.warnings).toEqual([{
       vid: 'oldvideo0001',
       sessionIdx: 0,
+      code: 'PBQL_UNSUPPORTED_VERSION',
       message: expect.stringContaining('unsupported insights version "2.9.0"')
     }])
+  })
+
+  test('warns when "me" is referenced but not tagged in a game', () => {
+    const game = makeDoublesGame()
+    game.meta = {}
+    const result = runQuery({ text: 'FROM video("x") WHERE hitter = me', games: [game] })
+    expect(result.shots).toEqual([]) // unknown semantics are unchanged
+    expect(result.warnings).toEqual([{
+      vid: 'testvid00001',
+      sessionIdx: 0,
+      code: 'PBQL_ME_NOT_TAGGED',
+      message: expect.stringContaining('"me" is not tagged in this game')
+    }])
+  })
+
+  test('my… references in SELECT/ORDER BY warn once; hitter refs never do', () => {
+    const game = makeDoublesGame()
+    game.meta = {}
+    const my = runQuery({
+      text: 'SELECT myTeammate.name FROM video("x") WHERE true ORDER BY me.team',
+      games: [game]
+    })
+    expect(my.warnings).toEqual([
+      expect.objectContaining({ code: 'PBQL_ME_NOT_TAGGED' })])
+    const hitters = runQuery({
+      text: 'FROM video("x") WHERE hittersOpponent1.name = "Carol"',
+      games: [makeDoublesGame(), game]
+    })
+    expect(hitters.warnings).toEqual([])
+  })
+
+  test('no me warning when the game has a myPlayerIdx', () => {
+    const result = runQuery({
+      text: 'FROM video("x") WHERE hitter = me',
+      games: [makeDoublesGame()]
+    })
+    expect(result.warnings).toEqual([])
+  })
+
+  test('warns per unmatched taggedWith pattern, naming the pattern', () => {
+    const result = runQuery({
+      text: 'FROM video("x") WHERE shot.taggedWith("zed*") OR ' +
+        'shot.taggedWith("nobody@example.com") OR myTeammate.taggedWith("bob")',
+      games: [makeDoublesGame()]
+    })
+    expect(result.warnings).toEqual([ // "bob" matches, so no third warning
+      {
+        vid: 'testvid00001',
+        sessionIdx: 0,
+        code: 'PBQL_TAG_NOT_FOUND',
+        message: expect.stringContaining('taggedWith("zed*")')
+      },
+      {
+        vid: 'testvid00001',
+        sessionIdx: 0,
+        code: 'PBQL_TAG_NOT_FOUND',
+        message: expect.stringContaining('taggedWith("nobody@example.com")')
+      }
+    ])
+  })
+
+  test('taggedWith warnings skip null player slots in singles games', () => {
+    const games = [makeSinglesGame()] // players: Alice, null, Carol, null
+    const carol = runQuery({
+      text: 'FROM video("x") WHERE shot.taggedWith("carol")', games
+    })
+    expect(carol.warnings).toEqual([])
+    const bob = runQuery({
+      text: 'FROM video("x") WHERE shot.taggedWith("bob")', games
+    })
+    expect(bob.warnings).toEqual([
+      expect.objectContaining({ code: 'PBQL_TAG_NOT_FOUND' })])
+  })
+
+  test('only literal string taggedWith patterns are checked', () => {
+    const result = runQuery({
+      text: 'FROM video("x") WHERE false AND ' +
+        '(shot.taggedWith(shot.winnerType) OR shot.taggedWith(5))',
+      games: [makeDoublesGame()]
+    })
+    expect(result.warnings).toEqual([])
+    expect(result.shots).toEqual([])
+  })
+
+  test('multiple games get their own warnings', () => {
+    const untagged = makeSinglesGame()
+    untagged.meta = { players: untagged.meta.players } // drop myPlayerIdx
+    const result = runQuery({
+      text: 'FROM video("x") WHERE hitter = me AND shot.taggedWith("bob")',
+      games: [makeDoublesGame(), untagged] // doubles resolves both
+    })
+    expect(result.warnings).toEqual([
+      expect.objectContaining({ vid: 'testvid00002', code: 'PBQL_ME_NOT_TAGGED' }),
+      expect.objectContaining({ vid: 'testvid00002', code: 'PBQL_TAG_NOT_FOUND' })
+    ])
   })
 
   test('propagates parse and analyze errors', () => {

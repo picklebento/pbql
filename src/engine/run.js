@@ -6,6 +6,7 @@ import { AGGREGATE_FNS, analyze, normalize } from '../analyze/analyze.js'
 import { parse } from '../lang/parse.js'
 import { printExpr } from '../lang/print.js'
 import { Game, UnsupportedInsightsError } from '../model/game.js'
+import { playerMatchesTag } from '../model/registry.js'
 
 import { UNKNOWN, evalExpr } from './evaluate.js'
 import { computeWindow } from './window.js'
@@ -100,6 +101,58 @@ function project (query, selected) {
   return { columns, rows }
 }
 
+// Collects the facts about a query that depend on per-game player metadata:
+// whether it references "me"/"my…" (needs meta.myPlayerIdx) and each literal
+// taggedWith() pattern (needs a matching tagged player in the game).
+function collectPlayerFacts (node, facts) {
+  if (Array.isArray(node)) {
+    node.forEach(item => collectPlayerFacts(item, facts))
+    return
+  }
+  if (node === null || typeof node !== 'object') {
+    return
+  }
+  if (node.kind === 'prop') {
+    const { base } = node
+    if (base.object === 'player' &&
+        (base.name === 'me' || base.name.startsWith('my'))) {
+      facts.referencesMe = true
+    }
+    if (node.args && node.path[0] === 'taggedWith' &&
+        node.args[0].kind === 'lit' && typeof node.args[0].value === 'string') {
+      facts.tagPatterns.add(node.args[0].value)
+    }
+  }
+  for (const value of Object.values(node)) {
+    collectPlayerFacts(value, facts)
+  }
+}
+
+// Per-game warnings for player references the game cannot resolve. These are
+// additive: the conditions still evaluate to unknown (D2) and simply never
+// match — the warnings tell the user why (hosts show them like validation
+// errors).
+function playerWarnings (facts, game) {
+  const warnings = []
+  const warn = (code, message) =>
+    warnings.push({ vid: game.vid, sessionIdx: game.sessionIdx, code, message })
+  if (facts.referencesMe && game.myPlayerIdx === undefined) {
+    warn('PBQL_ME_NOT_TAGGED',
+      '"me" is not tagged in this game, so conditions using "me" or "my…" ' +
+      'players are unknown here')
+  }
+  for (const pattern of facts.tagPatterns) {
+    const matches = [0, 1, 2, 3].some(playerIdx =>
+      playerMatchesTag({ game }, playerIdx, pattern) === true)
+    if (!matches) {
+      warn('PBQL_TAG_NOT_FOUND',
+        `no player in this game matches taggedWith("${pattern}"), so it is ` +
+        'unknown here')
+    }
+  }
+  return warnings
+}
+
 /**
  * Runs a PBQL query over the given games.
  * @param {object} args
@@ -144,9 +197,20 @@ export function runQuery ({ text, ast, games, options = {} }) {
       warnings.push({
         vid: game.vid,
         sessionIdx: game.sessionIdx,
+        code: 'PBQL_UNSUPPORTED_VERSION',
         message: err.message
       })
     }
+  }
+
+  // warn per game about player references that cannot resolve there (the
+  // conditions themselves still evaluate to unknown — see playerWarnings)
+  const facts = { referencesMe: false, tagPatterns: new Set() }
+  for (const part of [query.where, query.select, query.orderBy]) {
+    collectPlayerFacts(part, facts)
+  }
+  for (const game of wrapped) {
+    warnings.push(...playerWarnings(facts, game))
   }
 
   let selected = []
