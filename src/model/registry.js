@@ -515,7 +515,7 @@ const PLAYER_PROPS = [
   {
     path: 'name',
     type: 'string',
-    doc: 'the player\'s tagged name (host-supplied; falls back to the insights default)',
+    doc: 'the player\'s tagged name; untagged players keep their default name ("Player 1"…"Player 4")',
     extract: (ctx, playerIdx) => ctx.game.playerName(playerIdx)
   },
   {
@@ -630,7 +630,7 @@ const SHOT_METHODS = [
   {
     name: 'taggedWith',
     args: [{ name: 'pattern', type: 'string' }],
-    doc: 'whether the hitter is the player tagged with this name pattern (case-insensitive, * wildcard) or exact email',
+    doc: 'whether the hitter matches this name pattern (case-insensitive, * wildcard; untagged players match their default "Player N" name) or exact email',
     apply: (ctx, subject, [pattern]) =>
       playerMatchesTag(ctx, ctx.shot.player_id, pattern)
   },
@@ -655,7 +655,7 @@ const PLAYER_METHODS = [
   {
     name: 'taggedWith',
     args: [{ name: 'pattern', type: 'string' }],
-    doc: 'whether this player is the one tagged with this name pattern (case-insensitive, * wildcard) or exact email',
+    doc: 'whether this player matches this name pattern (case-insensitive, * wildcard; untagged players match their default "Player N" name) or exact email',
     apply: (ctx, playerIdx, [pattern]) => playerMatchesTag(ctx, playerIdx, pattern)
   }
 ]

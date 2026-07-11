@@ -64,9 +64,26 @@ export class Game {
     return shot.player_positions?.[playerIdx] ?? undefined
   }
 
+  // whether this player slot is occupied (singles leave slots 1 and 3 empty)
+  playerExists (playerIdx) {
+    const playerData = this.insights.player_data
+    if (playerData !== undefined) {
+      return playerData[playerIdx] !== null && playerData[playerIdx] !== undefined
+    }
+    return this.insights.session?.num_players === 2
+      ? playerIdx === 0 || playerIdx === 2
+      : true
+  }
+
+  // the tagged name, else the insights default, else "Player N" — every
+  // existing player is queryable by the name the UI shows for them
   playerName (playerIdx) {
+    if (!this.playerExists(playerIdx)) {
+      return undefined
+    }
     return this.meta.players?.[playerIdx]?.name ??
-      this.insights.player_data?.[playerIdx]?.name
+      this.insights.player_data?.[playerIdx]?.name ??
+      `Player ${playerIdx + 1}`
   }
 
   playerTeam (playerIdx) {

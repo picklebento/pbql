@@ -233,10 +233,12 @@ describe('registry', () => {
     expect(playerMatchesTag(farShotCtx, 0, 'Al*e')).toBe(true)
     expect(playerMatchesTag(farShotCtx, 0, 'Bob')).toBe(false)
     expect(playerMatchesTag(farShotCtx, undefined, 'x')).toBeUndefined()
+    // even with no tags and no player_data, default names still match
     const noTags = new Game({ ...makeDoublesGame(), meta: {} })
     delete noTags.insights.player_data
     const ctx = { ...farShotCtx, game: noTags }
-    expect(playerMatchesTag(ctx, 0, 'Alice')).toBeUndefined()
+    expect(playerMatchesTag(ctx, 0, 'Alice')).toBe(false)
+    expect(playerMatchesTag(ctx, 0, 'Player 1')).toBe(true)
   })
 
   test('shot methods: inHighlight matches kind + rally + time window', () => {
@@ -250,5 +252,29 @@ describe('registry', () => {
     delete bare.insights.highlights
     const ctx = { ...smashCtx, game: new Game(bare) }
     expect(inHighlight.apply(ctx, undefined, ['atp'])).toBeUndefined()
+  })
+})
+
+describe('default player names', () => {
+  test('playerName falls back to "Player N" only for existing players', () => {
+    const bare = makeDoublesGame()
+    bare.meta = {}
+    delete bare.insights.player_data
+    const bareGame = new Game(bare)
+    expect(bareGame.playerName(0)).toBe('Player 1')
+    expect(bareGame.playerExists(3)).toBe(true)
+    // a short player_data array means the missing slots don't exist
+    const short = makeDoublesGame()
+    short.insights.player_data = short.insights.player_data.slice(0, 2)
+    expect(new Game(short).playerExists(3)).toBe(false)
+    const singlesData = makeSinglesGame()
+    delete singlesData.insights.player_data
+    singlesData.meta = {}
+    const singles = new Game(singlesData)
+    expect(singles.playerName(0)).toBe('Player 1')
+    expect(singles.playerName(1)).toBeUndefined() // empty slot
+    expect(singles.playerName(2)).toBe('Player 3')
+    // with player_data present, null slots are authoritative
+    expect(new Game(makeSinglesGame()).playerName(3)).toBeUndefined()
   })
 })

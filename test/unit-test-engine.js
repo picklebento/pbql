@@ -435,3 +435,39 @@ describe('runQuery: inputs and errors', () => {
     expect(shots).toHaveLength(1)
   })
 })
+
+describe('default "Player N" names', () => {
+  test('untagged players are queryable by the name the UI shows', () => {
+    const game = makeDoublesGame()
+    game.meta = {} // nobody tagged: insights defaults ("Player 3") apply
+    const result = runQuery({
+      text: 'FROM video("v") WHERE shot.taggedWith("player 3")',
+      games: [game]
+    })
+    expect(result.shots.map(s => [s.rallyIdx, s.shotIdx]))
+      .toEqual([[0, 1], [1, 0], [2, 1]])
+    expect(result.warnings).toEqual([])
+    // even with no player_data at all, the "Player N" fallback holds
+    delete game.insights.player_data
+    const bare = runQuery({
+      text: 'FROM video("v") WHERE hitter.name = "Player 3"',
+      games: [{ ...game, insights: game.insights }]
+    })
+    expect(bare.shots).toHaveLength(3)
+  })
+
+  test('tagged names supersede defaults; empty singles slots never match', () => {
+    const tagged = runQuery({
+      text: 'FROM video("v") WHERE shot.taggedWith("Player 3")',
+      games: [makeDoublesGame()] // p2 is tagged as Carol
+    })
+    expect(tagged.shots).toEqual([])
+    expect(tagged.warnings[0].code).toBe('PBQL_TAG_NOT_FOUND')
+    const singles = runQuery({
+      text: 'FROM video("v") WHERE shot.taggedWith("Player 2")',
+      games: [makeSinglesGame()] // slot 1 is empty in singles
+    })
+    expect(singles.shots).toEqual([])
+    expect(singles.warnings[0].code).toBe('PBQL_TAG_NOT_FOUND')
+  })
+})
