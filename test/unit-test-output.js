@@ -97,11 +97,10 @@ describe('toEDL', () => {
 describe('ffmpegCommands', () => {
   const clips = [{ sMs: 500, eMs: 2000 }, { sMs: 10000, eMs: 12500 }]
 
-  test('precise mode emits one frame-accurate filter_complex command', () => {
-    const { steps, concatList } = ffmpegCommands({
+  test('emits one frame-accurate filter_complex command', () => {
+    const { steps } = ffmpegCommands({
       input: 'in.mp4', clips, output: 'out.mp4'
     })
-    expect(concatList).toBeUndefined()
     expect(steps).toHaveLength(1)
     const [{ argv, command }] = steps
     expect(argv[0]).toBe('ffmpeg')
@@ -110,16 +109,6 @@ describe('ffmpegCommands', () => {
     expect(filter).toContain('[0:a]atrim=start=10.000:end=12.500,asetpts=PTS-STARTPTS[a1]')
     expect(filter).toContain('[v0][a0][v1][a1]concat=n=2:v=1:a=1[v][a]')
     expect(command).toContain("-filter_complex '")
-  })
-
-  test('fast mode emits per-clip copies plus a concat step', () => {
-    const { steps, concatList } = ffmpegCommands({
-      input: 'in.mp4', clips, output: 'out.mp4', mode: 'fast'
-    })
-    expect(steps).toHaveLength(3)
-    expect(steps[0].command).toBe('ffmpeg -ss 0.500 -to 2.000 -i in.mp4 -c copy clip0.mp4')
-    expect(steps[2].command).toBe('ffmpeg -f concat -safe 0 -i clips.txt -c copy out.mp4')
-    expect(concatList).toBe("file 'clip0.mp4'\nfile 'clip1.mp4'\n")
   })
 
   test('refuses an empty clip list; quotes tricky args', () => {
@@ -259,11 +248,11 @@ describe('CLI main()', () => {
     expect(err.at(-1)).toContain('nothing to cut')
   })
 
-  test('ffmpeg --fast prints the concat list as comments', () => {
+  test('--fast is no longer a flag; it fails as an unknown option', () => {
     expect(main([QUERY, '--out', 'ffmpeg',
-      '--video-file', 'game.mp4', '--fast', '--output-file', 'reel.mp4'], io)).toBe(0)
-    expect(out[0]).toContain('# write this to clips.txt first:')
-    expect(out[1]).toContain('reel.mp4')
+      '--video-file', 'game.mp4', '--fast'], io)).toBe(1)
+    expect(err[0]).toContain("'--fast'")
+    expect(err[0]).toContain(USAGE)
   })
 
   test('unknown --out fails; unsupported insights warn on stderr', () => {

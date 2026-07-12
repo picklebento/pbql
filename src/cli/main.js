@@ -29,7 +29,6 @@ export const USAGE = `usage: pbql [QUERY | -f query.pbql] [options]
   --host <url>            web app host for --out se (default https://pb.vision)
   --video-file <path>     source video path (required for --out ffmpeg)
   --output-file <path>    cut video path for --out ffmpeg (default cut.mp4)
-  --fast                  ffmpeg stream-copy mode (keyframe-accurate only)
   --merge-gap <secs>      merge clips closer than this (default 0.5)
   --max-secs-beyond-rally <n>  context spill limit (default 3)`
 
@@ -40,7 +39,6 @@ const OPTIONS = {
   host: { type: 'string', default: 'https://pb.vision' },
   'video-file': { type: 'string' },
   'output-file': { type: 'string', default: 'cut.mp4' },
-  fast: { type: 'boolean', default: false },
   'merge-gap': { type: 'string', default: '0.5' },
   'max-secs-beyond-rally': { type: 'string', default: '3' },
   help: { type: 'boolean', short: 'h', default: false }
@@ -131,16 +129,11 @@ export function main (argv, io) {
       if (clips.length === 0) {
         return fail(io, 'no shots selected; nothing to cut')
       }
-      const { steps, concatList } = ffmpegCommands({
+      const { steps } = ffmpegCommands({
         input: values['video-file'],
         clips,
-        output: values['output-file'],
-        mode: values.fast ? 'fast' : 'precise'
+        output: values['output-file']
       })
-      if (concatList !== undefined) {
-        io.stdout('# write this to clips.txt first:\n' +
-          concatList.split('\n').filter(Boolean).map(l => `#   ${l}`).join('\n'))
-      }
       io.stdout(steps.map(s => s.command).join('\n'))
       return 0
     }
