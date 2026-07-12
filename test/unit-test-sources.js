@@ -80,7 +80,8 @@ describe('resolveSources', () => {
       'https://api-2o2klzx4pa-uc.a.run.app/video/ai_engine_version'
     const BUCKET = 'https://storage.googleapis.com/pbv-pro'
     const realFetch = global.fetch
-    let calls, responses
+    const savedXdg = process.env.XDG_CACHE_HOME
+    let calls, responses, cacheDir
     beforeEach(() => {
       calls = []
       responses = []
@@ -88,8 +89,19 @@ describe('resolveSources', () => {
         calls.push({ url, opts })
         return responses.shift()
       }
+      // point the insights cache at a fresh temp dir (never the real one)
+      cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pbql-cache-'))
+      process.env.XDG_CACHE_HOME = cacheDir
     })
-    afterEach(() => { global.fetch = realFetch })
+    afterEach(() => {
+      global.fetch = realFetch
+      fs.rmSync(cacheDir, { recursive: true, force: true })
+      if (savedXdg === undefined) {
+        delete process.env.XDG_CACHE_HOME
+      } else {
+        process.env.XDG_CACHE_HOME = savedXdg
+      }
+    })
 
     const version = ver => new Response(
       JSON.stringify({ aiEngineVersion: ver }), { status: 200 })
@@ -133,6 +145,47 @@ describe('resolveSources', () => {
           responses = [version(190), new Response('nope', { status })]
           await expect(resolveSources(['ab12cd34ef56:3'])).rejects.toThrow(
             '"ab12cd34ef56:3": session 3 not found for this video')
+        }
+      })
+
+    test('a fetch writes the cache; a hit then skips the network', async () => {
+      responses = [version(190), insights()]
+      await resolveSources(['ab12cd34ef56:2'])
+      expect(calls).toHaveLength(2) // miss: version endpoint + bucket
+      const file = path.join(cacheDir, 'pbql', 'ab12cd34ef56-2.json')
+      expect(JSON.parse(fs.readFileSync(file, 'utf8')).version).toBe('4.5.0')
+      calls = []
+      const games = await resolveSources(['ab12cd34ef56:2'])
+      expect(calls).toHaveLength(0) // hit: no version call, no bucket fetch
+      expect(games[0]).toMatchObject({ vid: 'ab12cd34ef56', sessionIdx: 1 })
+      expect(games[0].insights.version).toBe('4.5.0')
+    })
+
+    test('a corrupt cache file is a miss: refetched and rewritten', async () => {
+      const file = path.join(cacheDir, 'pbql', 'ab12cd34ef56-1.json')
+      fs.mkdirSync(path.dirname(file), { recursive: true })
+      fs.writeFileSync(file, '{not json')
+      responses = [version(190), insights()]
+      const games = await resolveSources(['ab12cd34ef56'])
+      expect(calls).toHaveLength(2)
+      expect(games[0].insights.version).toBe('4.5.0')
+      expect(JSON.parse(fs.readFileSync(file, 'utf8')).version).toBe('4.5.0')
+    })
+
+    test('the cache defaults to ~/.cache/pbql without XDG_CACHE_HOME',
+      async () => {
+        delete process.env.XDG_CACHE_HOME
+        // jest sandboxes process.env, so $HOME edits never reach libuv's
+        // homedir lookup — stub the shared node:os export instead
+        const savedHomedir = os.homedir
+        os.homedir = () => cacheDir
+        try {
+          responses = [version(190), insights()]
+          await resolveSources(['ab12cd34ef56'])
+          expect(fs.existsSync(path.join(
+            cacheDir, '.cache', 'pbql', 'ab12cd34ef56-1.json'))).toBe(true)
+        } finally {
+          os.homedir = savedHomedir
         }
       })
 

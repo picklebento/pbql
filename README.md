@@ -23,8 +23,7 @@ Docs and a browser playground: https://pbv-public.github.io/pbql/
 ## Status
 
 Working library and CLI: lexer, parser, analyzer, evaluation engine, and
-outputs (see the kitchen-sink query in `test/demo.pbql`). Fetching insights
-remotely by pb.vision video id is still to come.
+outputs (see the kitchen-sink query in `test/demo.pbql`).
 
 ## Getting started
 
@@ -41,7 +40,9 @@ node scripts/run-parser.js [query.pbql]  # print the AST as JSON
 
 Run a query from the CLI — `FROM` sources are quoted strings: a pb.vision
 video id (`"83gyqyc10y8f"`, optionally `":2"` for the second game — insights
-are fetched from production), else a local file (one insights JSON), an
+are fetched from production and cached without expiration in
+`$XDG_CACHE_HOME/pbql`, default `~/.cache/pbql`; delete a game's file, or
+the directory, to refetch), else a local file (one insights JSON), an
 existing directory (every `*.json` beneath it), or a glob:
 
 ```bash

@@ -3,12 +3,15 @@
 //   1. vid-shaped ("83gyqyc10y8f" or "83gyqyc10y8f:2", session 1-based) —
 //      a pb.vision video; its aiEngineVersion comes from the production
 //      service and its insights from the public production bucket (a local
-//      file named like a vid must be written "./…").
+//      file named like a vid must be written "./…"). Fetched insights are
+//      cached locally and the cache is preferred — a hit skips the network
+//      entirely (see cacheFile below).
 //   2. an existing file — one insights JSON (a local file is a whole game
 //      at sessionIdx 0).
 //   3. an existing directory — every *.json beneath it, recursively.
 //   4. anything else — a glob pattern ("games/*.json").
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { parseVidSource } from './vid.js'
@@ -36,7 +39,39 @@ async function endpointMessage (res) {
   return body === '' ? `HTTP ${res.status}` : body
 }
 
+// Fetched insights are cached with no expiration (a game's insights for a
+// given engine version never change), one file per game under
+// $XDG_CACHE_HOME/pbql (default ~/.cache/pbql). Refreshing = deleting the
+// game's file (or the whole directory); there is deliberately no --refresh
+// flag — one canonical approach.
+function cacheFile (vid, sessionIdx) {
+  const root = process.env.XDG_CACHE_HOME ||
+    path.join(os.homedir(), '.cache')
+  return path.join(root, 'pbql', `${vid}-${sessionIdx + 1}.json`)
+}
+
+function readCache (file) {
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'))
+  } catch {
+    return null // absent or unparseable (corrupt): treat as a miss
+  }
+}
+
+function writeCache (file, insights) {
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  // write-then-rename so a concurrent reader never sees a partial file
+  const tmp = `${file}.${process.pid}.tmp`
+  fs.writeFileSync(tmp, JSON.stringify(insights))
+  fs.renameSync(tmp, file)
+}
+
 async function fetchVidGame ({ vid, sessionIdx }, source) {
+  const cache = cacheFile(vid, sessionIdx)
+  const cached = readCache(cache)
+  if (cached !== null) {
+    return { vid, sessionIdx, insights: cached }
+  }
   const res = await fetch(VERSION_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -60,7 +95,9 @@ async function fetchVidGame ({ vid, sessionIdx }, source) {
   if (!insightsRes.ok) { // the bucket answers 404/403 for missing objects
     throw sessionNotFound()
   }
-  return { vid, sessionIdx, insights: await insightsRes.json() }
+  const insights = await insightsRes.json()
+  writeCache(cache, insights)
+  return { vid, sessionIdx, insights }
 }
 
 function gameFromFile (file) {

@@ -21,7 +21,9 @@ export const USAGE = `usage: pbql [QUERY | -f query.pbql] [options]
   "83gyqyc10y8f:2" — insights are fetched from production), else an
   existing file (one insights JSON), else an existing directory (every
   *.json beneath it), else a glob ("games/*.json"). Write "./name" for
-  a local file whose name looks like a video id.
+  a local file whose name looks like a video id. Fetched insights are
+  cached (no expiration) in $XDG_CACHE_HOME/pbql (default ~/.cache/pbql),
+  one file per game; to refetch, delete the game's file or the directory.
     pbql 'FROM "game.json" WHERE shot.isVolley' --out csv
   -f, --file <path>       read the query from a file
   --me <playerIdx>        which player (0-3) "me" refers to

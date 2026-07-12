@@ -166,7 +166,11 @@ describe('CLI main()', () => {
     expect(await main(['FROM "missing.json" WHERE true'], io)).toBe(1)
     expect(err[0]).toContain('"missing.json" matched nothing')
     // vid sources resolve via fetch; the resolver's message reaches stderr
+    // (an empty temp cache dir keeps the real insights cache out of play)
     const realFetch = global.fetch
+    const savedXdg = process.env.XDG_CACHE_HOME
+    const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pbql-cache-'))
+    process.env.XDG_CACHE_HOME = cacheDir
     global.fetch = async () => new Response(
       '{"code":"NotFoundException","message":"Not found"}', { status: 404 })
     try {
@@ -175,6 +179,12 @@ describe('CLI main()', () => {
         'insights — the pb.vision service says (HTTP 404): Not found')
     } finally {
       global.fetch = realFetch
+      fs.rmSync(cacheDir, { recursive: true, force: true })
+      if (savedXdg === undefined) {
+        delete process.env.XDG_CACHE_HOME
+      } else {
+        process.env.XDG_CACHE_HOME = savedXdg
+      }
     }
   })
 

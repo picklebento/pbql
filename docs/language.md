@@ -188,7 +188,12 @@ that applies:
    The CLI asks the pb.vision service for the video's engine version, then
    fetches its insights from the public production bucket; unknown,
    unprocessed, still-processing, or failed videos — and sessions that
-   don't exist — are reported clearly.
+   don't exist — are reported clearly. Fetched insights are **cached with
+   no expiration** in `$XDG_CACHE_HOME/pbql` (default `~/.cache/pbql`),
+   one file per game (`{vid}-{session}.json`, session 1-based), and the
+   cache is preferred: a hit skips the network entirely. To refetch a
+   game, delete its cache file (or the whole directory) — there is
+   deliberately no refresh flag.
 2. **file** — an existing file is one insights JSON. A local file is a
    whole game, so sessions do not apply. A file whose name happens to look
    like a video id must be written with a path prefix: `"./83gyqyc10y8f"`.
