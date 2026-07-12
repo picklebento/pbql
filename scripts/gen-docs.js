@@ -123,3 +123,12 @@ fs.writeFileSync(path.join(repoRoot, 'docs', 'data-dictionary.md'),
 fs.writeFileSync(path.join(repoRoot, 'docs', 'llms.txt'),
   generateLlmsTxt() + '\n')
 console.log('wrote docs/data-dictionary.md and docs/llms.txt')
+
+// also emit the guide as an importable module so host apps (e.g. the Shot
+// Explorer's "build with AI" button) can embed it in copyable LLM prompts
+const guide = generateLlmsTxt()
+fs.writeFileSync(path.join(repoRoot, 'src', 'llm', 'guide.js'),
+  '// GENERATED FILE — do not edit. Run `yarn docs` to regenerate from the\n' +
+  '// property registry and the example corpus.\n' +
+  `export const LLM_GUIDE = ${JSON.stringify(guide)}\n`)
+console.log('wrote src/llm/guide.js')

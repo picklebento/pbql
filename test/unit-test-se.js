@@ -245,3 +245,13 @@ describe('filtersToPbql window pluralization', () => {
     expect(validate(text).errors).toEqual([])
   })
 })
+
+describe('LLM_GUIDE', () => {
+  test('ships the generated language guide for prompt-building hosts', async () => {
+    const { LLM_GUIDE } = await import('../src/index.js')
+    expect(LLM_GUIDE).toContain('## Query shape')
+    expect(LLM_GUIDE).toContain('CONTEXT BEFORE')
+    expect(LLM_GUIDE).toContain('## Data dictionary')
+    expect(LLM_GUIDE).toContain('## Examples')
+  })
+})
