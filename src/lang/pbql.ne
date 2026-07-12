@@ -52,25 +52,12 @@ selectItem ->
   | expr %kw_as string   {% d => ({ expr: d[0], label: d[2] }) %}
 
 # ---- FROM ----------------------------------------------------------------
+# sources are opaque quoted strings; each host decides what they name (D17 —
+# the CLI resolves video ids, files, directories, and globs; see docs §6.1)
 from -> %kw_from sourceList {% d => d[1] %}
 sourceList ->
-    source                    {% d => [d[0]] %}
-  | sourceList %comma source  {% d => [...d[0], d[2]] %}
-source ->
-    %kw_video %leftParen string %rightParen
-    {% d => ({ kind: 'video', vid: d[2] }) %}
-  | %kw_video %leftParen string %comma int %rightParen
-    {% d => d[4] === 1
-         ? { kind: 'video', vid: d[2] } // session 1 is the default (D12)
-         : { kind: 'video', vid: d[2], sessionNum: d[4] } %}
-  | %kw_folder %leftParen int %rightParen
-    {% d => ({ kind: 'folder', fid: d[2] }) %}
-  # local-path forms (CLI/offline): a directory of insights JSON files,
-  # walked recursively unless the boolean says otherwise
-  | %kw_folder %leftParen string %rightParen
-    {% d => ({ kind: 'folder', path: d[2], recursive: true }) %}
-  | %kw_folder %leftParen string %comma boolean %rightParen
-    {% d => ({ kind: 'folder', path: d[2], recursive: d[4] }) %}
+    string                    {% d => [d[0]] %}
+  | sourceList %comma string  {% d => [...d[0], d[2]] %}
 
 # ---- WHERE ---------------------------------------------------------------
 where -> %kw_where expr {% d => d[1] %}
@@ -163,8 +150,6 @@ segName ->
   | %kw_false   {% d => d[0].text %}
   | %kw_asc     {% d => d[0].text %}
   | %kw_desc    {% d => d[0].text %}
-  | %kw_video   {% d => d[0].text %}
-  | %kw_folder  {% d => d[0].text %}
   | %kw_shot    {% d => d[0].text %}
   | %kw_rally   {% d => d[0].text %}
   | %kw_game    {% d => d[0].text %}

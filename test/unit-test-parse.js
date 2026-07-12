@@ -14,7 +14,7 @@ function read (...parts) {
 
 // parses a WHERE-clause expression via a tiny query wrapper
 function parseWhere (expr) {
-  const { ast, errors } = parse(`FROM folder(1) WHERE ${expr}`)
+  const { ast, errors } = parse(`FROM "f" WHERE ${expr}`)
   expect(errors).toBeUndefined()
   return stripLoc(ast.where)
 }
@@ -30,38 +30,26 @@ describe('parse()', () => {
   })
 
   test('parses a minimal query and applies defaults', () => {
-    const { ast, errors } = parse('FROM folder(1) WHERE true')
+    const { ast, errors } = parse('FROM "f" WHERE true')
     expect(errors).toBeUndefined()
     expect(ast.select).toBeNull()
-    expect(ast.sources).toEqual([{ kind: 'folder', fid: 1 }])
+    expect(ast.sources).toEqual(['f'])
     expect(stripLoc(ast.where)).toEqual({ kind: 'lit', value: true })
     expect(ast.context).toEqual({ before: ZERO, after: ZERO })
     expect(ast.orderBy).toBeNull()
     expect(ast.limit).toBeNull()
   })
 
-  test('FROM accepts videos, sessioned videos, and folders', () => {
-    const { ast } = parse('FROM video("abc123def456"), video("abc123def456", 2), folder(92) WHERE true')
-    expect(ast.sources).toEqual([
-      { kind: 'video', vid: 'abc123def456' },
-      { kind: 'video', vid: 'abc123def456', sessionNum: 2 },
-      { kind: 'folder', fid: 92 }
-    ])
-  })
-
-  test('session 1 is the default and canonicalizes away (D12)', () => {
-    const { ast } = parse('FROM video("abc123def456", 1) WHERE true')
-    expect(ast.sources).toEqual([{ kind: 'video', vid: 'abc123def456' }])
-  })
-
-  test('FROM accepts local folder paths with an optional recursive flag', () => {
+  test('FROM takes a comma list of opaque quoted strings (D17)', () => {
     const { ast } = parse(
-      'FROM folder("games"), folder("a/b", false), folder("c", true) WHERE true')
-    expect(ast.sources).toEqual([
-      { kind: 'folder', path: 'games', recursive: true },
-      { kind: 'folder', path: 'a/b', recursive: false },
-      { kind: 'folder', path: 'c', recursive: true }
-    ])
+      'FROM "abc123def456", "abc123def456:2", "games/*.json" WHERE true')
+    expect(ast.sources).toEqual(
+      ['abc123def456', 'abc123def456:2', 'games/*.json'])
+    // unquoted sources (the old video()/folder() forms) no longer parse
+    expect(parse('FROM video("abc123def456") WHERE true').errors[0])
+      .toMatchObject({ code: 'PBQL_PARSE_ERROR', message: 'unexpected "video"' })
+    expect(parse('FROM folder(92) WHERE true').errors[0])
+      .toMatchObject({ code: 'PBQL_PARSE_ERROR', message: 'unexpected "folder"' })
   })
 
   test('AND binds tighter than OR; junctions flatten n-ary', () => {
@@ -139,7 +127,7 @@ describe('parse()', () => {
       path: ['taggedWith'],
       args: [{ kind: 'lit', value: 'BJ*' }]
     })
-    const { ast } = parse('SELECT count() FROM folder(1) WHERE true')
+    const { ast } = parse('SELECT count() FROM "f" WHERE true')
     expect(stripLoc(ast.select)).toEqual([
       { expr: { kind: 'call', name: 'count', args: [] }, label: null }])
   })
@@ -150,7 +138,7 @@ describe('parse()', () => {
   })
 
   test('durations: units, aliases, rally, min/max', () => {
-    const q = 'FROM folder(1) WHERE true CONTEXT BEFORE max(1 shot, 2.5secs) CONTEXT AFTER rally'
+    const q = 'FROM "f" WHERE true CONTEXT BEFORE max(1 shot, 2.5secs) CONTEXT AFTER rally'
     const { ast, errors } = parse(q)
     expect(errors).toBeUndefined()
     expect(ast.context.before).toEqual({
@@ -166,14 +154,14 @@ describe('parse()', () => {
 
   test('ORDER BY supports directions per key; LIMIT parses', () => {
     const { ast } = parse(
-      'FROM folder(1) WHERE true ORDER BY shot.speed DESC, shot.hitTime LIMIT 25')
+      'FROM "f" WHERE true ORDER BY shot.speed DESC, shot.hitTime LIMIT 25')
     expect(ast.orderBy.map(o => o.dir)).toEqual(['desc', 'asc'])
     expect(ast.limit).toBe(25)
   })
 
   test('SELECT items take optional AS labels', () => {
     const { ast } = parse(
-      'SELECT shot.speed AS "mph", hitter.name FROM folder(1) WHERE true')
+      'SELECT shot.speed AS "mph", hitter.name FROM "f" WHERE true')
     expect(ast.select.map(s => s.label)).toEqual(['mph', null])
   })
 
@@ -201,7 +189,7 @@ describe('parse()', () => {
   })
 
   test('reports an incomplete query at the end of the input', () => {
-    const { errors } = parse('FROM video("x")\nWHERE')
+    const { errors } = parse('FROM "wxyz"\nWHERE')
     expect(errors).toEqual([{
       code: 'PBQL_UNEXPECTED_END',
       message: 'query ended unexpectedly (incomplete statement)',
@@ -212,9 +200,9 @@ describe('parse()', () => {
   })
 
   test('rejects calling an object or a non-min/max duration function', () => {
-    expect(parse('FROM folder(1) WHERE shot("x")').errors[0].code)
+    expect(parse('FROM "f" WHERE shot("x")').errors[0].code)
       .toBe('PBQL_UNEXPECTED_END')
-    expect(parse('FROM folder(1) WHERE true CONTEXT BEFORE avg(1 shots, 2secs)')
+    expect(parse('FROM "f" WHERE true CONTEXT BEFORE avg(1 shots, 2secs)')
       .errors[0].code).toBe('PBQL_UNEXPECTED_END')
   })
 })

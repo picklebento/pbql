@@ -2,21 +2,23 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { resolveLocalSources } from '../src/index.js'
+import { resolveSources } from '../src/index.js'
 
 import { makeDoublesInsights, makeSinglesInsights } from './fixtures/make-insights.js'
 
-describe('resolveLocalSources', () => {
+describe('resolveSources', () => {
   let dir
   beforeEach(() => {
     // dir/
-    //   a.json  notes.txt
+    //   a.json  notes.txt  ab12cd34ef56 (a file named like a vid)
     //   sub/b.json  sub/deeper/c.json
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pbql-src-'))
     fs.mkdirSync(path.join(dir, 'sub', 'deeper'), { recursive: true })
     fs.writeFileSync(path.join(dir, 'a.json'),
       JSON.stringify(makeDoublesInsights()))
     fs.writeFileSync(path.join(dir, 'notes.txt'), 'not insights')
+    fs.writeFileSync(path.join(dir, 'ab12cd34ef56'),
+      JSON.stringify(makeSinglesInsights()))
     fs.writeFileSync(path.join(dir, 'sub', 'b.json'),
       JSON.stringify(makeSinglesInsights()))
     fs.writeFileSync(path.join(dir, 'sub', 'deeper', 'c.json'),
@@ -24,63 +26,57 @@ describe('resolveLocalSources', () => {
   })
   afterEach(() => fs.rmSync(dir, { recursive: true, force: true }))
 
-  test('video paths load one game each, vid = basename sans .json', () => {
-    const games = resolveLocalSources([
-      { kind: 'video', vid: path.join(dir, 'a.json') } // absolute, default cwd
-    ])
+  test('file sources load one game each, vid = basename sans .json', () => {
+    const games = resolveSources([path.join(dir, 'a.json')]) // abs, default cwd
     expect(games).toHaveLength(1)
     expect(games[0]).toMatchObject({ vid: 'a', sessionIdx: 0 })
     expect(games[0].insights.version).toBe('4.5.0')
   })
 
   test('relative paths resolve against the cwd option', () => {
-    const games = resolveLocalSources(
-      [{ kind: 'video', vid: 'sub/b.json' }], { cwd: dir })
+    const games = resolveSources(['sub/b.json'], { cwd: dir })
     expect(games.map(g => g.vid)).toEqual(['b'])
   })
 
-  test('missing video files name the offending path', () => {
-    expect(() => resolveLocalSources(
-      [{ kind: 'video', vid: 'nope.json' }], { cwd: dir }))
-      .toThrow(/video\("nope\.json"\): no such insights file .*nope\.json/)
-    // a directory is not an insights file either
-    expect(() => resolveLocalSources(
-      [{ kind: 'video', vid: 'sub' }], { cwd: dir }))
-      .toThrow('video("sub"): no such insights file')
-  })
-
-  test('folder paths collect *.json recursively, sorted by path', () => {
-    const games = resolveLocalSources(
-      [{ kind: 'folder', path: '.', recursive: true }], { cwd: dir })
+  test('directory sources collect *.json recursively, sorted by path', () => {
+    const games = resolveSources(['.'], { cwd: dir })
     expect(games.map(g => g.vid)).toEqual(['a', 'b', 'c']) // notes.txt skipped
     expect(games.every(g => g.sessionIdx === 0)).toBe(true)
   })
 
-  test('folder("path", false) stays in the top directory', () => {
-    const games = resolveLocalSources(
-      [{ kind: 'folder', path: '.', recursive: false }], { cwd: dir })
-    expect(games.map(g => g.vid)).toEqual(['a'])
+  test('anything else is a glob; matched directories are skipped', () => {
+    expect(resolveSources(['sub/**/*.json'], { cwd: dir }).map(g => g.vid))
+      .toEqual(['b', 'c'])
+    // sub/* matches the deeper/ directory too; only files load
+    expect(resolveSources(['*.json', 'sub/*'], { cwd: dir }).map(g => g.vid))
+      .toEqual(['a', 'b'])
   })
 
-  test('missing or non-directory folder paths name the offending path', () => {
-    expect(() => resolveLocalSources(
-      [{ kind: 'folder', path: 'nowhere', recursive: true }], { cwd: dir }))
-      .toThrow(/folder\("nowhere"\): no such directory .*nowhere/)
-    expect(() => resolveLocalSources(
-      [{ kind: 'folder', path: 'a.json', recursive: true }], { cwd: dir }))
-      .toThrow('folder("a.json"): no such directory')
+  test('sources that match nothing name the offending string', () => {
+    expect(() => resolveSources(['nowhere/*.json'], { cwd: dir }))
+      .toThrow('"nowhere/*.json" matched nothing')
+    expect(() => resolveSources(['missing.json'], { cwd: dir }))
+      .toThrow('"missing.json" matched nothing')
   })
 
-  test('integer folder ids cannot resolve locally', () => {
-    expect(() => resolveLocalSources([{ kind: 'folder', fid: 92 }], { cwd: dir }))
-      .toThrow('folder(92) names a pb.vision library folder')
+  test('vid-shaped sources are pb.vision videos: fetch not yet supported', () => {
+    for (const source of ['ab12cd34ef56', 'ab12cd34ef56:2']) {
+      expect(() => resolveSources([source], { cwd: dir })).toThrow(
+        `"${source}": fetching insights by video id is not yet supported`)
+    }
+    // ...but a "./" prefix makes it the local file it names (documented)
+    const games = resolveSources(['./ab12cd34ef56'], { cwd: dir })
+    expect(games[0]).toMatchObject({ vid: 'ab12cd34ef56', sessionIdx: 0 })
+    expect(games[0].insights.session.vid).toBe('testvid00002') // singles fixture
+  })
+
+  test('session numbers are 1-based; :0 is rejected', () => {
+    expect(() => resolveSources(['ab12cd34ef56:0'], { cwd: dir }))
+      .toThrow('"ab12cd34ef56:0": session numbers are 1-based')
   })
 
   test('multiple sources concatenate in FROM order', () => {
-    const games = resolveLocalSources([
-      { kind: 'folder', path: 'sub', recursive: false },
-      { kind: 'video', vid: 'a.json' }
-    ], { cwd: dir })
-    expect(games.map(g => g.vid)).toEqual(['b', 'a'])
+    const games = resolveSources(['sub/deeper', 'a.json'], { cwd: dir })
+    expect(games.map(g => g.vid)).toEqual(['c', 'a'])
   })
 })

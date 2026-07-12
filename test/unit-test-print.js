@@ -51,34 +51,34 @@ describe('print()', () => {
   })
 
   test('canonicalizes keyword case and alias operators', () => {
-    const printed = roundtrips('from folder(1) where shot.speed <> 3 and shot.num == 2')
-    expect(printed).toBe('FROM folder(1)\nWHERE shot.speed != 3 AND shot.num = 2')
+    const printed = roundtrips('from "f" where shot.speed <> 3 and shot.num == 2')
+    expect(printed).toBe('FROM "f"\nWHERE shot.speed != 3 AND shot.num = 2')
   })
 
   test('keeps necessary parentheses and drops redundant ones', () => {
     const printed = roundtrips(
-      'FROM folder(1) WHERE ((shot.isVolley OR shot.isReset)) AND (shot.isPoach AND (shot.isFinal))')
+      'FROM "f" WHERE ((shot.isVolley OR shot.isReset)) AND (shot.isPoach AND (shot.isFinal))')
     expect(printed).toBe(
-      'FROM folder(1)\nWHERE (shot.isVolley OR shot.isReset) AND shot.isPoach AND shot.isFinal')
+      'FROM "f"\nWHERE (shot.isVolley OR shot.isReset) AND shot.isPoach AND shot.isFinal')
   })
 
   test('parenthesizes NOT of a junction but not NOT of a comparison', () => {
-    expect(roundtrips('FROM folder(1) WHERE NOT (shot.isVolley AND shot.isReset)'))
+    expect(roundtrips('FROM "f" WHERE NOT (shot.isVolley AND shot.isReset)'))
       .toContain('NOT (shot.isVolley AND shot.isReset)')
-    expect(roundtrips('FROM folder(1) WHERE NOT shot.speed = 3'))
+    expect(roundtrips('FROM "f" WHERE NOT shot.speed = 3'))
       .toContain('NOT shot.speed = 3')
   })
 
   test('prints arithmetic with minimal parens, honoring associativity', () => {
-    expect(roundtrips('FROM folder(1) WHERE shot.a - (shot.b + 1) * 2 = 0'))
+    expect(roundtrips('FROM "f" WHERE shot.a - (shot.b + 1) * 2 = 0'))
       .toContain('shot.a - (shot.b + 1) * 2 = 0')
-    expect(roundtrips('FROM folder(1) WHERE - -1 = 1'))
+    expect(roundtrips('FROM "f" WHERE - -1 = 1'))
       .toContain('- -1 = 1')
   })
 
   test('prints relative references, methods, IN, and durations canonically', () => {
     const printed = roundtrips(`
-      select shot.speed as "mph" from video("abc123def456", 2), folder(9)
+      select shot.speed as "mph" from "abc123def456:2", "games/*.json"
       where shot[-1].taggedWith("BJ*") and shot.num in (1, 3)
       context before max(1 shot, 2sec)
       context after rally
@@ -86,7 +86,7 @@ describe('print()', () => {
       limit 10`)
     expect(printed).toBe([
       'SELECT shot.speed AS "mph"',
-      'FROM video("abc123def456", 2), folder(9)',
+      'FROM "abc123def456:2", "games/*.json"',
       'WHERE shot[-1].taggedWith("BJ*") AND shot.num IN (1, 3)',
       'CONTEXT BEFORE max(1 shot, 2secs)',
       'CONTEXT AFTER rally',
@@ -95,22 +95,22 @@ describe('print()', () => {
     ].join('\n'))
   })
 
-  test('prints sources canonically: default session and recursion drop out', () => {
-    expect(roundtrips('FROM video("abc123def456", 1) WHERE true'))
-      .toBe('FROM video("abc123def456")\nWHERE true')
-    expect(roundtrips('FROM folder("games", true), folder("a/b", false) WHERE true'))
-      .toBe('FROM folder("games"), folder("a/b", false)\nWHERE true')
+  test('prints sources as quoted strings, escapes included (D17)', () => {
+    expect(roundtrips('from "abc123def456:2" , "games/*.json" WHERE true'))
+      .toBe('FROM "abc123def456:2", "games/*.json"\nWHERE true')
+    expect(roundtrips('FROM "a \\"b\\" \\\\" WHERE true'))
+      .toBe('FROM "a \\"b\\" \\\\"\nWHERE true')
   })
 
   test('omits default (zero) context and prints escaped strings', () => {
-    const printed = roundtrips('FROM folder(1) WHERE hitter.name = "say \\"hi\\" \\\\"')
-    expect(printed).toBe('FROM folder(1)\nWHERE hitter.name = "say \\"hi\\" \\\\"')
+    const printed = roundtrips('FROM "f" WHERE hitter.name = "say \\"hi\\" \\\\"')
+    expect(printed).toBe('FROM "f"\nWHERE hitter.name = "say \\"hi\\" \\\\"')
   })
 })
 
 describe('duration number agreement', () => {
   test('singular units print as 1 shot / 1sec', () => {
-    expect(roundtrips('FROM folder(1) WHERE true CONTEXT BEFORE 1secs CONTEXT AFTER 1 shots'))
+    expect(roundtrips('FROM "f" WHERE true CONTEXT BEFORE 1secs CONTEXT AFTER 1 shots'))
       .toContain('CONTEXT BEFORE 1sec\nCONTEXT AFTER 1 shot')
   })
 })

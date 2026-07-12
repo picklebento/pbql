@@ -107,25 +107,12 @@ const durArb = fc.letrec(tie => ({
     }))
 })).dur
 
+// sources are opaque strings (D17): vid-shaped, path/glob-shaped, or any
+// printable text (escapes included) — the language treats them all alike
 const sourceArb = fc.oneof(
-  fc.record({ kind: fc.constant('folder'), fid: fc.integer({ min: 1, max: 1e9 }) }),
-  // local-path folder sources; recursive: true prints without the boolean
-  fc.record({
-    kind: fc.constant('folder'),
-    path: stringArb,
-    recursive: fc.boolean()
-  }),
-  fc.record({
-    kind: fc.constant('video'),
-    vid: fc.stringMatching(/^[a-z0-9]{12}$/)
-  }),
-  fc.record({
-    kind: fc.constant('video'),
-    vid: fc.stringMatching(/^[a-z0-9]{12}$/),
-    // session 1 canonicalizes away (video("x", 1) → video("x")), so
-    // canonical ASTs only ever carry sessionNum >= 2
-    sessionNum: fc.integer({ min: 2, max: 9 })
-  }))
+  stringArb,
+  fc.stringMatching(/^[a-z0-9]{12}(:[1-9])?$/),
+  fc.stringMatching(/^[a-z0-9./*_-]{1,16}$/))
 
 const queryArb = fc.record({
   kind: fc.constant('query'),

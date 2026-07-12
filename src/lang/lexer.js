@@ -36,8 +36,6 @@ const KEYWORDS = {
   kw_false: 'false',
   kw_asc: 'asc',
   kw_desc: 'desc',
-  kw_video: 'video',
-  kw_folder: 'folder',
   kw_shot: 'shot', // the shot object; also the singular duration unit alias
   kw_rally: 'rally', // the rally object; also the to-rally-boundary duration
   kw_game: 'game',

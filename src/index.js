@@ -3,11 +3,11 @@ export { parse } from './lang/parse.js'
 export { print } from './lang/print.js'
 export { validate } from './validate.js'
 
-// Shot Explorer bridge
-export { toShotExplorerParams, toShotExplorerURLs } from './se/to-shot-explorer.js'
+// Shot Explorer bridge (explore links carrying the query via ?q=)
+export { toShotExplorerURLs } from './se/to-shot-explorer.js'
 
-// source resolution (local files; pb.vision providers land in M8)
-export { resolveLocalSources } from './sources/local.js'
+// source resolution (Node hosts: files/dirs/globs; vid fetching lands in M8)
+export { resolveSources } from './sources/resolve.js'
 
 // data model
 export { Game, UnsupportedInsightsError, SUPPORTED_MAJOR } from './model/game.js'

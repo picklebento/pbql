@@ -1,7 +1,6 @@
-// The pbql CLI: run a query over local insights JSON files and emit
-// selected shots as JSON/CSV/EDL or an ffmpeg command. FROM sources are
-// resolved as local paths: video("game.json") is an insights file and
-// folder("dir") queries every *.json beneath a directory.
+// The pbql CLI: run a query over insights JSON and emit selected shots as
+// JSON/CSV/EDL, an ffmpeg command, or pb.vision explore links. FROM sources
+// are strings the CLI resolves per src/sources/resolve.js (D17).
 import fs from 'node:fs'
 import { parseArgs } from 'node:util'
 
@@ -13,20 +12,23 @@ import { toEDL } from '../output/edl.js'
 import { ffmpegCommands } from '../output/ffmpeg.js'
 import { toSelectedShotsJSON } from '../output/json.js'
 import { toShotExplorerURLs } from '../se/to-shot-explorer.js'
-import { resolveLocalSources } from '../sources/local.js'
+import { resolveSources } from '../sources/resolve.js'
+import { validate } from '../validate.js'
 
 export const USAGE = `usage: pbql [QUERY | -f query.pbql] [options]
-  FROM sources are local paths relative to the current directory:
-  video("game.json") is an insights file; folder("dir") queries every
-  *.json under dir, recursively unless written folder("dir", false).
-  Sessions do not apply to local files.
-    pbql 'FROM video("game.json") WHERE shot.isVolley' --out csv
+  FROM sources are strings; the CLI interprets each with one rule:
+  a pb.vision video id with optional 1-based session ("83gyqyc10y8f",
+  "83gyqyc10y8f:2" — fetching these is not yet supported), else an
+  existing file (one insights JSON), else an existing directory (every
+  *.json beneath it), else a glob ("games/*.json"). Write "./name" for
+  a local file whose name looks like a video id.
+    pbql 'FROM "game.json" WHERE shot.isVolley' --out csv
   -f, --file <path>       read the query from a file
   --me <playerIdx>        which player (0-3) "me" refers to
   --out <format>          json (default) | csv | edl | ffmpeg | se
-                          (se = Shot Explorer deep links, one per game;
+                          (se = pb.vision explore links carrying the query,
+                          one per video-id source in FROM;
                           edl uses the queried video's frame rate, default 30)
-  --host <url>            web app host for --out se (default https://pb.vision)
   --video-file <path>     source video path (required for --out ffmpeg)
   --output-file <path>    cut video path for --out ffmpeg (default cut.mp4)
   --merge-gap <secs>      merge clips closer than this (default 0.5)
@@ -36,7 +38,6 @@ const OPTIONS = {
   file: { type: 'string', short: 'f' },
   me: { type: 'string' },
   out: { type: 'string', default: 'json' },
-  host: { type: 'string', default: 'https://pb.vision' },
   'video-file': { type: 'string' },
   'output-file': { type: 'string', default: 'cut.mp4' },
   'merge-gap': { type: 'string', default: '0.5' },
@@ -47,6 +48,35 @@ const OPTIONS = {
 function fail (io, message) {
   io.stderr(message)
   return 1
+}
+
+function reportErrors (io, errors) {
+  for (const e of errors) {
+    io.stderr(`${e.line}:${e.col} ${e.code}: ${e.message}` +
+      (e.hint === undefined ? '' : ` (${e.hint})`))
+  }
+  return 1
+}
+
+// --out se emits explore links that carry the query itself (?q=...), so it
+// only needs a valid query — no insights are fetched or evaluated
+function emitExploreLinks (text, io) {
+  const { errors, ast } = validate(text)
+  if (errors.length > 0) {
+    return reportErrors(io, errors)
+  }
+  let urls
+  try {
+    urls = toShotExplorerURLs(text, ast.sources)
+  } catch (err) {
+    return fail(io, err.message)
+  }
+  if (urls.length === 0) {
+    return fail(io, '--out se needs a pb.vision video id in FROM ' +
+      '(e.g. FROM "83gyqyc10y8f"); local paths have no explore page')
+  }
+  io.stdout(urls.join('\n'))
+  return 0
 }
 
 export function main (argv, io) {
@@ -71,14 +101,18 @@ export function main (argv, io) {
     return fail(io, `expected a query (or -f query.pbql)\n${USAGE}`)
   }
 
+  if (values.out === 'se') {
+    return emitExploreLinks(text, io)
+  }
+
   const meta = values.me === undefined ? {} : { myPlayerIdx: parseInt(values.me) }
-  // resolve the query's FROM sources as local paths; parse errors are
-  // left for runQuery below so they print with positions like any other
+  // resolve the query's FROM sources; parse errors are left for runQuery
+  // below so they print with positions like any other
   const query = parse(text)
   let games = []
   if (query.ast !== undefined) {
     try {
-      games = resolveLocalSources(query.ast.sources)
+      games = resolveSources(query.ast.sources)
         .map(game => ({ ...game, meta }))
     } catch (err) {
       return fail(io, err.message)
@@ -91,11 +125,7 @@ export function main (argv, io) {
     options: { maxSecsBeyondRally: parseFloat(values['max-secs-beyond-rally']) }
   })
   if (result.errors) {
-    for (const e of result.errors) {
-      io.stderr(`${e.line}:${e.col} ${e.code}: ${e.message}` +
-        (e.hint === undefined ? '' : ` (${e.hint})`))
-    }
-    return 1
+    return reportErrors(io, result.errors)
   }
   for (const warning of result.warnings) {
     io.stderr(`warning: ${warning.vid}: ${warning.message}`)
@@ -108,9 +138,6 @@ export function main (argv, io) {
       return 0
     case 'csv':
       io.stdout(shotsToCSV(result))
-      return 0
-    case 'se':
-      io.stdout(toShotExplorerURLs(result, { host: values.host }).join('\n'))
       return 0
     case 'edl':
       io.stdout(toEDL({

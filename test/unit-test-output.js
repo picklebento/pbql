@@ -25,7 +25,7 @@ describe('toClips', () => {
 describe('toSelectedShotsJSON', () => {
   test('emits the Shot-Explorer shape in seconds', () => {
     const result = runQuery({
-      text: 'SELECT shot.num FROM video("x") WHERE shot.speed = 50 CONTEXT BEFORE 1 shots',
+      text: 'SELECT shot.num FROM "x" WHERE shot.speed = 50 CONTEXT BEFORE 1 shots',
       games: [makeDoublesGame()]
     })
     expect(toSelectedShotsJSON(result)).toEqual({
@@ -59,14 +59,14 @@ describe('CSV', () => {
 
   test('shot lists get fixed columns; SELECT results use theirs', () => {
     const result = runQuery({
-      text: 'FROM video("x") WHERE shot.speed = 50',
+      text: 'FROM "x" WHERE shot.speed = 50',
       games: [makeDoublesGame()]
     })
     expect(shotsToCSV(result)).toBe(
       'vid,sessionIdx,rallyIdx,shotIdx,hitTimeSecs,windowStartSecs,windowEndSecs\r\n' +
       'testvid00001,0,2,2,58,58,59\r\n')
     const selected = runQuery({
-      text: 'SELECT count() FROM video("x") WHERE true',
+      text: 'SELECT count() FROM "x" WHERE true',
       games: [makeDoublesGame()]
     })
     expect(shotsToCSV(selected)).toBe('count()\r\n9\r\n')
@@ -125,7 +125,7 @@ describe('CLI main()', () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pbql-test-'))
     insightsFile = path.join(dir, 'testvid00001.json')
     fs.writeFileSync(insightsFile, JSON.stringify(makeDoublesInsights()))
-    QUERY = `FROM video("${insightsFile}") WHERE shot.speed = 50 CONTEXT BEFORE 1secs`
+    QUERY = `FROM "${insightsFile}" WHERE shot.speed = 50 CONTEXT BEFORE 1secs`
     out = []
     err = []
     io = { stdout: t => out.push(t), stderr: t => err.push(t) }
@@ -150,25 +150,28 @@ describe('CLI main()', () => {
     expect(err[4]).toContain(USAGE)
   })
 
-  test('FROM names local files and folders', () => {
-    expect(main([`FROM video("${insightsFile}") WHERE shot.speed = 50`], io))
+  test('FROM names files, directories, and globs', () => {
+    expect(main([`FROM "${insightsFile}" WHERE shot.speed = 50`], io))
       .toBe(0)
     expect(JSON.parse(out[0]).selectedShots[0]).toMatchObject({
       vid: 'testvid00001', sessionIdx: 0, rallyIdx: 2, shotIdx: 2
     })
-    expect(main([`FROM folder("${dir}") WHERE shot.speed = 50`], io)).toBe(0)
+    expect(main([`FROM "${dir}" WHERE shot.speed = 50`], io)).toBe(0)
     expect(JSON.parse(out[1]).selectedShots).toHaveLength(1)
+    expect(main([`FROM "${dir}/*.json" WHERE shot.speed = 50`], io)).toBe(0)
+    expect(JSON.parse(out[2]).selectedShots).toHaveLength(1)
   })
 
-  test('local source failures exit 1 with the offending path', () => {
-    expect(main(['FROM video("missing.json") WHERE true'], io)).toBe(1)
-    expect(err[0]).toContain('video("missing.json"): no such insights file')
-    expect(main(['FROM folder(1) WHERE true'], io)).toBe(1)
-    expect(err[1]).toContain('folder(1) names a pb.vision library folder')
+  test('source failures exit 1 with the offending string', () => {
+    expect(main(['FROM "missing.json" WHERE true'], io)).toBe(1)
+    expect(err[0]).toContain('"missing.json" matched nothing')
+    expect(main(['FROM "83gyqyc10y8f" WHERE true'], io)).toBe(1)
+    expect(err[1]).toContain(
+      '"83gyqyc10y8f": fetching insights by video id is not yet supported')
   })
 
   test('query errors print with positions and exit 1', () => {
-    expect(main([`FROM video("${insightsFile}") WHERE shot.isVoley`], io)).toBe(1)
+    expect(main([`FROM "${insightsFile}" WHERE shot.isVoley`], io)).toBe(1)
     expect(err[0]).toContain('PBQL_UNKNOWN_PROPERTY')
     expect(err[0]).toContain('did you mean "isVolley"?')
     expect(main(['FROM @'], io)).toBe(1) // parse errors still report positions
@@ -187,18 +190,37 @@ describe('CLI main()', () => {
   test('reads the query from a file; honors --me', () => {
     const queryFile = path.join(dir, 'q.pbql')
     fs.writeFileSync(queryFile,
-      `FROM video("${insightsFile}") WHERE hitter = me`)
+      `FROM "${insightsFile}" WHERE hitter = me`)
     expect(main(['-f', queryFile, '--me', '1'], io)).toBe(0)
     const json = JSON.parse(out[0])
     expect(json.selectedShots).toHaveLength(2) // Bob's shots
     expect(json.selectedShots[0]).toMatchObject({ vid: 'testvid00001', sessionIdx: 0 })
   })
 
-  test('se output prints explore deep links', () => {
+  test('se output prints explore links carrying the query itself', () => {
+    // no insights are fetched or evaluated: vid sources work here even
+    // though resolving them is not yet supported
+    const q = 'FROM "83gyqyc10y8f:2", "games/*.json" WHERE shot.isVolley'
+    expect(main([q, '--out', 'se'], io)).toBe(0)
+    expect(out[0]).toBe('https://pb.vision/video/83gyqyc10y8f/1/explore?q=' +
+      encodeURIComponent(q))
+  })
+
+  test('se fails clearly without a video-id source or with a bad query', () => {
+    expect(main([QUERY, '--out', 'se'], io)).toBe(1) // file path source
+    expect(err[0]).toContain('--out se needs a pb.vision video id')
+    expect(main(['FROM "83gyqyc10y8f" WHERE shot.isVoley', '--out', 'se'], io))
+      .toBe(1) // se still validates the query
+    expect(err[1]).toContain('PBQL_UNKNOWN_PROPERTY')
+    expect(main(['FROM "ab12cd34ef56:0" WHERE true', '--out', 'se'], io)).toBe(1)
+    expect(err[2]).toContain('session numbers are 1-based')
+  })
+
+  test('--host is no longer a flag; it fails as an unknown option', () => {
     expect(main([QUERY, '--out', 'se',
-      '--host', 'https://pbv-dev.web.app'], io)).toBe(0)
-    expect(out[0]).toBe(
-      'https://pbv-dev.web.app/video/testvid00001/0/explore?shots=3.3&numAfter=0')
+      '--host', 'https://pbv-dev.web.app'], io)).toBe(1)
+    expect(err[0]).toContain("'--host'")
+    expect(err[0]).toContain(USAGE)
   })
 
   test('csv and edl outputs', () => {
@@ -212,7 +234,7 @@ describe('CLI main()', () => {
     // a 0.5s lead-in makes the start frame differ by fps: 57.5s is frame
     // 30 of second 57 at 60fps but frame 15 at the 30fps fallback
     const query = file =>
-      `FROM video("${file}") WHERE shot.speed = 50 CONTEXT BEFORE 0.5secs`
+      `FROM "${file}" WHERE shot.speed = 50 CONTEXT BEFORE 0.5secs`
     const insights = makeDoublesInsights()
     insights.camera.fps = 60
     const sixty = path.join(dir, 'sixty.json')
@@ -229,7 +251,7 @@ describe('CLI main()', () => {
   test('edl of an empty selection emits just the header', () => {
     const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'pbql-empty-'))
     try {
-      expect(main([`FROM folder("${empty}") WHERE true`, '--out', 'edl'], io))
+      expect(main([`FROM "${empty}" WHERE true`, '--out', 'edl'], io))
         .toBe(0)
       expect(out[0]).toBe('TITLE: pbql selection\nFCM: NON-DROP FRAME\n\n')
     } finally {
@@ -243,7 +265,7 @@ describe('CLI main()', () => {
     expect(main([QUERY, '--out', 'ffmpeg',
       '--video-file', 'game.mp4'], io)).toBe(0)
     expect(out[0]).toContain('ffmpeg -i game.mp4 -filter_complex')
-    expect(main([`FROM video("${insightsFile}") WHERE false`,
+    expect(main([`FROM "${insightsFile}" WHERE false`,
       '--out', 'ffmpeg', '--video-file', 'game.mp4'], io)).toBe(1)
     expect(err.at(-1)).toContain('nothing to cut')
   })
@@ -259,7 +281,7 @@ describe('CLI main()', () => {
     expect(main([QUERY, '--out', 'yaml'], io)).toBe(1)
     fs.writeFileSync(path.join(dir, 'old.json'),
       JSON.stringify({ version: '2.9.0', rallies: [] }))
-    expect(main([`FROM folder("${dir}") WHERE shot.speed = 50`], io)).toBe(0)
+    expect(main([`FROM "${dir}" WHERE shot.speed = 50`], io)).toBe(0)
     expect(err.at(-1)).toContain('unsupported insights version')
     expect(JSON.parse(out.at(-1)).selectedShots).toHaveLength(1)
   })

@@ -89,21 +89,6 @@ function isZeroDur (dur) {
   return dur.kind === 'dur' && dur.unit === 'secs' && dur.value === 0
 }
 
-function printSource (src) {
-  if (src.kind === 'folder') {
-    if (src.path !== undefined) {
-      // recursive is the default, so only the false form is printed
-      return src.recursive
-        ? `folder(${quote(src.path)})`
-        : `folder(${quote(src.path)}, false)`
-    }
-    return `folder(${src.fid})`
-  }
-  return src.sessionNum === undefined
-    ? `video(${quote(src.vid)})`
-    : `video(${quote(src.vid)}, ${src.sessionNum})`
-}
-
 export function print (query) {
   const lines = []
   if (query.select) {
@@ -111,7 +96,8 @@ export function print (query) {
       label === null ? printExpr(expr) : `${printExpr(expr)} AS ${quote(label)}`
     ).join(', '))
   }
-  lines.push('FROM ' + query.sources.map(printSource).join(', '))
+  // sources are opaque strings (D17); hosts interpret them
+  lines.push('FROM ' + query.sources.map(quote).join(', '))
   lines.push('WHERE ' + printExpr(query.where))
   const { before, after } = query.context
   if (!isZeroDur(before)) {

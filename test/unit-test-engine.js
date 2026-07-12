@@ -7,7 +7,7 @@ import { makeDoublesGame, makeSinglesGame } from './fixtures/make-insights.js'
 // runs `WHERE expr` over the doubles fixture, returning [rallyIdx, shotIdx]
 function shotsWhere (expr, rest = '') {
   const result = runQuery({
-    text: `FROM video("testvid00001") WHERE ${expr} ${rest}`,
+    text: `FROM "testvid00001" WHERE ${expr} ${rest}`,
     games: [makeDoublesGame()]
   })
   expect(result.errors).toBeUndefined()
@@ -16,7 +16,7 @@ function shotsWhere (expr, rest = '') {
 
 function windowFor (contextClauses, options) {
   const result = runQuery({
-    text: `FROM video("x") WHERE shot.speed = 50 ${contextClauses}`,
+    text: `FROM "x" WHERE shot.speed = 50 ${contextClauses}`,
     games: [makeDoublesGame()],
     options
   })
@@ -36,7 +36,7 @@ describe('runQuery: filtering', () => {
     // without a "me" mapping the predicate is unknown, never true
     const game = makeDoublesGame()
     game.meta = {}
-    const result = runQuery({ text: 'FROM video("x") WHERE hitter = me', games: [game] })
+    const result = runQuery({ text: 'FROM "x" WHERE hitter = me', games: [game] })
     expect(result.shots).toEqual([])
   })
 
@@ -178,7 +178,7 @@ describe('runQuery: context windows', () => {
 
   test('a rally-opening shot has nothing before it', () => {
     const result = runQuery({
-      text: 'FROM video("x") WHERE rally.num = 3 AND shot.num = 1 CONTEXT BEFORE 2 shots',
+      text: 'FROM "x" WHERE rally.num = 3 AND shot.num = 1 CONTEXT BEFORE 2 shots',
       games: [makeDoublesGame()]
     })
     expect(result.shots[0].window.sMs).toBe(52000)
@@ -236,7 +236,7 @@ describe('coverage edges', () => {
   test('evalExpr tolerates unanalyzed ASTs (unknown names are unknown)', () => {
     const game = new Game(makeDoublesGame())
     const ctx = game.shotRefs[0]
-    const where = text => parse(`FROM folder(1) WHERE ${text}`).ast.where
+    const where = text => parse(`FROM "f" WHERE ${text}`).ast.where
     expect(evalExpr(where('shot.nope'), ctx)).toBe(UNKNOWN)
     expect(evalExpr(where('shot.nope(1)'), ctx)).toBe(UNKNOWN)
     expect(evalExpr(where('foo(1)'), ctx)).toBe(UNKNOWN)
@@ -254,7 +254,7 @@ describe('coverage edges', () => {
 describe('runQuery: SELECT', () => {
   test('projects one row per shot with labeled columns', () => {
     const result = runQuery({
-      text: 'SELECT shot.num, shot.speed AS "mph" FROM video("x") WHERE rally.num = 3 ORDER BY shot.num',
+      text: 'SELECT shot.num, shot.speed AS "mph" FROM "x" WHERE rally.num = 3 ORDER BY shot.num',
       games: [makeDoublesGame()]
     })
     expect(result.columns).toEqual(['shot.num', 'mph'])
@@ -263,7 +263,7 @@ describe('runQuery: SELECT', () => {
 
   test('unknown values project as null', () => {
     const result = runQuery({
-      text: 'SELECT shot.isVolley FROM video("x") WHERE rally.num = 2',
+      text: 'SELECT shot.isVolley FROM "x" WHERE rally.num = 2',
       games: [makeDoublesGame()]
     })
     expect(result.rows).toEqual([[null], [null]])
@@ -272,17 +272,17 @@ describe('runQuery: SELECT', () => {
   test('aggregates collapse to one row and skip unknowns', () => {
     const result = runQuery({
       text: 'SELECT count(), avg(shot.speed), min(shot.speed), max(shot.speed), sum(shot.num) ' +
-        'FROM video("x") WHERE rally.num = 3',
+        'FROM "x" WHERE rally.num = 3',
       games: [makeDoublesGame()]
     })
     expect(result.rows).toEqual([[4, 35, 30, 50, 10]])
     const sparse = runQuery({
-      text: 'SELECT avg(shot.speed) FROM video("x") WHERE rally.num = 2',
+      text: 'SELECT avg(shot.speed) FROM "x" WHERE rally.num = 2',
       games: [makeDoublesGame()]
     })
     expect(sparse.rows).toEqual([[38]]) // the trajectory-less shot is skipped
     const empty = runQuery({
-      text: 'SELECT count(), avg(shot.speed) FROM video("x") WHERE false',
+      text: 'SELECT count(), avg(shot.speed) FROM "x" WHERE false',
       games: [makeDoublesGame()]
     })
     expect(empty.rows).toEqual([[0, null]])
@@ -290,7 +290,7 @@ describe('runQuery: SELECT', () => {
 
   test('mixing aggregates with per-shot expressions is an error', () => {
     const result = runQuery({
-      text: 'SELECT count(), shot.num FROM video("x") WHERE true',
+      text: 'SELECT count(), shot.num FROM "x" WHERE true',
       games: [makeDoublesGame()]
     })
     expect(result.errors[0].code).toBe('PBQL_MIXED_AGGREGATES')
@@ -301,17 +301,17 @@ describe('runQuery: inputs and errors', () => {
   test('singles: teammate/opponent2 unknown, lone opponent answers LHS', () => {
     const games = [makeSinglesGame()]
     const run = text => runQuery({ text, games }).shots.map(s => [s.rallyIdx, s.shotIdx])
-    expect(run('FROM video("x") WHERE myOpponent1.name = "Carol"')).toHaveLength(2)
-    expect(run('FROM video("x") WHERE myTeammate.name = "Carol"')).toEqual([])
-    expect(run('FROM video("x") WHERE hittersOpponent2.name = "Carol"')).toEqual([])
-    expect(run('FROM video("x") WHERE hittersOpponentLHS.name = "Carol"'))
+    expect(run('FROM "x" WHERE myOpponent1.name = "Carol"')).toHaveLength(2)
+    expect(run('FROM "x" WHERE myTeammate.name = "Carol"')).toEqual([])
+    expect(run('FROM "x" WHERE hittersOpponent2.name = "Carol"')).toEqual([])
+    expect(run('FROM "x" WHERE hittersOpponentLHS.name = "Carol"'))
       .toEqual([[0, 0]])
   })
 
   test('skips-and-reports games with unsupported insights versions', () => {
     const old = { vid: 'oldvideo0001', sessionIdx: 0, insights: { version: '2.9.0', rallies: [] } }
     const result = runQuery({
-      text: 'FROM video("x") WHERE true',
+      text: 'FROM "x" WHERE true',
       games: [makeDoublesGame(), old]
     })
     expect(result.shots).toHaveLength(9)
@@ -326,7 +326,7 @@ describe('runQuery: inputs and errors', () => {
   test('warns when "me" is referenced but not tagged in a game', () => {
     const game = makeDoublesGame()
     game.meta = {}
-    const result = runQuery({ text: 'FROM video("x") WHERE hitter = me', games: [game] })
+    const result = runQuery({ text: 'FROM "x" WHERE hitter = me', games: [game] })
     expect(result.shots).toEqual([]) // unknown semantics are unchanged
     expect(result.warnings).toEqual([{
       vid: 'testvid00001',
@@ -340,13 +340,13 @@ describe('runQuery: inputs and errors', () => {
     const game = makeDoublesGame()
     game.meta = {}
     const my = runQuery({
-      text: 'SELECT myTeammate.name FROM video("x") WHERE true ORDER BY me.team',
+      text: 'SELECT myTeammate.name FROM "x" WHERE true ORDER BY me.team',
       games: [game]
     })
     expect(my.warnings).toEqual([
       expect.objectContaining({ code: 'PBQL_ME_NOT_TAGGED' })])
     const hitters = runQuery({
-      text: 'FROM video("x") WHERE hittersOpponent1.name = "Carol"',
+      text: 'FROM "x" WHERE hittersOpponent1.name = "Carol"',
       games: [makeDoublesGame(), game]
     })
     expect(hitters.warnings).toEqual([])
@@ -354,7 +354,7 @@ describe('runQuery: inputs and errors', () => {
 
   test('no me warning when the game has a myPlayerIdx', () => {
     const result = runQuery({
-      text: 'FROM video("x") WHERE hitter = me',
+      text: 'FROM "x" WHERE hitter = me',
       games: [makeDoublesGame()]
     })
     expect(result.warnings).toEqual([])
@@ -362,7 +362,7 @@ describe('runQuery: inputs and errors', () => {
 
   test('warns per unmatched taggedWith pattern, naming the pattern', () => {
     const result = runQuery({
-      text: 'FROM video("x") WHERE shot.taggedWith("zed*") OR ' +
+      text: 'FROM "x" WHERE shot.taggedWith("zed*") OR ' +
         'shot.taggedWith("nobody@example.com") OR myTeammate.taggedWith("bob")',
       games: [makeDoublesGame()]
     })
@@ -385,11 +385,11 @@ describe('runQuery: inputs and errors', () => {
   test('taggedWith warnings skip null player slots in singles games', () => {
     const games = [makeSinglesGame()] // players: Alice, null, Carol, null
     const carol = runQuery({
-      text: 'FROM video("x") WHERE shot.taggedWith("carol")', games
+      text: 'FROM "x" WHERE shot.taggedWith("carol")', games
     })
     expect(carol.warnings).toEqual([])
     const bob = runQuery({
-      text: 'FROM video("x") WHERE shot.taggedWith("bob")', games
+      text: 'FROM "x" WHERE shot.taggedWith("bob")', games
     })
     expect(bob.warnings).toEqual([
       expect.objectContaining({ code: 'PBQL_TAG_NOT_FOUND' })])
@@ -397,7 +397,7 @@ describe('runQuery: inputs and errors', () => {
 
   test('only literal string taggedWith patterns are checked', () => {
     const result = runQuery({
-      text: 'FROM video("x") WHERE false AND ' +
+      text: 'FROM "x" WHERE false AND ' +
         '(shot.taggedWith(shot.winnerType) OR shot.taggedWith(5))',
       games: [makeDoublesGame()]
     })
@@ -409,7 +409,7 @@ describe('runQuery: inputs and errors', () => {
     const untagged = makeSinglesGame()
     untagged.meta = { players: untagged.meta.players } // drop myPlayerIdx
     const result = runQuery({
-      text: 'FROM video("x") WHERE hitter = me AND shot.taggedWith("bob")',
+      text: 'FROM "x" WHERE hitter = me AND shot.taggedWith("bob")',
       games: [makeDoublesGame(), untagged] // doubles resolves both
     })
     expect(result.warnings).toEqual([
@@ -421,7 +421,7 @@ describe('runQuery: inputs and errors', () => {
   test('propagates parse and analyze errors', () => {
     expect(runQuery({ text: 'FROM @', games: [] }).errors[0].code)
       .toBe('PBQL_LEX_ERROR')
-    expect(runQuery({ text: 'FROM folder(1) WHERE shot.isVoley', games: [] })
+    expect(runQuery({ text: 'FROM "f" WHERE shot.isVoley', games: [] })
       .errors[0].code).toBe('PBQL_UNKNOWN_PROPERTY')
   })
 })
@@ -431,7 +431,7 @@ describe('default "Player N" names', () => {
     const game = makeDoublesGame()
     game.meta = {} // nobody tagged: insights defaults ("Player 3") apply
     const result = runQuery({
-      text: 'FROM video("v") WHERE shot.taggedWith("player 3")',
+      text: 'FROM "v" WHERE shot.taggedWith("player 3")',
       games: [game]
     })
     expect(result.shots.map(s => [s.rallyIdx, s.shotIdx]))
@@ -440,7 +440,7 @@ describe('default "Player N" names', () => {
     // even with no player_data at all, the "Player N" fallback holds
     delete game.insights.player_data
     const bare = runQuery({
-      text: 'FROM video("v") WHERE hitter.name = "Player 3"',
+      text: 'FROM "v" WHERE hitter.name = "Player 3"',
       games: [{ ...game, insights: game.insights }]
     })
     expect(bare.shots).toHaveLength(3)
@@ -448,13 +448,13 @@ describe('default "Player N" names', () => {
 
   test('tagged names supersede defaults; empty singles slots never match', () => {
     const tagged = runQuery({
-      text: 'FROM video("v") WHERE shot.taggedWith("Player 3")',
+      text: 'FROM "v" WHERE shot.taggedWith("Player 3")',
       games: [makeDoublesGame()] // p2 is tagged as Carol
     })
     expect(tagged.shots).toEqual([])
     expect(tagged.warnings[0].code).toBe('PBQL_TAG_NOT_FOUND')
     const singles = runQuery({
-      text: 'FROM video("v") WHERE shot.taggedWith("Player 2")',
+      text: 'FROM "v" WHERE shot.taggedWith("Player 2")',
       games: [makeSinglesGame()] // slot 1 is empty in singles
     })
     expect(singles.shots).toEqual([])

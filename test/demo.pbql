@@ -1,8 +1,8 @@
 # kitchen-sink query exercising every grammar feature (not a useful query)
 SELECT hitter.name AS "who", shot.speed AS "mph", shot.to.x - shot.from.x
-FROM video("jko65sx8kalj"),
-     folder(92),
-     video("xysdfnkdsafd", 2)
+FROM "jko65sx8kalj",
+     "games/*.json",
+     "xysdfnkdsafd:2"
 WHERE
     (hitter = me OR myTeammate.name = "Anna \"AL\" Waters") AND
     hitter.feetToKitchen <= 2.5 AND

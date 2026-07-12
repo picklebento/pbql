@@ -90,19 +90,9 @@
     }
   ],
   "sources": [
-    {
-      "kind": "video",
-      "vid": "jko65sx8kalj"
-    },
-    {
-      "kind": "folder",
-      "fid": 92
-    },
-    {
-      "kind": "video",
-      "vid": "xysdfnkdsafd",
-      "sessionNum": 2
-    }
+    "jko65sx8kalj",
+    "games/*.json",
+    "xysdfnkdsafd:2"
   ],
   "where": {
     "kind": "and",

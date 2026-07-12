@@ -1,65 +1,23 @@
-// Converts query results into the Shot Explorer's own input format — the
-// explore page's URL params (?shots=R.S,…&numBefore=&numAfter=, 1-based
-// rally.shot numbers) — so a PBQL query can drive SE exactly like manual
-// filters, with the language's richer expressiveness.
-
-// SE expresses context only as uniform shot counts (0-999; 999 = to the
-// rally boundary). Plain `N shots` and `rally` durations map exactly;
-// seconds-based or min/max durations don't, so we return undefined and SE
-// falls back to its own default (the clip windows may differ slightly).
-export function windowParam (dur) {
-  if (dur.kind === 'durfn') {
-    return undefined
-  }
-  if (dur.unit === 'shots') {
-    return dur.value
-  }
-  if (dur.unit === 'rally') {
-    return 999
-  }
-  return dur.value === 0 ? 0 : undefined
-}
+// Builds Shot Explorer deep links. The explore page accepts a PBQL query
+// directly via its q param, so sharing a query is just sharing a URL — no
+// result translation needed. One link per pb.vision video named in FROM
+// (other source strings — files, directories, globs — have no explore page).
+import { parseVidSource } from '../sources/vid.js'
 
 /**
- * Groups a query result into per-game Shot Explorer selections.
- * @param {object} result a runQuery() result
- * @returns {Array<{vid: string, sessionIdx: number, params: {shots: string,
- *   numBefore?: number, numAfter?: number}}>} one entry per game that had
- *   selected shots, in result order
+ * Builds ready-to-open explore deep links for a query.
+ * @param {string} queryText the PBQL query
+ * @param {Array<string>} sources the query's FROM sources (ast.sources)
+ * @returns {Array<string>} one URL per vid-shaped source, in FROM order
  */
-export function toShotExplorerParams (result) {
-  const numBefore = windowParam(result.context.before)
-  const numAfter = windowParam(result.context.after)
-  const byGame = new Map()
-  for (const shot of result.shots) {
-    const key = `${shot.vid}#${shot.sessionIdx}`
-    if (!byGame.has(key)) {
-      byGame.set(key, { vid: shot.vid, sessionIdx: shot.sessionIdx, refs: [] })
+export function toShotExplorerURLs (queryText, sources) {
+  const urls = []
+  for (const source of sources) {
+    const vidSource = parseVidSource(source)
+    if (vidSource !== null) {
+      urls.push(`https://pb.vision/video/${vidSource.vid}/` +
+        `${vidSource.sessionIdx}/explore?q=${encodeURIComponent(queryText)}`)
     }
-    // the explore page uses 1-based rally.shot pairs
-    byGame.get(key).refs.push(`${shot.rallyIdx + 1}.${shot.shotIdx + 1}`)
   }
-  return [...byGame.values()].map(({ vid, sessionIdx, refs }) => {
-    const params = { shots: refs.join(',') }
-    if (numBefore !== undefined) {
-      params.numBefore = numBefore
-    }
-    if (numAfter !== undefined) {
-      params.numAfter = numAfter
-    }
-    return { vid, sessionIdx, params }
-  })
-}
-
-/**
- * Builds ready-to-open explore deep links, one per game with results.
- * @param {object} result a runQuery() result
- * @param {object} [options] { host } — e.g. 'https://pbv-dev.web.app'
- */
-export function toShotExplorerURLs (result, { host = 'https://pb.vision' } = {}) {
-  return toShotExplorerParams(result).map(({ vid, sessionIdx, params }) => {
-    const qs = new URLSearchParams(
-      Object.entries(params).map(([k, v]) => [k, String(v)]))
-    return `${host}/video/${vid}/${sessionIdx}/explore?${qs}`
-  })
+  return urls
 }

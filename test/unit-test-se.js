@@ -1,10 +1,10 @@
-import { runQuery, toShotExplorerParams, toShotExplorerURLs, validate } from '../src/index.js'
+import { runQuery, toShotExplorerURLs, validate } from '../src/index.js'
 
-import { makeDoublesGame, makeSinglesGame } from './fixtures/make-insights.js'
+import { makeDoublesGame } from './fixtures/make-insights.js'
 
 function shotsWhere (expr) {
   const result = runQuery({
-    text: `FROM video("v") WHERE ${expr}`,
+    text: `FROM "v" WHERE ${expr}`,
     games: [makeDoublesGame()]
   })
   expect(result.errors).toBeUndefined()
@@ -13,14 +13,14 @@ function shotsWhere (expr) {
 
 describe('validate()', () => {
   test('valid queries return no errors plus the canonical AST', () => {
-    const { errors, ast } = validate('FROM folder(1) WHERE taggedWith(shot, "A*")')
+    const { errors, ast } = validate('FROM "f" WHERE taggedWith(shot, "A*")')
     expect(errors).toEqual([])
     expect(ast.where.kind).toBe('prop') // alias form was normalized
   })
 
   test('parse and analyze errors flow through', () => {
     expect(validate('FROM @').errors[0].code).toBe('PBQL_LEX_ERROR')
-    const analyzed = validate('FROM folder(1) WHERE shot.isVoley')
+    const analyzed = validate('FROM "f" WHERE shot.isVoley')
     expect(analyzed.errors[0].code).toBe('PBQL_UNKNOWN_PROPERTY')
     expect(analyzed.ast).toBeDefined() // parsed fine, still returned
   })
@@ -44,50 +44,22 @@ describe('M6 built-ins', () => {
   })
 })
 
-describe('toShotExplorerParams/URLs', () => {
-  test('emits SE 1-based rally.shot refs with translated windows', () => {
-    const result = runQuery({
-      text: 'FROM video("v") WHERE shot.isFinal CONTEXT BEFORE 2 shots CONTEXT AFTER rally',
-      games: [makeDoublesGame(), makeSinglesGame()]
-    })
-    expect(toShotExplorerParams(result)).toEqual([
-      {
-        vid: 'testvid00001',
-        sessionIdx: 0,
-        params: { shots: '1.3,2.2,3.4', numBefore: 2, numAfter: 999 }
-      },
-      {
-        vid: 'testvid00002',
-        sessionIdx: 0,
-        params: { shots: '1.2', numBefore: 2, numAfter: 999 }
-      }
-    ])
+describe('toShotExplorerURLs', () => {
+  test('one explore link per vid-shaped source, carrying the query in ?q=', () => {
+    const text = 'FROM "83gyqyc10y8f", "./games", "jhc3t8h8b5cj:2"\nWHERE shot.isVolley'
+    expect(toShotExplorerURLs(text, ['83gyqyc10y8f', './games', 'jhc3t8h8b5cj:2']))
+      .toEqual([
+        // sessions in URLs are 0-based; local paths have no explore page
+        `https://pb.vision/video/83gyqyc10y8f/0/explore?q=${encodeURIComponent(text)}`,
+        `https://pb.vision/video/jhc3t8h8b5cj/1/explore?q=${encodeURIComponent(text)}`
+      ])
+    expect(toShotExplorerURLs('FROM "./games" WHERE true', ['./games']))
+      .toEqual([])
   })
 
-  test('default context maps to 0/0; secs and min/max are omitted', () => {
-    const run = ctx => runQuery({
-      text: `FROM video("v") WHERE shot.speed = 50 ${ctx}`,
-      games: [makeDoublesGame()]
-    })
-    expect(toShotExplorerParams(run(''))[0].params)
-      .toEqual({ shots: '3.3', numBefore: 0, numAfter: 0 })
-    expect(toShotExplorerParams(run('CONTEXT BEFORE 2secs'))[0].params)
-      .toEqual({ shots: '3.3', numAfter: 0 })
-    expect(toShotExplorerParams(
-      run('CONTEXT AFTER min(1 shots, 2secs)'))[0].params)
-      .toEqual({ shots: '3.3', numBefore: 0 })
-  })
-
-  test('builds explore deep links per game with a configurable host', () => {
-    const result = runQuery({
-      text: 'FROM video("v") WHERE shot.speed = 50 CONTEXT BEFORE 1 shots CONTEXT AFTER 1 shots',
-      games: [makeDoublesGame()]
-    })
-    expect(toShotExplorerURLs(result)).toEqual([
-      'https://pb.vision/video/testvid00001/0/explore?shots=3.3&numBefore=1&numAfter=1'
-    ])
-    expect(toShotExplorerURLs(result, { host: 'https://pbv-dev.web.app' })[0])
-      .toContain('https://pbv-dev.web.app/video/')
+  test('session numbers are 1-based; :0 is rejected', () => {
+    expect(() => toShotExplorerURLs('q', ['ab12cd34ef56:0']))
+      .toThrow('"ab12cd34ef56:0": session numbers are 1-based')
   })
 })
 

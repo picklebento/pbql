@@ -10,7 +10,7 @@ function analyzeQuery (text) {
 }
 
 function analyzeWhere (expr) {
-  return analyzeQuery(`FROM folder(1) WHERE ${expr}`)
+  return analyzeQuery(`FROM "f" WHERE ${expr}`)
 }
 
 describe('analyze()', () => {
@@ -28,7 +28,7 @@ describe('analyze()', () => {
       code: 'PBQL_UNKNOWN_PROPERTY',
       message: 'shot has no property "isVoley"',
       line: 1,
-      col: 22,
+      col: 16,
       length: 0,
       hint: 'did you mean "isVolley"?'
     })
@@ -70,7 +70,7 @@ describe('analyze()', () => {
     // aggregates don't exist in WHERE...
     expect(analyzeWhere('count() = 1')[0].code).toBe('PBQL_UNKNOWN_FUNCTION')
     // ...but do in SELECT, where min() is also a 1-arg aggregate
-    expect(analyzeQuery('SELECT count(), min(shot.speed) FROM folder(1) WHERE true'))
+    expect(analyzeQuery('SELECT count(), min(shot.speed) FROM "f" WHERE true'))
       .toEqual([])
   })
 
@@ -99,28 +99,28 @@ describe('analyze()', () => {
   })
 
   test('unknown functions in SELECT suggest aggregates too', () => {
-    const [error] = analyzeQuery('SELECT coont() FROM folder(1) WHERE true')
+    const [error] = analyzeQuery('SELECT coont() FROM "f" WHERE true')
     expect(error.code).toBe('PBQL_UNKNOWN_FUNCTION')
     expect(error.hint).toBe('did you mean "count"?')
   })
 
   test('checks SELECT and ORDER BY expressions too', () => {
-    expect(analyzeQuery('SELECT shot.spd FROM folder(1) WHERE true')[0].hint)
+    expect(analyzeQuery('SELECT shot.spd FROM "f" WHERE true')[0].hint)
       .toBe('did you mean "speed"?')
-    expect(analyzeQuery('FROM folder(1) WHERE true ORDER BY shot.spd')[0].code)
+    expect(analyzeQuery('FROM "f" WHERE true ORDER BY shot.spd')[0].code)
       .toBe('PBQL_UNKNOWN_PROPERTY')
   })
 })
 
 describe('normalize()', () => {
   test('rewrites function-form methods to method form (D15/D16)', () => {
-    const { ast } = parse('FROM folder(1) WHERE taggedWith(shot, "BJ*")')
-    const { ast: canonical } = parse('FROM folder(1) WHERE shot.taggedWith("BJ*")')
+    const { ast } = parse('FROM "f" WHERE taggedWith(shot, "BJ*")')
+    const { ast: canonical } = parse('FROM "f" WHERE shot.taggedWith("BJ*")')
     expect(stripLoc(normalize(ast))).toEqual(stripLoc(canonical))
   })
 
   test('rewrites player-subject methods and validates post-rewrite', () => {
-    const { ast } = parse('FROM folder(1) WHERE taggedWith(myTeammate, "A*")')
+    const { ast } = parse('FROM "f" WHERE taggedWith(myTeammate, "A*")')
     const normalized = normalize(ast)
     expect(analyze(normalized).errors).toEqual([])
     expect(normalized.where).toMatchObject({
@@ -132,7 +132,7 @@ describe('normalize()', () => {
 
   test('leaves regular functions and non-method calls alone', () => {
     const { ast } = parse(
-      'FROM folder(1) WHERE min(shot.from.x, 1) < 2 AND foo(shot.speed) = 1')
+      'FROM "f" WHERE min(shot.from.x, 1) < 2 AND foo(shot.speed) = 1')
     expect(stripLoc(normalize(ast))).toEqual(stripLoc(ast))
   })
 })
