@@ -156,25 +156,22 @@ function playerWarnings (facts, game) {
 /**
  * Runs a PBQL query over the given games.
  * @param {object} args
- * @param {string} [args.text] the query text (or pass a parsed args.ast)
- * @param {object} [args.ast] a parsed query AST
- * @param {Array<Game|object>} args.games Game instances, or raw
- *   {vid, sessionIdx, insights, meta} descriptors to wrap; games whose
- *   insights version is unsupported are skipped and reported in warnings
+ * @param {string} args.text the query text
+ * @param {Array<object>} args.games the games to search, as plain
+ *   {vid, sessionIdx, insights, meta} descriptors (the engine wraps them);
+ *   games whose insights version is unsupported are skipped and reported in
+ *   warnings
  * @param {object} [args.options] { maxSecsBeyondRally }
  * @returns {{shots: Array, columns?: Array, rows?: Array,
  *   warnings: Array} | {errors: Array}} results, or lex/parse/analyze errors
  */
-export function runQuery ({ text, ast, games, options = {} }) {
-  if (ast === undefined) {
-    const parsed = parse(text)
-    if (parsed.errors) {
-      return { errors: parsed.errors }
-    }
-    ast = parsed.ast
+export function runQuery ({ text, games, options = {} }) {
+  const parsed = parse(text)
+  if (parsed.errors) {
+    return { errors: parsed.errors }
   }
   // canonicalize alias forms (e.g. taggedWith(shot, "x")) before validating
-  const query = normalize(ast)
+  const query = normalize(parsed.ast)
   const analysis = analyze(query)
   if (analysis.errors.length > 0) {
     return { errors: analysis.errors }
@@ -183,10 +180,6 @@ export function runQuery ({ text, ast, games, options = {} }) {
   const warnings = []
   const wrapped = []
   for (const game of games) {
-    if (game instanceof Game) {
-      wrapped.push(game)
-      continue
-    }
     try {
       wrapped.push(new Game(game))
     } catch (err) {

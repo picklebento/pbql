@@ -1,4 +1,6 @@
-import { Game, UNKNOWN, computeWindow, evalExpr, parse, runQuery } from '../src/index.js'
+import { UNKNOWN, evalExpr } from '../src/engine/evaluate.js'
+import { computeWindow } from '../src/engine/window.js'
+import { Game, parse, runQuery } from '../src/index.js'
 
 import { makeDoublesGame, makeSinglesGame } from './fixtures/make-insights.js'
 
@@ -306,14 +308,6 @@ describe('runQuery: inputs and errors', () => {
       .toEqual([[0, 0]])
   })
 
-  test('accepts pre-wrapped Game instances', () => {
-    const result = runQuery({
-      text: 'FROM video("x") WHERE hitter = me',
-      games: [new Game(makeDoublesGame())]
-    })
-    expect(result.shots).toHaveLength(3)
-  })
-
   test('skips-and-reports games with unsupported insights versions', () => {
     const old = { vid: 'oldvideo0001', sessionIdx: 0, insights: { version: '2.9.0', rallies: [] } }
     const result = runQuery({
@@ -429,10 +423,6 @@ describe('runQuery: inputs and errors', () => {
       .toBe('PBQL_LEX_ERROR')
     expect(runQuery({ text: 'FROM folder(1) WHERE shot.isVoley', games: [] })
       .errors[0].code).toBe('PBQL_UNKNOWN_PROPERTY')
-    // a pre-parsed AST is accepted directly
-    const { ast } = parse('FROM video("x") WHERE shot.type = "drop"')
-    const { shots } = runQuery({ ast, games: [makeDoublesGame()] })
-    expect(shots).toHaveLength(1)
   })
 })
 

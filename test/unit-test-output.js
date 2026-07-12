@@ -157,6 +157,8 @@ describe('CLI main()', () => {
     expect(err[2]).toContain(USAGE) // unknown flags still print usage
     expect(main([QUERY, '--insights', insightsFile], io)).toBe(1) // removed flag
     expect(err[3]).toContain(USAGE)
+    expect(main([QUERY, '--out', 'edl', '--fps', '60'], io)).toBe(1) // removed flag
+    expect(err[4]).toContain(USAGE)
   })
 
   test('FROM names local files and folders', () => {
@@ -215,6 +217,35 @@ describe('CLI main()', () => {
     expect(out[0]).toContain('vid,sessionIdx,rallyIdx')
     expect(main([QUERY, '--out', 'edl'], io)).toBe(0)
     expect(out[1]).toContain('FCM: NON-DROP FRAME')
+  })
+
+  test('edl frame rate comes from the queried video, default 30', () => {
+    // a 0.5s lead-in makes the start frame differ by fps: 57.5s is frame
+    // 30 of second 57 at 60fps but frame 15 at the 30fps fallback
+    const query = file =>
+      `FROM video("${file}") WHERE shot.speed = 50 CONTEXT BEFORE 0.5secs`
+    const insights = makeDoublesInsights()
+    insights.camera.fps = 60
+    const sixty = path.join(dir, 'sixty.json')
+    fs.writeFileSync(sixty, JSON.stringify(insights))
+    expect(main([query(sixty), '--out', 'edl'], io)).toBe(0)
+    expect(out[0]).toContain('00:00:57:30 00:00:59:00')
+    delete insights.camera
+    const nocam = path.join(dir, 'nocam.json')
+    fs.writeFileSync(nocam, JSON.stringify(insights))
+    expect(main([query(nocam), '--out', 'edl'], io)).toBe(0)
+    expect(out[1]).toContain('00:00:57:15 00:00:59:00')
+  })
+
+  test('edl of an empty selection emits just the header', () => {
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'pbql-empty-'))
+    try {
+      expect(main([`FROM folder("${empty}") WHERE true`, '--out', 'edl'], io))
+        .toBe(0)
+      expect(out[0]).toBe('TITLE: pbql selection\nFCM: NON-DROP FRAME\n\n')
+    } finally {
+      fs.rmSync(empty, { recursive: true, force: true })
+    }
   })
 
   test('ffmpeg output requires --video-file and selected shots', () => {

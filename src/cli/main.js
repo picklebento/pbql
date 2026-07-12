@@ -24,12 +24,12 @@ export const USAGE = `usage: pbql [QUERY | -f query.pbql] [options]
   -f, --file <path>       read the query from a file
   --me <playerIdx>        which player (0-3) "me" refers to
   --out <format>          json (default) | csv | edl | ffmpeg | se
-                          (se = Shot Explorer deep links, one per game)
+                          (se = Shot Explorer deep links, one per game;
+                          edl uses the queried video's frame rate, default 30)
   --host <url>            web app host for --out se (default https://pb.vision)
   --video-file <path>     source video path (required for --out ffmpeg)
   --output-file <path>    cut video path for --out ffmpeg (default cut.mp4)
   --fast                  ffmpeg stream-copy mode (keyframe-accurate only)
-  --fps <n>               EDL frame rate (default 30)
   --merge-gap <secs>      merge clips closer than this (default 0.5)
   --max-secs-beyond-rally <n>  context spill limit (default 3)`
 
@@ -41,7 +41,6 @@ const OPTIONS = {
   'video-file': { type: 'string' },
   'output-file': { type: 'string', default: 'cut.mp4' },
   fast: { type: 'boolean', default: false },
-  fps: { type: 'string', default: '30' },
   'merge-gap': { type: 'string', default: '0.5' },
   'max-secs-beyond-rally': { type: 'string', default: '3' },
   help: { type: 'boolean', short: 'h', default: false }
@@ -119,7 +118,9 @@ export function main (argv, io) {
       io.stdout(toEDL({
         title: 'pbql selection',
         clips: toClips(result.shots, { mergeGapMs }),
-        fps: parseFloat(values.fps)
+        // frame rate comes from the queried data (the first game's, as in
+        // the web app); toEDL falls back to 30 when the camera doesn't say
+        fps: games[0]?.insights.camera?.fps
       }))
       return 0
     case 'ffmpeg': {
