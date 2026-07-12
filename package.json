@@ -19,6 +19,7 @@
   ],
   "scripts": {
     "build": "bash scripts/compile-parser.sh",
+    "build:site": "yarn -s build && node docs-site/build.js",
     "coverage": "yarn -s test --coverage",
     "debug": "INDEBUGGER=1 ./node_modules/nodemon/bin/nodemon.js --no-lazy --legacy-watch --watch ./src --watch ./test --exec 'node --inspect=9229 --experimental-vm-modules ./node_modules/jest/bin/jest.js --config=./jest.config.json --runInBand'",
     "docs": "node scripts/gen-docs.js",
@@ -45,6 +46,7 @@
     "@babel/eslint-parser": "^7.17.0",
     "@babel/preset-env": "^7.17.12",
     "@pbvision/jest-unit-test": "^0.2.3",
+    "esbuild": "^0.28.1",
     "eslint": "^8.22.0",
     "eslint-config-standard": "17.1.0",
     "eslint-plugin-import": "^2.22.0",
@@ -53,6 +55,7 @@
     "eslint-plugin-promise": "^6.0.0",
     "fast-check": "^4.9.0",
     "jest": "^29.7.0",
+    "marked": "^18.0.6",
     "nodemon": "^3.0.3",
     "standard": "^17.1.0"
   },

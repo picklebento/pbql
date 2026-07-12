@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PBQL — Pickleball Query Language</title>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<nav>
+  <a href="index.html">PBQL</a>
+  <a href="language.html">Language</a>
+  <a href="data-dictionary.html">Data dictionary</a>
+  <a href="playground/">Playground</a>
+  <a href="llms.txt">llms.txt</a>
+</nav>
+<main>
+<h1>PBQL: Pickleball Query Language</h1>
+<p>
+PBQL is a SQL-like language for querying shots in pickleball games analyzed
+by <a href="https://pb.vision">PB Vision</a>. A query names the videos or
+folders to search, filters shots by their properties, attaches surrounding
+context, and orders/limits the results:
+</p>
+<pre><code>FROM "83gyqyc10y8f"
+WHERE shot.type = "drop" AND hitter = me AND shot.quality.overall >= 0.8
+CONTEXT BEFORE 1 shots
+CONTEXT AFTER 2secs
+ORDER BY shot.speed DESC
+LIMIT 50</code></pre>
+<p>
+Selected shots can drive the Shot Explorer in the PB Vision web app, be
+exported as JSON/CSV, or be turned into an EDL or ffmpeg command that cuts
+the clips into a reel.
+</p>
+<h2>Start here</h2>
+<ul>
+  <li><a href="playground/">Playground</a> — validate, format, and run
+    queries against a real game, right in your browser.</li>
+  <li><a href="language.html">Language reference</a> — the normative spec:
+    grammar, operators, unknown semantics, context windows.</li>
+  <li><a href="data-dictionary.html">Data dictionary</a> — every queryable
+    property with its type, unit, and meaning.</li>
+  <li><a href="llms.txt">llms.txt</a> — a compact guide for LLMs writing
+    PBQL, with the full property list and worked examples.</li>
+</ul>
+<h2>Install</h2>
+<p>
+The library and CLI live at
+<a href="https://github.com/pbv-public/pbql">github.com/pbv-public/pbql</a>
+(<code>@pbvision/pbql</code>).
+</p>
+</main>
+</body>
+</html>

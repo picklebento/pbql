@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PBQL Playground</title>
+<link rel="stylesheet" href="../site.css">
+</head>
+<body>
+<nav>
+  <a href="../index.html">PBQL</a>
+  <a href="../language.html">Language</a>
+  <a href="../data-dictionary.html">Data dictionary</a>
+  <a href="./">Playground</a>
+  <a href="../llms.txt">llms.txt</a>
+</nav>
+<main>
+<h1>Playground</h1>
+<p class="hint">
+Runs entirely in your browser with the real PBQL library. Validate and
+Format need no data; Run executes the query against the game loaded below
+(the query's FROM clause is not fetched — the loaded game is the source).
+</p>
+
+<textarea id="query" spellcheck="false" aria-label="PBQL query">
+FROM "83gyqyc10y8f"
+WHERE shot.isVolley AND shot.speed > 25
+CONTEXT BEFORE 2secs
+CONTEXT AFTER 1.5secs
+ORDER BY shot.speed DESC
+LIMIT 20</textarea>
+<div class="pg-row">
+  <button id="validate">Validate</button>
+  <button id="format">Format</button>
+  <button id="run">Run</button>
+  <label>me =
+    <select id="me" aria-label="which player is me">
+      <option value="">not set</option>
+      <option value="0">player 0</option>
+      <option value="1">player 1</option>
+      <option value="2">player 2</option>
+      <option value="3">player 3</option>
+    </select>
+  </label>
+</div>
+
+<fieldset>
+  <legend>Game</legend>
+  <div class="pg-row">
+    <input type="text" id="vid" class="mono" size="16"
+           placeholder="vid[:sessionNum]" aria-label="pb.vision video id">
+    <button id="load-vid">Load video</button>
+    <button id="load-demo">Load demo game</button>
+    <label>or a local insights JSON:
+      <input type="file" id="file" accept=".json,application/json">
+    </label>
+  </div>
+  <div id="game-status" class="hint">no game loaded</div>
+</fieldset>
+
+<div id="messages"></div>
+<div id="results"></div>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

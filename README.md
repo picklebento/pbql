@@ -18,6 +18,8 @@ Selected shots can drive the Shot Explorer in the PB Vision web app, be
 exported as JSON/CSV, or be turned into an EDL or ffmpeg command that cuts
 the clips into a reel.
 
+Docs and a browser playground: https://pbv-public.github.io/pbql/
+
 ## Status
 
 Working library and CLI: lexer, parser, analyzer, evaluation engine, and

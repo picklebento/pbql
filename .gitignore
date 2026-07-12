@@ -1,3 +1,4 @@
 node_modules
 src/lang/grammar-generated.js
 test/*-debug.log
+docs-site/dist

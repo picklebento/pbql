@@ -1,0 +1,109 @@
+/* Shared styles for the PBQL docs site. Light/dark follows the system. */
+:root {
+  --bg: #ffffff;
+  --fg: #1c2733;
+  --muted: #64707d;
+  --accent: #0b6bcb;
+  --border: #d7dee6;
+  --code-bg: #f2f5f8;
+  --ok: #1a7f37;
+  --warn: #955f00;
+  --err: #b42318;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14181d;
+    --fg: #dbe4ec;
+    --muted: #93a1af;
+    --accent: #61aaf2;
+    --border: #333d47;
+    --code-bg: #1e252d;
+    --ok: #4bc26b;
+    --warn: #d9a62e;
+    --err: #f2716a;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0 auto;
+  padding: 1.25rem 1.25rem 4rem;
+  max-width: 62rem;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+nav a { font-weight: 600; text-decoration: none; }
+nav a:first-child { color: var(--fg); }
+
+a { color: var(--accent); }
+h1, h2, h3 { line-height: 1.25; }
+h1 { font-size: 1.7rem; }
+hr { border: none; border-top: 1px solid var(--border); }
+
+code, pre, textarea, .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+}
+code { background: var(--code-bg); padding: 0.1em 0.3em; border-radius: 4px; }
+pre {
+  background: var(--code-bg);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+pre code { background: none; padding: 0; }
+
+table { border-collapse: collapse; display: block; overflow-x: auto; }
+th, td {
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--code-bg); }
+
+/* --- playground --- */
+.pg-row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin: 0.6rem 0; }
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 1rem 0;
+  padding: 0.25rem 1rem 0.75rem;
+}
+legend { font-weight: 600; padding: 0 0.4rem; }
+textarea {
+  width: 100%;
+  min-height: 9rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-bg);
+  color: var(--fg);
+  resize: vertical;
+}
+button, input[type="text"], select {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.3rem 0.8rem;
+}
+button { background: var(--code-bg); cursor: pointer; font-weight: 600; }
+button:hover { border-color: var(--accent); }
+.hint { color: var(--muted); font-size: 0.9rem; }
+#messages div { white-space: pre-wrap; }
+.ok { color: var(--ok); }
+.warn { color: var(--warn); }
+.err { color: var(--err); }

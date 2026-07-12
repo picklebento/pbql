@@ -18,6 +18,18 @@
         "import"
     ],
     "parser": "@babel/eslint-parser",
+    "ignorePatterns": ["docs-site/dist/"],
+    "overrides": [
+        {
+            "files": ["docs-site/playground/*.js"],
+            "env": {
+                "browser": true
+            },
+            "rules": {
+                "import/no-unresolved": ["error", {"ignore": ["^\\./pbql\\.js$"]}]
+            }
+        }
+    ],
     "rules": {
         "import/extensions": ["error", "ignorePackages"],
         "import/order": [
