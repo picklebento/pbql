@@ -3,8 +3,7 @@
 PBQL selects shots from pickleball games analyzed by PB Vision. This document
 is the normative spec: the grammar in `src/lang/pbql.ne` implements it, and
 every deviation is a bug. Property-by-property details live in the generated
-[data dictionary](data-dictionary.md); design rationale lives in the
-[decision log](design-decisions.md).
+[data dictionary](data-dictionary.md).
 
 ## 1. Overall shape
 
