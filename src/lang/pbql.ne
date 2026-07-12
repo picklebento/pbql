@@ -60,9 +60,17 @@ source ->
     %kw_video %leftParen string %rightParen
     {% d => ({ kind: 'video', vid: d[2] }) %}
   | %kw_video %leftParen string %comma int %rightParen
-    {% d => ({ kind: 'video', vid: d[2], sessionNum: d[4] }) %}
+    {% d => d[4] === 1
+         ? { kind: 'video', vid: d[2] } // session 1 is the default (D12)
+         : { kind: 'video', vid: d[2], sessionNum: d[4] } %}
   | %kw_folder %leftParen int %rightParen
     {% d => ({ kind: 'folder', fid: d[2] }) %}
+  # local-path forms (CLI/offline): a directory of insights JSON files,
+  # walked recursively unless the boolean says otherwise
+  | %kw_folder %leftParen string %rightParen
+    {% d => ({ kind: 'folder', path: d[2], recursive: true }) %}
+  | %kw_folder %leftParen string %comma boolean %rightParen
+    {% d => ({ kind: 'folder', path: d[2], recursive: d[4] }) %}
 
 # ---- WHERE ---------------------------------------------------------------
 where -> %kw_where expr {% d => d[1] %}

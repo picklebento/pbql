@@ -154,8 +154,25 @@ describe('CLI main()', () => {
     expect(err[0]).toContain('expected a query')
     expect(main(['q', 'extra', '--insights', insightsFile], io)).toBe(1)
     expect(main(['--nope'], io)).toBe(1)
+  })
+
+  test('without --insights, FROM names local files and folders', () => {
+    expect(main([`FROM video("${insightsFile}") WHERE shot.speed = 50`], io))
+      .toBe(0)
+    expect(JSON.parse(out[0]).selectedShots[0]).toMatchObject({
+      vid: 'testvid00001', sessionIdx: 0, rallyIdx: 2, shotIdx: 2
+    })
+    expect(main([`FROM folder("${dir}") WHERE shot.speed = 50`], io)).toBe(0)
+    expect(JSON.parse(out[1]).selectedShots).toHaveLength(1)
+  })
+
+  test('local source failures exit 1 with the offending path', () => {
+    expect(main(['FROM video("missing.json") WHERE true'], io)).toBe(1)
+    expect(err[0]).toContain('video("missing.json"): no such insights file')
     expect(main(['FROM folder(1) WHERE true'], io)).toBe(1)
-    expect(err.at(-1)).toContain('--insights is required')
+    expect(err[1]).toContain('folder(1) names a pb.vision library folder')
+    expect(main(['FROM @'], io)).toBe(1) // parse errors still report positions
+    expect(err[2]).toBe('1:6 PBQL_LEX_ERROR: unrecognized text')
   })
 
   test('query errors print with positions and exit 1', () => {

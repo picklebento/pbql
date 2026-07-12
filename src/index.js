@@ -6,8 +6,10 @@ export { analyze, normalize } from './analyze/analyze.js'
 export { validate } from './validate.js'
 
 // Shot Explorer bridge
-export { filtersToPbql } from './se/filters-to-pbql.js'
 export { toShotExplorerParams, toShotExplorerURLs } from './se/to-shot-explorer.js'
+
+// source resolution (local files; pb.vision providers land in M8)
+export { resolveLocalSources } from './sources/local.js'
 
 // data model
 export { Game, UnsupportedInsightsError, SUPPORTED_MAJOR } from './model/game.js'

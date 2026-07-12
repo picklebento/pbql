@@ -95,6 +95,13 @@ describe('print()', () => {
     ].join('\n'))
   })
 
+  test('prints sources canonically: default session and recursion drop out', () => {
+    expect(roundtrips('FROM video("abc123def456", 1) WHERE true'))
+      .toBe('FROM video("abc123def456")\nWHERE true')
+    expect(roundtrips('FROM folder("games", true), folder("a/b", false) WHERE true'))
+      .toBe('FROM folder("games"), folder("a/b", false)\nWHERE true')
+  })
+
   test('omits default (zero) context and prints escaped strings', () => {
     const printed = roundtrips('FROM folder(1) WHERE hitter.name = "say \\"hi\\" \\\\"')
     expect(printed).toBe('FROM folder(1)\nWHERE hitter.name = "say \\"hi\\" \\\\"')

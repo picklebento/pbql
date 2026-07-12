@@ -174,10 +174,23 @@ of characters (`"Alex*"`). Unknown when the game has no tag data.
 FROM video("83gyqyc10y8f"), video("jhc3t8h8b5cj", 2), folder(92)
 ```
 
-- `video(vid)` — every session (game) of that video.
-- `video(vid, n)` — session **n, 1-indexed** (game 1 is `n = 1`).
+One video source names **one game**:
+
+- `video(vid)` — the video's default game, session 1. Hosts that are
+  already showing a particular game supply it as that source's session
+  (the pb.vision app passes its current session).
+- `video(vid, n)` — session **n, 1-indexed**. `video(vid, 1)` is the
+  default spelling and canonicalizes to `video(vid)`.
 - `folder(fid)` — every video/session in the folder, recursively; folders
   are integers scoped to the querying user's library.
+
+In local usage (the CLI, or any host without a pb.vision library), paths
+replace ids — sessions do not apply, since a local file is a whole game:
+
+- `video("path/to/game.json")` — one local insights file.
+- `folder("path")` — every `*.json` insights file under the directory,
+  recursive by default; `folder("path", false)` searches only the directory
+  itself. `folder("path", true)` canonicalizes to `folder("path")`.
 
 Duplicate mentions of the same (video, session) are queried once.
 

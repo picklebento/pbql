@@ -1,22 +1,29 @@
 // The pbql CLI: run a query over local insights JSON files and emit
-// selected shots as JSON/CSV/EDL or an ffmpeg command. FROM sources are
-// not dereferenced by the CLI yet — the files you pass are the games
-// searched.
+// selected shots as JSON/CSV/EDL or an ffmpeg command. Without --insights,
+// FROM sources are resolved as local paths: video("game.json") is an
+// insights file and folder("dir") queries every *.json beneath a directory.
 import fs from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 
 import { runQuery } from '../engine/run.js'
+import { parse } from '../lang/parse.js'
 import { toClips } from '../output/clips.js'
 import { shotsToCSV } from '../output/csv.js'
 import { toEDL } from '../output/edl.js'
 import { ffmpegCommands } from '../output/ffmpeg.js'
 import { toSelectedShotsJSON } from '../output/json.js'
 import { toShotExplorerURLs } from '../se/to-shot-explorer.js'
+import { resolveLocalSources } from '../sources/local.js'
 
-export const USAGE = `usage: pbql [QUERY | -f query.pbql] --insights a.json[,b.json] [options]
+export const USAGE = `usage: pbql [QUERY | -f query.pbql] [options]
+  Without --insights, FROM sources are local paths relative to the current
+  directory: video("game.json") is an insights file; folder("dir") queries
+  every *.json under dir, recursively unless written folder("dir", false).
+  Sessions do not apply to local files.
   -f, --file <path>       read the query from a file
-  --insights <paths>      comma-separated insights JSON files (required)
+  --insights <paths>      comma-separated insights JSON files (FROM sources
+                          are then symbolic and these files are the games)
   --vid <ids>             comma-separated video ids (default: file basenames)
   --session <nums>        comma-separated 0-based session indexes (default 0)
   --me <playerIdx>        which player (0-3) "me" refers to
@@ -74,19 +81,32 @@ export function main (argv, io) {
     return fail(io, `expected a query (or -f query.pbql)\n${USAGE}`)
   }
 
-  if (values.insights === undefined) {
-    return fail(io, `--insights is required\n${USAGE}`)
-  }
-  const files = values.insights.split(',')
-  const vids = values.vid === undefined ? [] : values.vid.split(',')
-  const sessions = values.session === undefined ? [] : values.session.split(',')
   const meta = values.me === undefined ? {} : { myPlayerIdx: parseInt(values.me) }
-  const games = files.map((file, i) => ({
-    vid: vids[i] ?? path.basename(file).replace(/\.json$/, ''),
-    sessionIdx: sessions[i] === undefined ? 0 : parseInt(sessions[i]),
-    insights: JSON.parse(fs.readFileSync(file, 'utf8')),
-    meta
-  }))
+  let games
+  if (values.insights === undefined) {
+    // resolve the query's FROM sources as local paths; parse errors are
+    // left for runQuery below so they print with positions like any other
+    const parsed = parse(text)
+    games = []
+    if (parsed.ast !== undefined) {
+      try {
+        games = resolveLocalSources(parsed.ast.sources)
+          .map(game => ({ ...game, meta }))
+      } catch (err) {
+        return fail(io, err.message)
+      }
+    }
+  } else {
+    const files = values.insights.split(',')
+    const vids = values.vid === undefined ? [] : values.vid.split(',')
+    const sessions = values.session === undefined ? [] : values.session.split(',')
+    games = files.map((file, i) => ({
+      vid: vids[i] ?? path.basename(file).replace(/\.json$/, ''),
+      sessionIdx: sessions[i] === undefined ? 0 : parseInt(sessions[i]),
+      insights: JSON.parse(fs.readFileSync(file, 'utf8')),
+      meta
+    }))
+  }
 
   const result = runQuery({
     text,

@@ -49,6 +49,21 @@ describe('parse()', () => {
     ])
   })
 
+  test('session 1 is the default and canonicalizes away (D12)', () => {
+    const { ast } = parse('FROM video("abc123def456", 1) WHERE true')
+    expect(ast.sources).toEqual([{ kind: 'video', vid: 'abc123def456' }])
+  })
+
+  test('FROM accepts local folder paths with an optional recursive flag', () => {
+    const { ast } = parse(
+      'FROM folder("games"), folder("a/b", false), folder("c", true) WHERE true')
+    expect(ast.sources).toEqual([
+      { kind: 'folder', path: 'games', recursive: true },
+      { kind: 'folder', path: 'a/b', recursive: false },
+      { kind: 'folder', path: 'c', recursive: true }
+    ])
+  })
+
   test('AND binds tighter than OR; junctions flatten n-ary', () => {
     expect(parseWhere('shot.a = 1 OR shot.b = 2 AND shot.c = 3 AND shot.d = 4'))
       .toMatchObject({

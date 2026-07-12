@@ -91,6 +91,12 @@ function isZeroDur (dur) {
 
 function printSource (src) {
   if (src.kind === 'folder') {
+    if (src.path !== undefined) {
+      // recursive is the default, so only the false form is printed
+      return src.recursive
+        ? `folder(${quote(src.path)})`
+        : `folder(${quote(src.path)}, false)`
+    }
     return `folder(${src.fid})`
   }
   return src.sessionNum === undefined
