@@ -100,3 +100,10 @@ describe('print()', () => {
     expect(printed).toBe('FROM folder(1)\nWHERE hitter.name = "say \\"hi\\" \\\\"')
   })
 })
+
+describe('duration number agreement', () => {
+  test('singular units print as 1 shot / 1sec', () => {
+    expect(roundtrips('FROM folder(1) WHERE true CONTEXT BEFORE 1secs CONTEXT AFTER 1 shots'))
+      .toContain('CONTEXT BEFORE 1sec\nCONTEXT AFTER 1 shot')
+  })
+})

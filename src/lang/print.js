@@ -81,7 +81,7 @@ export function printDuration (dur) {
     return 'rally'
   }
   return dur.unit === 'secs'
-    ? `${dur.value}secs`
+    ? `${dur.value}${dur.value === 1 ? 'sec' : 'secs'}`
     : `${dur.value} ${dur.value === 1 ? 'shot' : 'shots'}`
 }
 
