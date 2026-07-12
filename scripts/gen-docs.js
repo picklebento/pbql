@@ -92,7 +92,7 @@ function generateLlmsTxt () {
     '- Strings are double-quoted. Comments start with #.',
     '- Missing data is "unknown" (SQL NULL-like): comparisons with unknown',
     '  are unknown and WHERE keeps only true. exists(x) tests presence.',
-    '- Durations: `2secs`, `1 shots`, `rally` (= to the rally boundary), or',
+    '- Durations: `2secs`, `1 shot`, `rally` (= to the rally boundary), or',
     '  min(a, b)/max(a, b) of two durations (min = cap, max = floor).',
     '  `N shots` also adds those shots to the results as context.',
     '- Subject predicates are methods: shot.taggedWith("Alex*"),',

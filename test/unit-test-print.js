@@ -43,6 +43,48 @@ describe('the example corpus', () => {
   test.each(corpus)('parses and roundtrips: $question', ({ query }) => {
     roundtrips(query)
   })
+
+  // the corpus feeds docs/llms.txt, so its examples must be stored exactly
+  // as print() would emit them (canonical keyword case, singular "1 shot" /
+  // "1sec" units, current FROM string syntax, …) — no drift allowed
+  test.each(corpus)('is stored canonically: $question', ({ query }) => {
+    expect(query).toBe(print(parse(query).ast))
+  })
+})
+
+// example queries displayed by the docs site and README are authored
+// separately from the corpus, so hold them to the same canonical bar
+describe('displayed example queries are canonical', () => {
+  const decode = html => html.replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>').replaceAll('&amp;', '&')
+  const expectCanonical = query => {
+    const { ast, errors } = parse(query)
+    expect(errors).toBeUndefined()
+    expect(query).toBe(print(ast))
+  }
+
+  test('the docs-site homepage example', () => {
+    const html = fs.readFileSync(
+      path.join(repoRoot, 'docs-site', 'index.html'), 'utf8')
+    const match = html.match(/<pre><code>([\s\S]*?)<\/code><\/pre>/)
+    expect(match).not.toBeNull()
+    expectCanonical(decode(match[1]))
+  })
+
+  test('the playground starter query', () => {
+    const html = fs.readFileSync(
+      path.join(repoRoot, 'docs-site', 'playground', 'index.html'), 'utf8')
+    const match = html.match(/<textarea id="query"[^>]*>\n?([\s\S]*?)<\/textarea>/)
+    expect(match).not.toBeNull()
+    expectCanonical(decode(match[1]))
+  })
+
+  test('the README example', () => {
+    const md = fs.readFileSync(path.join(repoRoot, 'README.md'), 'utf8')
+    const match = md.match(/```sql\n([\s\S]*?)\n```/)
+    expect(match).not.toBeNull()
+    expectCanonical(match[1])
+  })
 })
 
 describe('print()', () => {

@@ -24,7 +24,7 @@ context, and orders/limits the results:
 </p>
 <pre><code>FROM "83gyqyc10y8f"
 WHERE shot.type = "drop" AND hitter = me AND shot.quality.overall >= 0.8
-CONTEXT BEFORE 1 shots
+CONTEXT BEFORE 1 shot
 CONTEXT AFTER 2secs
 ORDER BY shot.speed DESC
 LIMIT 50</code></pre>

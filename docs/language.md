@@ -210,7 +210,7 @@ everything).
 ### 6.3 CONTEXT
 
 ```sql
-CONTEXT BEFORE min(1 shots, 2secs)
+CONTEXT BEFORE min(1 shot, 2secs)
 CONTEXT AFTER 3secs
 CONTEXT BEFORE rally
 ```
@@ -233,10 +233,10 @@ BEFORE/AFTER):
   (`max` = floor). Same meaning for BEFORE and AFTER.
 
 Worked example: the selected shot is hit at 90.0s; the previous shot starts
-at 86.5s. `BEFORE min(1 shots, 2secs)`: the candidates are 3.5s (to include
+at 86.5s. `BEFORE min(1 shot, 2secs)`: the candidates are 3.5s (to include
 the previous shot) and 2.0s; `min` picks 2.0s, so the window opens at 88.0s
 and no context shot is added (the previous shot isn't fully included).
-`BEFORE max(1 shots, 2secs)` picks 3.5s: the window opens at 86.5s and the
+`BEFORE max(1 shot, 2secs)` picks 3.5s: the window opens at 86.5s and the
 previous shot joins as context.
 
 Omitted clauses default to `BEFORE 0` / `AFTER 0`. Overlapping windows of

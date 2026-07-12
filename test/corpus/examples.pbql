@@ -33,7 +33,7 @@ CONTEXT AFTER 1.5secs
 # Q: Anna's winners, with the shot before each one for context
 FROM "83gyqyc10y8f"
 WHERE shot.taggedWith("Anna*") AND exists(shot.winnerType)
-CONTEXT BEFORE 1 shots
+CONTEXT BEFORE 1 shot
 
 # Q: Every shot of every rally I won, whole rallies as clips
 FROM "83gyqyc10y8f"
