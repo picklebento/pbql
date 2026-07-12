@@ -1,7 +1,7 @@
 // runQuery: the engine's public entry point. The caller supplies the games
-// to search (the host resolves FROM sources to insights JSON); the engine
-// analyzes, filters, orders, limits, computes context windows, and projects
-// SELECT.
+// to search (the host resolves FROM sources to insights JSON — the CLI via
+// src/sources/resolve.js, per D17); the engine analyzes, filters, orders,
+// limits, computes context windows, and projects SELECT.
 import { AGGREGATE_FNS, analyze, normalize } from '../analyze/analyze.js'
 import { parse } from '../lang/parse.js'
 import { printExpr } from '../lang/print.js'

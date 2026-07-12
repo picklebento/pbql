@@ -3,7 +3,7 @@
 //
 // Supported input: PB Vision insights, latest major version (4.x), augmented
 // field names. Older majors are rejected (the caller should skip-and-report
-// per D13).
+// per D13 in docs/design-decisions.md).
 
 export const SUPPORTED_MAJOR = 4
 

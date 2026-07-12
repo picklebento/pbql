@@ -115,7 +115,7 @@ describe('parse()', () => {
       .toEqual({ object: 'player', name: 'myTeammate' })
   })
 
-  test('keywords are legal path segments (research-notes issue 5)', () => {
+  test('keywords are legal path segments', () => {
     expect(parseWhere('shot.video.true.min = 1').lhs.path)
       .toEqual(['video', 'true', 'min'])
   })
