@@ -131,18 +131,17 @@ describe('ffmpegCommands', () => {
 })
 
 describe('CLI main()', () => {
-  let dir, insightsFile, out, err, io
+  let dir, insightsFile, QUERY, out, err, io
   beforeEach(() => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pbql-test-'))
     insightsFile = path.join(dir, 'testvid00001.json')
     fs.writeFileSync(insightsFile, JSON.stringify(makeDoublesInsights()))
+    QUERY = `FROM video("${insightsFile}") WHERE shot.speed = 50 CONTEXT BEFORE 1secs`
     out = []
     err = []
     io = { stdout: t => out.push(t), stderr: t => err.push(t) }
   })
   afterEach(() => fs.rmSync(dir, { recursive: true, force: true }))
-
-  const QUERY = 'FROM video("testvid00001") WHERE shot.speed = 50 CONTEXT BEFORE 1secs'
 
   test('--help prints usage', () => {
     expect(main(['--help'], io)).toBe(0)
@@ -152,11 +151,15 @@ describe('CLI main()', () => {
   test('bad invocations fail with guidance', () => {
     expect(main([], io)).toBe(1)
     expect(err[0]).toContain('expected a query')
-    expect(main(['q', 'extra', '--insights', insightsFile], io)).toBe(1)
+    expect(main(['q', 'extra'], io)).toBe(1)
+    expect(err[1]).toContain('expected a query')
     expect(main(['--nope'], io)).toBe(1)
+    expect(err[2]).toContain(USAGE) // unknown flags still print usage
+    expect(main([QUERY, '--insights', insightsFile], io)).toBe(1) // removed flag
+    expect(err[3]).toContain(USAGE)
   })
 
-  test('without --insights, FROM names local files and folders', () => {
+  test('FROM names local files and folders', () => {
     expect(main([`FROM video("${insightsFile}") WHERE shot.speed = 50`], io))
       .toBe(0)
     expect(JSON.parse(out[0]).selectedShots[0]).toMatchObject({
@@ -171,21 +174,18 @@ describe('CLI main()', () => {
     expect(err[0]).toContain('video("missing.json"): no such insights file')
     expect(main(['FROM folder(1) WHERE true'], io)).toBe(1)
     expect(err[1]).toContain('folder(1) names a pb.vision library folder')
-    expect(main(['FROM @'], io)).toBe(1) // parse errors still report positions
-    expect(err[2]).toBe('1:6 PBQL_LEX_ERROR: unrecognized text')
   })
 
   test('query errors print with positions and exit 1', () => {
-    expect(main(['FROM folder(1) WHERE shot.isVoley', '--insights', insightsFile], io))
-      .toBe(1)
+    expect(main([`FROM video("${insightsFile}") WHERE shot.isVoley`], io)).toBe(1)
     expect(err[0]).toContain('PBQL_UNKNOWN_PROPERTY')
     expect(err[0]).toContain('did you mean "isVolley"?')
-    expect(main(['FROM @', '--insights', insightsFile], io)).toBe(1)
+    expect(main(['FROM @'], io)).toBe(1) // parse errors still report positions
     expect(err[1]).toBe('1:6 PBQL_LEX_ERROR: unrecognized text') // no hint suffix
   })
 
-  test('default JSON output; vid defaults to the file basename', () => {
-    expect(main([QUERY, '--insights', insightsFile], io)).toBe(0)
+  test('default JSON output; vid comes from the file basename', () => {
+    expect(main([QUERY], io)).toBe(0)
     const json = JSON.parse(out[0])
     expect(json.selectedShots).toHaveLength(1)
     expect(json.selectedShots[0]).toMatchObject({
@@ -193,53 +193,54 @@ describe('CLI main()', () => {
     })
   })
 
-  test('reads the query from a file; honors --vid/--session/--me', () => {
+  test('reads the query from a file; honors --me', () => {
     const queryFile = path.join(dir, 'q.pbql')
-    fs.writeFileSync(queryFile, 'FROM video("v") WHERE hitter = me')
-    expect(main(['-f', queryFile, '--insights', insightsFile,
-      '--vid', 'customvid001', '--session', '1', '--me', '1'], io)).toBe(0)
+    fs.writeFileSync(queryFile,
+      `FROM video("${insightsFile}") WHERE hitter = me`)
+    expect(main(['-f', queryFile, '--me', '1'], io)).toBe(0)
     const json = JSON.parse(out[0])
     expect(json.selectedShots).toHaveLength(2) // Bob's shots
-    expect(json.selectedShots[0]).toMatchObject({ vid: 'customvid001', sessionIdx: 1 })
+    expect(json.selectedShots[0]).toMatchObject({ vid: 'testvid00001', sessionIdx: 0 })
   })
 
   test('se output prints explore deep links', () => {
-    expect(main([QUERY, '--insights', insightsFile, '--out', 'se',
+    expect(main([QUERY, '--out', 'se',
       '--host', 'https://pbv-dev.web.app'], io)).toBe(0)
     expect(out[0]).toBe(
       'https://pbv-dev.web.app/video/testvid00001/0/explore?shots=3.3&numAfter=0')
   })
 
   test('csv and edl outputs', () => {
-    expect(main([QUERY, '--insights', insightsFile, '--out', 'csv'], io)).toBe(0)
+    expect(main([QUERY, '--out', 'csv'], io)).toBe(0)
     expect(out[0]).toContain('vid,sessionIdx,rallyIdx')
-    expect(main([QUERY, '--insights', insightsFile, '--out', 'edl'], io)).toBe(0)
+    expect(main([QUERY, '--out', 'edl'], io)).toBe(0)
     expect(out[1]).toContain('FCM: NON-DROP FRAME')
   })
 
   test('ffmpeg output requires --video-file and selected shots', () => {
-    expect(main([QUERY, '--insights', insightsFile, '--out', 'ffmpeg'], io)).toBe(1)
+    expect(main([QUERY, '--out', 'ffmpeg'], io)).toBe(1)
     expect(err[0]).toContain('--video-file')
-    expect(main([QUERY, '--insights', insightsFile, '--out', 'ffmpeg',
+    expect(main([QUERY, '--out', 'ffmpeg',
       '--video-file', 'game.mp4'], io)).toBe(0)
     expect(out[0]).toContain('ffmpeg -i game.mp4 -filter_complex')
-    expect(main(['FROM video("v") WHERE false', '--insights', insightsFile,
+    expect(main([`FROM video("${insightsFile}") WHERE false`,
       '--out', 'ffmpeg', '--video-file', 'game.mp4'], io)).toBe(1)
     expect(err.at(-1)).toContain('nothing to cut')
   })
 
   test('ffmpeg --fast prints the concat list as comments', () => {
-    expect(main([QUERY, '--insights', insightsFile, '--out', 'ffmpeg',
+    expect(main([QUERY, '--out', 'ffmpeg',
       '--video-file', 'game.mp4', '--fast', '--output-file', 'reel.mp4'], io)).toBe(0)
     expect(out[0]).toContain('# write this to clips.txt first:')
     expect(out[1]).toContain('reel.mp4')
   })
 
   test('unknown --out fails; unsupported insights warn on stderr', () => {
-    expect(main([QUERY, '--insights', insightsFile, '--out', 'yaml'], io)).toBe(1)
-    const oldFile = path.join(dir, 'old.json')
-    fs.writeFileSync(oldFile, JSON.stringify({ version: '2.9.0', rallies: [] }))
-    expect(main([QUERY, '--insights', `${insightsFile},${oldFile}`], io)).toBe(0)
+    expect(main([QUERY, '--out', 'yaml'], io)).toBe(1)
+    fs.writeFileSync(path.join(dir, 'old.json'),
+      JSON.stringify({ version: '2.9.0', rallies: [] }))
+    expect(main([`FROM folder("${dir}") WHERE shot.speed = 50`], io)).toBe(0)
     expect(err.at(-1)).toContain('unsupported insights version')
+    expect(JSON.parse(out.at(-1)).selectedShots).toHaveLength(1)
   })
 })

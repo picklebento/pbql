@@ -20,8 +20,10 @@ the clips into a reel.
 
 ## Status
 
-Early development. The lexer and parser work (see the kitchen-sink query in
-`test/demo.pbql`); the evaluation engine, outputs, and CLI are being built.
+Working library and CLI: lexer, parser, analyzer, evaluation engine, and
+outputs (see the kitchen-sink query in `test/demo.pbql`). Integration with
+pb.vision (resolving `folder()` library ids and video ids remotely) is still
+to come.
 
 ## Getting started
 
@@ -34,6 +36,15 @@ yarn coverage   # tests + coverage (100% thresholds)
 
 node scripts/run-lexer.js  [query.pbql]  # print the token stream
 node scripts/run-parser.js [query.pbql]  # print the AST as JSON
+```
+
+Run a query from the CLI — `FROM` sources are local paths relative to the
+current directory (`video("game.json")` is one insights file;
+`folder("dir")` queries every `*.json` under a directory):
+
+```bash
+node bin/pbql.js 'FROM video("game.json") WHERE shot.isVolley' --out csv
+node bin/pbql.js 'FROM folder("games") WHERE hitter = me' --me 0 --out edl
 ```
 
 ## Usage
