@@ -9,7 +9,7 @@ every deviation is a bug. Property-by-property details live in the generated
 
 ```sql
 [SELECT expr [AS "label"] [, ...]]
-FROM source [, ...]
+FROM "source" [, ...]
 WHERE condition
 [CONTEXT BEFORE duration]
 [CONTEXT AFTER duration]
@@ -40,8 +40,8 @@ specified here for completeness but is not implemented until milestone M6.
 - **Booleans**: `true`, `false`.
 - **Comments**: `#` to end of line.
 - **Reserved words may still be used as property names**: keywords are
-  allowed as path segments after a `.` (so a future `shot.video` property
-  would not conflict with the `video(...)` source function).
+  allowed as path segments after a `.` (`shot.from.x` works even though
+  `FROM` is a keyword).
 
 ### Aliases (accepted and canonicalized, never printed)
 
@@ -171,28 +171,30 @@ of characters (`"Alex*"`). Unknown when the game has no tag data.
 ### 6.1 FROM
 
 ```sql
-FROM video("83gyqyc10y8f"), video("jhc3t8h8b5cj", 2), folder(92)
+FROM "83gyqyc10y8f", "jhc3t8h8b5cj:2", "games/*.json"
 ```
 
-One video source names **one game**:
+`FROM` takes one or more **quoted strings**. The strings are opaque to the
+language: each host interprets them (the pb.vision app queries the
+video/session it is showing; the CLI resolves them as below). PBQL only
+requires that each source resolve to whole games of insights data.
 
-- `video(vid)` — the video's default game, session 1. Hosts that are
-  already showing a particular game supply it as that source's session
-  (the pb.vision app passes its current session).
-- `video(vid, n)` — session **n, 1-indexed**. `video(vid, 1)` is the
-  default spelling and canonicalizes to `video(vid)`.
-- `folder(fid)` — every video/session in the folder, recursively; folders
-  are integers scoped to the querying user's library.
+The CLI interprets each source string with exactly one rule, the first
+that applies:
 
-In local usage (the CLI, or any host without a pb.vision library), paths
-replace ids — sessions do not apply, since a local file is a whole game:
-
-- `video("path/to/game.json")` — one local insights file.
-- `folder("path")` — every `*.json` insights file under the directory,
-  recursive by default; `folder("path", false)` searches only the directory
-  itself. `folder("path", true)` canonicalizes to `folder("path")`.
-
-Duplicate mentions of the same (video, session) are queried once.
+1. **pb.vision video** — the string matches `^[a-z0-9]{12}(:[0-9]+)?$`: a
+   12-character video id with an optional **1-based** session number
+   (`"83gyqyc10y8f"` is the first game; `"83gyqyc10y8f:2"` the second).
+   Insights live in the public production bucket, but fetching them by id
+   is **not yet supported** — it needs a version-discovery endpoint (plan
+   M8); until then the CLI reports this clearly.
+2. **file** — an existing file is one insights JSON. A local file is a
+   whole game, so sessions do not apply. A file whose name happens to look
+   like a video id must be written with a path prefix: `"./83gyqyc10y8f"`.
+3. **directory** — an existing directory contributes every `*.json` file
+   beneath it, recursively.
+4. **glob** — anything else is a glob pattern (`"games/*.json"`,
+   `"**/court-2/*.json"`), matched relative to the current directory.
 
 ### 6.2 WHERE
 

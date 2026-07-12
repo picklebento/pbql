@@ -6,7 +6,7 @@ search, filters shots by their properties, attaches surrounding context, and
 orders/limits the results:
 
 ```sql
-FROM folder(92)
+FROM "games/*.json"
 WHERE shot.type = "drop" AND hitter = me AND shot.quality.overall >= 0.8
 CONTEXT BEFORE 1 shot
 CONTEXT AFTER 2secs
@@ -21,9 +21,8 @@ the clips into a reel.
 ## Status
 
 Working library and CLI: lexer, parser, analyzer, evaluation engine, and
-outputs (see the kitchen-sink query in `test/demo.pbql`). Integration with
-pb.vision (resolving `folder()` library ids and video ids remotely) is still
-to come.
+outputs (see the kitchen-sink query in `test/demo.pbql`). Fetching insights
+remotely by pb.vision video id is still to come.
 
 ## Getting started
 
@@ -38,13 +37,14 @@ node scripts/run-lexer.js  [query.pbql]  # print the token stream
 node scripts/run-parser.js [query.pbql]  # print the AST as JSON
 ```
 
-Run a query from the CLI — `FROM` sources are local paths relative to the
-current directory (`video("game.json")` is one insights file;
-`folder("dir")` queries every `*.json` under a directory):
+Run a query from the CLI — `FROM` sources are quoted strings: a pb.vision
+video id (`"83gyqyc10y8f"`, optionally `":2"` for the second game — fetching
+these is not yet supported), else a local file (one insights JSON), an
+existing directory (every `*.json` beneath it), or a glob:
 
 ```bash
-node bin/pbql.js 'FROM video("game.json") WHERE shot.isVolley' --out csv
-node bin/pbql.js 'FROM folder("games") WHERE hitter = me' --me 0 --out edl
+node bin/pbql.js 'FROM "game.json" WHERE shot.isVolley' --out csv
+node bin/pbql.js 'FROM "games/*.json" WHERE hitter = me' --me 0 --out edl
 ```
 
 ## Usage
@@ -52,7 +52,7 @@ node bin/pbql.js 'FROM folder("games") WHERE hitter = me' --me 0 --out edl
 ```js
 import { parse } from '@pbvision/pbql'
 
-const { ast, errors } = parse('FROM folder(1) WHERE shot.isVolley')
+const { ast, errors } = parse('FROM "game.json" WHERE shot.isVolley')
 if (errors) {
   // [{ code, message, line, col, length }]
 }
