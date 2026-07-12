@@ -234,3 +234,14 @@ describe('filtersToPbql player readability', () => {
       .toContain('hitter.id = 1') // index 1 has no name entry
   })
 })
+
+describe('filtersToPbql window pluralization', () => {
+  test('single-shot windows read naturally', () => {
+    const { text } = filtersToPbql({
+      vid: 'abc123def456',
+      shotWindow: { numBefore: 1, numAfter: 1 }
+    })
+    expect(text).toContain('CONTEXT BEFORE 1 shot\nCONTEXT AFTER 1 shot')
+    expect(validate(text).errors).toEqual([])
+  })
+})

@@ -8,8 +8,8 @@ orders/limits the results:
 ```sql
 FROM folder(92)
 WHERE shot.type = "drop" AND hitter = me AND shot.quality.overall >= 0.8
-SHOT CONTEXT BEFORE 1 shots
-SHOT CONTEXT AFTER 2secs
+CONTEXT BEFORE 1 shot
+CONTEXT AFTER 2secs
 ORDER BY shot.speed DESC
 LIMIT 50
 ```
