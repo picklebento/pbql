@@ -1,9 +1,10 @@
-# The PBQL Language, v0.1 (draft)
+# The PBQL Language
 
 PBQL selects shots from pickleball games analyzed by PB Vision. This document
 is the normative spec: the grammar in `src/lang/pbql.ne` implements it, and
 every deviation is a bug. Property-by-property details live in the generated
-[data dictionary](data-dictionary.md).
+[data dictionary](data-dictionary.md); design rationale lives in the
+[decision log](design-decisions.md).
 
 ## 1. Overall shape
 
@@ -22,8 +23,7 @@ A query conceptually builds one row per **shot** across all games named by
 shot's video window per `CONTEXT`, sorts, limits, and outputs. Without
 `SELECT`, the output is the selected shots themselves (for the Shot Explorer,
 EDL, or ffmpeg); with `SELECT`, it is one projected row per shot (CSV/JSON),
-or a single row if every selected expression is an aggregate. `SELECT` is
-specified here for completeness but is not implemented until milestone M6.
+or a single row if every selected expression is an aggregate.
 
 ## 2. Lexical structure
 
@@ -49,8 +49,8 @@ specified here for completeness but is not implemented until milestone M6.
 |---|---|
 | `<>` | `!=` |
 | `==` | `=` |
-| `seconds`, `sec` | `secs` |
-| `shot` (duration unit) | `shots` |
+| `sec`, `secs`, `seconds` | number agreement: `1sec`, `2secs` |
+| `shot`, `shots` (duration unit) | number agreement: `1 shot`, `2 shots` |
 | `f(x, ...)` for a method | `x.f(...)` |
 
 ## 3. Operators and precedence
@@ -145,7 +145,7 @@ Player properties include `id`, `team`, `name`, position (`pos.x`/`pos.y`
 in the player's own frame, `pos.absX`/`pos.absY` raw) at the current shot's
 hit time, and derived distances (`feetToKitchen`, `distanceToNet`, …).
 
-### 5.5 Calling conventions (D16)
+### 5.5 Calling conventions
 
 - **Zero-argument derived values are plain properties**: `hitter.feetToKitchen`.
 - **Predicates about one subject take arguments as methods**:
@@ -153,7 +153,8 @@ hit time, and derived distances (`feetToKitchen`, `distanceToNet`, …).
   call function-style (`taggedWith(shot, "Alex*")`) is accepted and
   canonicalized.
 - **Subject-less utilities are functions**: `min(a, b)`, `max(a, b)`,
-  `exists(x)`, `abs(x)`.
+  `exists(x)`, `abs(x)`, and the unit conversions `kph(x)` (mph → km/h),
+  `toMs(x)` (seconds → ms), `toSecs(x)` (ms → seconds).
 
 Every built-in receives the evaluation context implicitly; user-visible
 signatures never mention it.
@@ -256,7 +257,7 @@ last regardless of direction. Without `ORDER BY`, results keep video order
 
 `LIMIT n` keeps the first n rows after ordering, across all games.
 
-### 6.6 SELECT (specified now, implemented in M6)
+### 6.6 SELECT
 
 ```sql
 SELECT hitter.name, shot.speed AS "mph", shot.type

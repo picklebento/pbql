@@ -55,6 +55,7 @@ fs.mkdirSync(path.join(dist, 'playground'), { recursive: true })
 
 renderDoc('language.md', 'language.html', 'The PBQL Language')
 renderDoc('data-dictionary.md', 'data-dictionary.html', 'PBQL Data Dictionary')
+renderDoc('design-decisions.md', 'design-decisions.html', 'PBQL Design Decisions')
 for (const [from, to] of [
   [[repoRoot, 'docs', 'llms.txt'], ['llms.txt']],
   [[siteDir, 'assets', 'site.css'], ['site.css']],

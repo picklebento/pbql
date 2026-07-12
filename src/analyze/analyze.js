@@ -10,7 +10,7 @@ export const SCALAR_FNS = new Map([
   ['max', { minArgs: 2, maxArgs: Infinity }],
   ['abs', { minArgs: 1, maxArgs: 1 }],
   ['exists', { minArgs: 1, maxArgs: 1 }],
-  // unit conversions (M6): mph→km/h, seconds→ms, ms→seconds ("secs"/"ms"
+  // unit conversions: mph→km/h, seconds→ms, ms→seconds ("secs"/"ms"
   // themselves are duration-unit keywords, hence the to- prefix)
   ['kph', { minArgs: 1, maxArgs: 1 }],
   ['toMs', { minArgs: 1, maxArgs: 1 }],

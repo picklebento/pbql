@@ -22,8 +22,9 @@ Docs and a browser playground: https://pbv-public.github.io/pbql/
 
 ## Status
 
-Working library and CLI: lexer, parser, analyzer, evaluation engine, and
-outputs (see the kitchen-sink query in `test/demo.pbql`).
+Working library and CLI: lexer, parser, analyzer, evaluation engine (including
+`SELECT` projections and aggregates), and outputs (see the kitchen-sink query
+in `test/demo.pbql`). The design record lives in `docs/design-decisions.md`.
 
 ## Getting started
 
@@ -67,8 +68,10 @@ if (errors) {
 |---|---|
 | `src/lang/` | lexer (moo), grammar (`pbql.ne`, compiled by `yarn build`), `parse()` |
 | `src/index.js` | package entry |
+| `docs/` | language spec, design decisions, generated data dictionary + llms.txt |
+| `docs-site/` | static docs site + browser playground (`yarn build:site`) |
 | `test/` | jest unit tests + `demo.pbql` and its golden AST |
-| `scripts/` | grammar build + demo runners |
+| `scripts/` | grammar build, doc generation, demo runners |
 
 
 ## License
