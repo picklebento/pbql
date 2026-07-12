@@ -11,15 +11,15 @@ every deviation is a bug. Property-by-property details live in the generated
 [SELECT expr [AS "label"] [, ...]]
 FROM source [, ...]
 WHERE condition
-[SHOT CONTEXT BEFORE duration]
-[SHOT CONTEXT AFTER duration]
+[CONTEXT BEFORE duration]
+[CONTEXT AFTER duration]
 [ORDER BY expr [ASC|DESC] [, ...]]
 [LIMIT n]
 ```
 
 A query conceptually builds one row per **shot** across all games named by
 `FROM`, keeps the rows where `WHERE` evaluates to `true`, widens each kept
-shot's video window per `SHOT CONTEXT`, sorts, limits, and outputs. Without
+shot's video window per `CONTEXT`, sorts, limits, and outputs. Without
 `SELECT`, the output is the selected shots themselves (for the Shot Explorer,
 EDL, or ffmpeg); with `SELECT`, it is one projected row per shot (CSV/JSON),
 or a single row if every selected expression is an aggregate. `SELECT` is
@@ -29,7 +29,7 @@ specified here for completeness but is not implemented until milestone M6.
 
 - **Keywords** are case-insensitive (`FROM` ≡ `from` ≡ `From`). Canonical
   form is UPPERCASE for clause keywords and lowercase for everything else.
-  Multi-word keywords (`SHOT CONTEXT BEFORE`, `SHOT CONTEXT AFTER`,
+  Multi-word keywords (`CONTEXT BEFORE`, `CONTEXT AFTER`,
   `ORDER BY`) allow any whitespace between the words.
 - **Identifiers** (property names, function names) are case-sensitive:
   `shot.isVolley`, not `shot.isvolley`.
@@ -186,16 +186,16 @@ Duplicate mentions of the same (video, session) are queried once.
 Any boolean-valued expression per §3–§5. Required (use `WHERE true` for
 everything).
 
-### 6.3 SHOT CONTEXT
+### 6.3 CONTEXT
 
 ```sql
-SHOT CONTEXT BEFORE min(1 shots, 2secs)
-SHOT CONTEXT AFTER 3secs
-SHOT CONTEXT BEFORE rally
+CONTEXT BEFORE min(1 shots, 2secs)
+CONTEXT AFTER 3secs
+CONTEXT BEFORE rally
 ```
 
 Each selected shot has a video window, by default the shot's own flight
-(`hitTime`…`endTime` plus the host's presentation padding). `SHOT CONTEXT`
+(`hitTime`…`endTime` plus the host's presentation padding). `CONTEXT`
 widens it; durations are **positive magnitudes** (direction comes from
 BEFORE/AFTER):
 

@@ -69,8 +69,8 @@ describe('pbql lexer', () => {
   })
 
   test('multi-word keywords allow flexible whitespace and any case', () => {
-    expect(types('SHOT CONTEXT BEFORE shot   context\tafter Order   By'))
-      .toEqual(['shotContextBefore', 'shotContextAfter', 'orderBy'])
+    expect(types('CONTEXT BEFORE Context\tAfter Order   By'))
+      .toEqual(['contextBefore', 'contextAfter', 'orderBy'])
   })
 
   test('player references are case-insensitive', () => {

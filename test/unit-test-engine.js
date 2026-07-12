@@ -129,54 +129,54 @@ describe('runQuery: context windows', () => {
   })
 
   test('secs stretch, clamped to rally bounds + 3s spill', () => {
-    expect(windowFor('SHOT CONTEXT BEFORE 2secs SHOT CONTEXT AFTER 1secs').window)
+    expect(windowFor('CONTEXT BEFORE 2secs CONTEXT AFTER 1secs').window)
       .toEqual({ sMs: 56000, eMs: 60000 })
-    expect(windowFor('SHOT CONTEXT BEFORE 12secs SHOT CONTEXT AFTER 12secs').window)
+    expect(windowFor('CONTEXT BEFORE 12secs CONTEXT AFTER 12secs').window)
       .toEqual({ sMs: 47000, eMs: 67000 }) // rally is 50000..64000
-    expect(windowFor('SHOT CONTEXT BEFORE 12secs', { maxSecsBeyondRally: 0 }).window.sMs)
+    expect(windowFor('CONTEXT BEFORE 12secs', { maxSecsBeyondRally: 0 }).window.sMs)
       .toBe(50000)
   })
 
   test('shots units include neighbors as context, clamped to the rally', () => {
-    const one = windowFor('SHOT CONTEXT BEFORE 1 shots SHOT CONTEXT AFTER 1 shots')
+    const one = windowFor('CONTEXT BEFORE 1 shots CONTEXT AFTER 1 shots')
     expect(one.window).toEqual({ sMs: 55000, eMs: 62000 })
     expect(one.contextShots).toEqual([
       { rallyIdx: 2, shotIdx: 1 }, { rallyIdx: 2, shotIdx: 3 }])
-    const many = windowFor('SHOT CONTEXT BEFORE 5 shots')
+    const many = windowFor('CONTEXT BEFORE 5 shots')
     expect(many.window.sMs).toBe(52000)
     expect(many.contextShots).toEqual([
       { rallyIdx: 2, shotIdx: 0 }, { rallyIdx: 2, shotIdx: 1 }])
   })
 
   test('rally duration goes to the boundary', () => {
-    const whole = windowFor('SHOT CONTEXT BEFORE rally SHOT CONTEXT AFTER rally')
+    const whole = windowFor('CONTEXT BEFORE rally CONTEXT AFTER rally')
     expect(whole.window).toEqual({ sMs: 50000, eMs: 64000 })
     expect(whole.contextShots).toHaveLength(3)
   })
 
   test('min caps, max floors, ties prefer context shots (D4)', () => {
-    expect(windowFor('SHOT CONTEXT BEFORE min(1 shots, 2secs)')).toMatchObject({
+    expect(windowFor('CONTEXT BEFORE min(1 shots, 2secs)')).toMatchObject({
       window: { sMs: 56000 }, contextShots: []
     })
-    expect(windowFor('SHOT CONTEXT BEFORE max(1 shots, 2secs)')).toMatchObject({
+    expect(windowFor('CONTEXT BEFORE max(1 shots, 2secs)')).toMatchObject({
       window: { sMs: 55000 },
       contextShots: [{ rallyIdx: 2, shotIdx: 1 }]
     })
     // 3secs resolves to exactly the previous shot's start: a tie
-    expect(windowFor('SHOT CONTEXT BEFORE min(1 shots, 3secs)').contextShots)
+    expect(windowFor('CONTEXT BEFORE min(1 shots, 3secs)').contextShots)
       .toEqual([{ rallyIdx: 2, shotIdx: 1 }])
-    expect(windowFor('SHOT CONTEXT AFTER max(1 shots, 1secs)')).toMatchObject({
+    expect(windowFor('CONTEXT AFTER max(1 shots, 1secs)')).toMatchObject({
       window: { eMs: 62000 },
       contextShots: [{ rallyIdx: 2, shotIdx: 3 }]
     })
-    expect(windowFor('SHOT CONTEXT AFTER min(1 shots, 1secs)')).toMatchObject({
+    expect(windowFor('CONTEXT AFTER min(1 shots, 1secs)')).toMatchObject({
       window: { eMs: 60000 }, contextShots: []
     })
   })
 
   test('a rally-opening shot has nothing before it', () => {
     const result = runQuery({
-      text: 'FROM video("x") WHERE rally.num = 3 AND shot.num = 1 SHOT CONTEXT BEFORE 2 shots',
+      text: 'FROM video("x") WHERE rally.num = 3 AND shot.num = 1 CONTEXT BEFORE 2 shots',
       games: [makeDoublesGame()]
     })
     expect(result.shots[0].window.sMs).toBe(52000)
@@ -216,9 +216,9 @@ describe('coverage edges', () => {
   })
 
   test('durfn arg order and all-secs ties', () => {
-    expect(windowFor('SHOT CONTEXT BEFORE min(2secs, 1 shots)').window.sMs).toBe(56000)
-    expect(windowFor('SHOT CONTEXT AFTER max(2secs, 1 shots)').window.eMs).toBe(62000)
-    const tie = windowFor('SHOT CONTEXT BEFORE min(3secs, 3secs)')
+    expect(windowFor('CONTEXT BEFORE min(2secs, 1 shots)').window.sMs).toBe(56000)
+    expect(windowFor('CONTEXT AFTER max(2secs, 1 shots)').window.eMs).toBe(62000)
+    const tie = windowFor('CONTEXT BEFORE min(3secs, 3secs)')
     expect(tie.window.sMs).toBe(55000)
     expect(tie.contextShots).toEqual([])
   })

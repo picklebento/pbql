@@ -1,5 +1,5 @@
 // Context-window computation (D3/D4): each selected shot's video window is
-// its own flight, widened by the SHOT CONTEXT clauses. Durations are
+// its own flight, widened by the CONTEXT clauses. Durations are
 // positive magnitudes; `shots` units never cross rally boundaries (and add
 // the covered shots to the result as context); `secs` units may spill past
 // the rally by at most maxSecsBeyondRally (default 3s); min = cap,

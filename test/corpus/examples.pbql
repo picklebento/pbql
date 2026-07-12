@@ -27,19 +27,19 @@ WHERE shot.sequence = "serve" AND shot.to.zone = "deep"
 # Q: Shots faster than 40 mph with a bit of lead-in video
 FROM video("83gyqyc10y8f")
 WHERE shot.speed > 40
-SHOT CONTEXT BEFORE 2secs
-SHOT CONTEXT AFTER 1.5secs
+CONTEXT BEFORE 2secs
+CONTEXT AFTER 1.5secs
 
 # Q: Anna's winners, with the shot before each one for context
 FROM video("83gyqyc10y8f")
 WHERE shot.taggedWith("Anna*") AND exists(shot.winnerType)
-SHOT CONTEXT BEFORE 1 shots
+CONTEXT BEFORE 1 shots
 
 # Q: Every shot of every rally I won, whole rallies as clips
 FROM video("83gyqyc10y8f")
 WHERE rally.winner = me.team
-SHOT CONTEXT BEFORE rally
-SHOT CONTEXT AFTER rally
+CONTEXT BEFORE rally
+CONTEXT AFTER rally
 
 # Q: My unforced errors
 FROM video("83gyqyc10y8f")
@@ -64,8 +64,8 @@ WHERE hitter.team = me.team AND shot.isSpeedup AND shot.strokeType = "backhand"
 # Q: Around-the-post highlights
 FROM video("83gyqyc10y8f")
 WHERE shot.inHighlight("atp")
-SHOT CONTEXT BEFORE min(2 shots, 4secs)
-SHOT CONTEXT AFTER 2secs
+CONTEXT BEFORE min(2 shots, 4secs)
+CONTEXT AFTER 2secs
 
 # Q: Long rallies (12+ shots) that my team lost
 FROM video("83gyqyc10y8f")

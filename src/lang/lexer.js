@@ -63,8 +63,8 @@ const lexer = moo.compile({
   // double-quoted, \" and \\ escapes, no newlines
   string: /"(?:\\["\\]|[^"\\\n])*"/,
   // multi-word section keywords (must precede the identifier rule)
-  shotContextBefore: ciPhrase('SHOT CONTEXT BEFORE'),
-  shotContextAfter: ciPhrase('SHOT CONTEXT AFTER'),
+  contextBefore: ciPhrase('CONTEXT BEFORE'),
+  contextAfter: ciPhrase('CONTEXT AFTER'),
   orderBy: ciPhrase('ORDER BY'),
   leftParen: '(',
   rightParen: ')',

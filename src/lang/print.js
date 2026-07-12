@@ -80,7 +80,9 @@ export function printDuration (dur) {
   if (dur.unit === 'rally') {
     return 'rally'
   }
-  return dur.unit === 'secs' ? `${dur.value}secs` : `${dur.value} shots`
+  return dur.unit === 'secs'
+    ? `${dur.value}secs`
+    : `${dur.value} ${dur.value === 1 ? 'shot' : 'shots'}`
 }
 
 function isZeroDur (dur) {
@@ -107,10 +109,10 @@ export function print (query) {
   lines.push('WHERE ' + printExpr(query.where))
   const { before, after } = query.context
   if (!isZeroDur(before)) {
-    lines.push('SHOT CONTEXT BEFORE ' + printDuration(before))
+    lines.push('CONTEXT BEFORE ' + printDuration(before))
   }
   if (!isZeroDur(after)) {
-    lines.push('SHOT CONTEXT AFTER ' + printDuration(after))
+    lines.push('CONTEXT AFTER ' + printDuration(after))
   }
   if (query.orderBy) {
     lines.push('ORDER BY ' + query.orderBy.map(({ expr, dir }) =>

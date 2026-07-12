@@ -177,14 +177,14 @@ export function filtersToPbql ({
     : `FROM video(${quote(vid)}, ${sessionNum})`)
   lines.push(`WHERE ${groups.join(' AND\n      ') || 'true'}`)
   if (shotWindow?.numBefore) {
-    lines.push(`SHOT CONTEXT BEFORE ${shotWindow.numBefore === 999
+    lines.push(`CONTEXT BEFORE ${shotWindow.numBefore === 999
       ? 'rally'
-: `${shotWindow.numBefore} shots`}`)
+: `${shotWindow.numBefore} ${shotWindow.numBefore === 1 ? 'shot' : 'shots'}`}`)
   }
   if (shotWindow?.numAfter) {
-    lines.push(`SHOT CONTEXT AFTER ${shotWindow.numAfter === 999
+    lines.push(`CONTEXT AFTER ${shotWindow.numAfter === 999
       ? 'rally'
-: `${shotWindow.numAfter} shots`}`)
+: `${shotWindow.numAfter} ${shotWindow.numAfter === 1 ? 'shot' : 'shots'}`}`)
   }
   return { text: lines.join('\n'), unsupported }
 }

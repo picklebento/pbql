@@ -135,7 +135,7 @@ describe('parse()', () => {
   })
 
   test('durations: units, aliases, rally, min/max', () => {
-    const q = 'FROM folder(1) WHERE true SHOT CONTEXT BEFORE max(1 shot, 2.5secs) SHOT CONTEXT AFTER rally'
+    const q = 'FROM folder(1) WHERE true CONTEXT BEFORE max(1 shot, 2.5secs) CONTEXT AFTER rally'
     const { ast, errors } = parse(q)
     expect(errors).toBeUndefined()
     expect(ast.context.before).toEqual({
@@ -199,7 +199,7 @@ describe('parse()', () => {
   test('rejects calling an object or a non-min/max duration function', () => {
     expect(parse('FROM folder(1) WHERE shot("x")').errors[0].code)
       .toBe('PBQL_UNEXPECTED_END')
-    expect(parse('FROM folder(1) WHERE true SHOT CONTEXT BEFORE avg(1 shots, 2secs)')
+    expect(parse('FROM folder(1) WHERE true CONTEXT BEFORE avg(1 shots, 2secs)')
       .errors[0].code).toBe('PBQL_UNEXPECTED_END')
   })
 })

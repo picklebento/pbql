@@ -47,7 +47,7 @@ describe('M6 built-ins', () => {
 describe('toShotExplorerParams/URLs', () => {
   test('emits SE 1-based rally.shot refs with translated windows', () => {
     const result = runQuery({
-      text: 'FROM video("v") WHERE shot.isFinal SHOT CONTEXT BEFORE 2 shots SHOT CONTEXT AFTER rally',
+      text: 'FROM video("v") WHERE shot.isFinal CONTEXT BEFORE 2 shots CONTEXT AFTER rally',
       games: [makeDoublesGame(), makeSinglesGame()]
     })
     expect(toShotExplorerParams(result)).toEqual([
@@ -71,16 +71,16 @@ describe('toShotExplorerParams/URLs', () => {
     })
     expect(toShotExplorerParams(run(''))[0].params)
       .toEqual({ shots: '3.3', numBefore: 0, numAfter: 0 })
-    expect(toShotExplorerParams(run('SHOT CONTEXT BEFORE 2secs'))[0].params)
+    expect(toShotExplorerParams(run('CONTEXT BEFORE 2secs'))[0].params)
       .toEqual({ shots: '3.3', numAfter: 0 })
     expect(toShotExplorerParams(
-      run('SHOT CONTEXT AFTER min(1 shots, 2secs)'))[0].params)
+      run('CONTEXT AFTER min(1 shots, 2secs)'))[0].params)
       .toEqual({ shots: '3.3', numBefore: 0 })
   })
 
   test('builds explore deep links per game with a configurable host', () => {
     const result = runQuery({
-      text: 'FROM video("v") WHERE shot.speed = 50 SHOT CONTEXT BEFORE 1 shots SHOT CONTEXT AFTER 1 shots',
+      text: 'FROM video("v") WHERE shot.speed = 50 CONTEXT BEFORE 1 shots CONTEXT AFTER 1 shots',
       games: [makeDoublesGame()]
     })
     expect(toShotExplorerURLs(result)).toEqual([
@@ -157,8 +157,8 @@ describe('filtersToPbql()', () => {
       '(rally.num = 5 AND shot.num = 3)',
       '(rally.num = 7 AND shot.num >= 1 AND shot.num <= 4)',
       '(shot.hitTime >= 12.5 AND shot.hitTime < 30)',
-      'SHOT CONTEXT BEFORE 2 shots',
-      'SHOT CONTEXT AFTER rally'
+      'CONTEXT BEFORE 2 shots',
+      'CONTEXT AFTER rally'
     ]) {
       expect(text).toContain(expected)
     }
@@ -191,8 +191,8 @@ describe('filtersToPbql()', () => {
     expect(gen({ filters: { quality: { min: 0, max: 0.9 } } }).text)
       .toContain('shot.quality.overall <= 0.9')
     const { text } = gen({ shotWindow: { numBefore: 999, numAfter: 2 } })
-    expect(text).toContain('SHOT CONTEXT BEFORE rally')
-    expect(text).toContain('SHOT CONTEXT AFTER 2 shots')
+    expect(text).toContain('CONTEXT BEFORE rally')
+    expect(text).toContain('CONTEXT AFTER 2 shots')
   })
 
   test('unsupported fields are reported, not dropped silently', () => {

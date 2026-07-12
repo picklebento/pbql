@@ -80,16 +80,16 @@ describe('print()', () => {
     const printed = roundtrips(`
       select shot.speed as "mph" from video("abc123def456", 2), folder(9)
       where shot[-1].taggedWith("BJ*") and shot.num in (1, 3)
-      shot context before max(1 shot, 2sec)
-      shot context after rally
+      context before max(1 shot, 2sec)
+      context after rally
       order by shot.speed desc, shot.hitTime asc
       limit 10`)
     expect(printed).toBe([
       'SELECT shot.speed AS "mph"',
       'FROM video("abc123def456", 2), folder(9)',
       'WHERE shot[-1].taggedWith("BJ*") AND shot.num IN (1, 3)',
-      'SHOT CONTEXT BEFORE max(1 shots, 2secs)',
-      'SHOT CONTEXT AFTER rally',
+      'CONTEXT BEFORE max(1 shot, 2secs)',
+      'CONTEXT AFTER rally',
       'ORDER BY shot.speed DESC, shot.hitTime',
       'LIMIT 10'
     ].join('\n'))

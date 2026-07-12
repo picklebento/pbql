@@ -17,7 +17,7 @@ WHERE
     game.duration / 60 < 20 AND
     hittersOpponentRHS.name != "Ben Johns" AND
     exists(shot.winnerType)
-SHOT CONTEXT BEFORE max(1 shots, 2secs)
-SHOT CONTEXT AFTER min(3secs, 1 shots)
+CONTEXT BEFORE max(1 shots, 2secs)
+CONTEXT AFTER min(3secs, 1 shots)
 ORDER BY shot.hitTime ASC, shot.speed DESC
 LIMIT 1000

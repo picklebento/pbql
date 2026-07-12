@@ -25,7 +25,7 @@ describe('toClips', () => {
 describe('toSelectedShotsJSON', () => {
   test('emits the Shot-Explorer shape in seconds', () => {
     const result = runQuery({
-      text: 'SELECT shot.num FROM video("x") WHERE shot.speed = 50 SHOT CONTEXT BEFORE 1 shots',
+      text: 'SELECT shot.num FROM video("x") WHERE shot.speed = 50 CONTEXT BEFORE 1 shots',
       games: [makeDoublesGame()]
     })
     expect(toSelectedShotsJSON(result)).toEqual({
@@ -142,7 +142,7 @@ describe('CLI main()', () => {
   })
   afterEach(() => fs.rmSync(dir, { recursive: true, force: true }))
 
-  const QUERY = 'FROM video("testvid00001") WHERE shot.speed = 50 SHOT CONTEXT BEFORE 1secs'
+  const QUERY = 'FROM video("testvid00001") WHERE shot.speed = 50 CONTEXT BEFORE 1secs'
 
   test('--help prints usage', () => {
     expect(main(['--help'], io)).toBe(0)
