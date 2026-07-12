@@ -6,7 +6,7 @@ export { validate } from './validate.js'
 // Shot Explorer bridge (explore links carrying the query via ?q=)
 export { toShotExplorerURLs } from './se/to-shot-explorer.js'
 
-// source resolution (Node hosts: files/dirs/globs; vid fetching lands in M8)
+// source resolution (Node hosts: vids fetched from production, files/dirs/globs)
 export { resolveSources } from './sources/resolve.js'
 
 // data model

@@ -38,8 +38,8 @@ node scripts/run-parser.js [query.pbql]  # print the AST as JSON
 ```
 
 Run a query from the CLI — `FROM` sources are quoted strings: a pb.vision
-video id (`"83gyqyc10y8f"`, optionally `":2"` for the second game — fetching
-these is not yet supported), else a local file (one insights JSON), an
+video id (`"83gyqyc10y8f"`, optionally `":2"` for the second game — insights
+are fetched from production), else a local file (one insights JSON), an
 existing directory (every `*.json` beneath it), or a glob:
 
 ```bash

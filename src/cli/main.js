@@ -18,7 +18,7 @@ import { validate } from '../validate.js'
 export const USAGE = `usage: pbql [QUERY | -f query.pbql] [options]
   FROM sources are strings; the CLI interprets each with one rule:
   a pb.vision video id with optional 1-based session ("83gyqyc10y8f",
-  "83gyqyc10y8f:2" — fetching these is not yet supported), else an
+  "83gyqyc10y8f:2" — insights are fetched from production), else an
   existing file (one insights JSON), else an existing directory (every
   *.json beneath it), else a glob ("games/*.json"). Write "./name" for
   a local file whose name looks like a video id.
@@ -79,7 +79,7 @@ function emitExploreLinks (text, io) {
   return 0
 }
 
-export function main (argv, io) {
+export async function main (argv, io) {
   let parsed
   try {
     parsed = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true })
@@ -112,7 +112,7 @@ export function main (argv, io) {
   let games = []
   if (query.ast !== undefined) {
     try {
-      games = resolveSources(query.ast.sources)
+      games = (await resolveSources(query.ast.sources))
         .map(game => ({ ...game, meta }))
     } catch (err) {
       return fail(io, err.message)

@@ -185,9 +185,10 @@ that applies:
 1. **pb.vision video** — the string matches `^[a-z0-9]{12}(:[0-9]+)?$`: a
    12-character video id with an optional **1-based** session number
    (`"83gyqyc10y8f"` is the first game; `"83gyqyc10y8f:2"` the second).
-   Insights live in the public production bucket, but fetching them by id
-   is **not yet supported** — it needs a version-discovery endpoint (plan
-   M8); until then the CLI reports this clearly.
+   The CLI asks the pb.vision service for the video's engine version, then
+   fetches its insights from the public production bucket; unknown,
+   unprocessed, still-processing, or failed videos — and sessions that
+   don't exist — are reported clearly.
 2. **file** — an existing file is one insights JSON. A local file is a
    whole game, so sessions do not apply. A file whose name happens to look
    like a video id must be written with a path prefix: `"./83gyqyc10y8f"`.

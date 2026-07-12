@@ -132,54 +132,62 @@ describe('CLI main()', () => {
   })
   afterEach(() => fs.rmSync(dir, { recursive: true, force: true }))
 
-  test('--help prints usage', () => {
-    expect(main(['--help'], io)).toBe(0)
+  test('--help prints usage', async () => {
+    expect(await main(['--help'], io)).toBe(0)
     expect(out[0]).toBe(USAGE)
   })
 
-  test('bad invocations fail with guidance', () => {
-    expect(main([], io)).toBe(1)
+  test('bad invocations fail with guidance', async () => {
+    expect(await main([], io)).toBe(1)
     expect(err[0]).toContain('expected a query')
-    expect(main(['q', 'extra'], io)).toBe(1)
+    expect(await main(['q', 'extra'], io)).toBe(1)
     expect(err[1]).toContain('expected a query')
-    expect(main(['--nope'], io)).toBe(1)
+    expect(await main(['--nope'], io)).toBe(1)
     expect(err[2]).toContain(USAGE) // unknown flags still print usage
-    expect(main([QUERY, '--insights', insightsFile], io)).toBe(1) // removed flag
+    expect(await main([QUERY, '--insights', insightsFile], io)).toBe(1) // removed flag
     expect(err[3]).toContain(USAGE)
-    expect(main([QUERY, '--out', 'edl', '--fps', '60'], io)).toBe(1) // removed flag
+    expect(await main([QUERY, '--out', 'edl', '--fps', '60'], io)).toBe(1) // removed flag
     expect(err[4]).toContain(USAGE)
   })
 
-  test('FROM names files, directories, and globs', () => {
-    expect(main([`FROM "${insightsFile}" WHERE shot.speed = 50`], io))
+  test('FROM names files, directories, and globs', async () => {
+    expect(await main([`FROM "${insightsFile}" WHERE shot.speed = 50`], io))
       .toBe(0)
     expect(JSON.parse(out[0]).selectedShots[0]).toMatchObject({
       vid: 'testvid00001', sessionIdx: 0, rallyIdx: 2, shotIdx: 2
     })
-    expect(main([`FROM "${dir}" WHERE shot.speed = 50`], io)).toBe(0)
+    expect(await main([`FROM "${dir}" WHERE shot.speed = 50`], io)).toBe(0)
     expect(JSON.parse(out[1]).selectedShots).toHaveLength(1)
-    expect(main([`FROM "${dir}/*.json" WHERE shot.speed = 50`], io)).toBe(0)
+    expect(await main([`FROM "${dir}/*.json" WHERE shot.speed = 50`], io)).toBe(0)
     expect(JSON.parse(out[2]).selectedShots).toHaveLength(1)
   })
 
-  test('source failures exit 1 with the offending string', () => {
-    expect(main(['FROM "missing.json" WHERE true'], io)).toBe(1)
+  test('source failures exit 1 with the offending string', async () => {
+    expect(await main(['FROM "missing.json" WHERE true'], io)).toBe(1)
     expect(err[0]).toContain('"missing.json" matched nothing')
-    expect(main(['FROM "83gyqyc10y8f" WHERE true'], io)).toBe(1)
-    expect(err[1]).toContain(
-      '"83gyqyc10y8f": fetching insights by video id is not yet supported')
+    // vid sources resolve via fetch; the resolver's message reaches stderr
+    const realFetch = global.fetch
+    global.fetch = async () => new Response(
+      '{"code":"NotFoundException","message":"Not found"}', { status: 404 })
+    try {
+      expect(await main(['FROM "83gyqyc10y8f" WHERE true'], io)).toBe(1)
+      expect(err[1]).toContain('"83gyqyc10y8f": cannot fetch this video\'s ' +
+        'insights — the pb.vision service says (HTTP 404): Not found')
+    } finally {
+      global.fetch = realFetch
+    }
   })
 
-  test('query errors print with positions and exit 1', () => {
-    expect(main([`FROM "${insightsFile}" WHERE shot.isVoley`], io)).toBe(1)
+  test('query errors print with positions and exit 1', async () => {
+    expect(await main([`FROM "${insightsFile}" WHERE shot.isVoley`], io)).toBe(1)
     expect(err[0]).toContain('PBQL_UNKNOWN_PROPERTY')
     expect(err[0]).toContain('did you mean "isVolley"?')
-    expect(main(['FROM @'], io)).toBe(1) // parse errors still report positions
+    expect(await main(['FROM @'], io)).toBe(1) // parse errors still report positions
     expect(err[1]).toBe('1:6 PBQL_LEX_ERROR: unrecognized text') // no hint suffix
   })
 
-  test('default JSON output; vid comes from the file basename', () => {
-    expect(main([QUERY], io)).toBe(0)
+  test('default JSON output; vid comes from the file basename', async () => {
+    expect(await main([QUERY], io)).toBe(0)
     const json = JSON.parse(out[0])
     expect(json.selectedShots).toHaveLength(1)
     expect(json.selectedShots[0]).toMatchObject({
@@ -187,50 +195,49 @@ describe('CLI main()', () => {
     })
   })
 
-  test('reads the query from a file; honors --me', () => {
+  test('reads the query from a file; honors --me', async () => {
     const queryFile = path.join(dir, 'q.pbql')
     fs.writeFileSync(queryFile,
       `FROM "${insightsFile}" WHERE hitter = me`)
-    expect(main(['-f', queryFile, '--me', '1'], io)).toBe(0)
+    expect(await main(['-f', queryFile, '--me', '1'], io)).toBe(0)
     const json = JSON.parse(out[0])
     expect(json.selectedShots).toHaveLength(2) // Bob's shots
     expect(json.selectedShots[0]).toMatchObject({ vid: 'testvid00001', sessionIdx: 0 })
   })
 
-  test('se output prints explore links carrying the query itself', () => {
-    // no insights are fetched or evaluated: vid sources work here even
-    // though resolving them is not yet supported
+  test('se output prints explore links carrying the query itself', async () => {
+    // no insights are fetched or evaluated: the links carry the query
     const q = 'FROM "83gyqyc10y8f:2", "games/*.json" WHERE shot.isVolley'
-    expect(main([q, '--out', 'se'], io)).toBe(0)
+    expect(await main([q, '--out', 'se'], io)).toBe(0)
     expect(out[0]).toBe('https://pb.vision/video/83gyqyc10y8f/1/explore?q=' +
       encodeURIComponent(q))
   })
 
-  test('se fails clearly without a video-id source or with a bad query', () => {
-    expect(main([QUERY, '--out', 'se'], io)).toBe(1) // file path source
+  test('se fails clearly without a video-id source or with a bad query', async () => {
+    expect(await main([QUERY, '--out', 'se'], io)).toBe(1) // file path source
     expect(err[0]).toContain('--out se needs a pb.vision video id')
-    expect(main(['FROM "83gyqyc10y8f" WHERE shot.isVoley', '--out', 'se'], io))
+    expect(await main(['FROM "83gyqyc10y8f" WHERE shot.isVoley', '--out', 'se'], io))
       .toBe(1) // se still validates the query
     expect(err[1]).toContain('PBQL_UNKNOWN_PROPERTY')
-    expect(main(['FROM "ab12cd34ef56:0" WHERE true', '--out', 'se'], io)).toBe(1)
+    expect(await main(['FROM "ab12cd34ef56:0" WHERE true', '--out', 'se'], io)).toBe(1)
     expect(err[2]).toContain('session numbers are 1-based')
   })
 
-  test('--host is no longer a flag; it fails as an unknown option', () => {
-    expect(main([QUERY, '--out', 'se',
+  test('--host is no longer a flag; it fails as an unknown option', async () => {
+    expect(await main([QUERY, '--out', 'se',
       '--host', 'https://pbv-dev.web.app'], io)).toBe(1)
     expect(err[0]).toContain("'--host'")
     expect(err[0]).toContain(USAGE)
   })
 
-  test('csv and edl outputs', () => {
-    expect(main([QUERY, '--out', 'csv'], io)).toBe(0)
+  test('csv and edl outputs', async () => {
+    expect(await main([QUERY, '--out', 'csv'], io)).toBe(0)
     expect(out[0]).toContain('vid,sessionIdx,rallyIdx')
-    expect(main([QUERY, '--out', 'edl'], io)).toBe(0)
+    expect(await main([QUERY, '--out', 'edl'], io)).toBe(0)
     expect(out[1]).toContain('FCM: NON-DROP FRAME')
   })
 
-  test('edl frame rate comes from the queried video, default 30', () => {
+  test('edl frame rate comes from the queried video, default 30', async () => {
     // a 0.5s lead-in makes the start frame differ by fps: 57.5s is frame
     // 30 of second 57 at 60fps but frame 15 at the 30fps fallback
     const query = file =>
@@ -239,19 +246,19 @@ describe('CLI main()', () => {
     insights.camera.fps = 60
     const sixty = path.join(dir, 'sixty.json')
     fs.writeFileSync(sixty, JSON.stringify(insights))
-    expect(main([query(sixty), '--out', 'edl'], io)).toBe(0)
+    expect(await main([query(sixty), '--out', 'edl'], io)).toBe(0)
     expect(out[0]).toContain('00:00:57:30 00:00:59:00')
     delete insights.camera
     const nocam = path.join(dir, 'nocam.json')
     fs.writeFileSync(nocam, JSON.stringify(insights))
-    expect(main([query(nocam), '--out', 'edl'], io)).toBe(0)
+    expect(await main([query(nocam), '--out', 'edl'], io)).toBe(0)
     expect(out[1]).toContain('00:00:57:15 00:00:59:00')
   })
 
-  test('edl of an empty selection emits just the header', () => {
+  test('edl of an empty selection emits just the header', async () => {
     const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'pbql-empty-'))
     try {
-      expect(main([`FROM "${empty}" WHERE true`, '--out', 'edl'], io))
+      expect(await main([`FROM "${empty}" WHERE true`, '--out', 'edl'], io))
         .toBe(0)
       expect(out[0]).toBe('TITLE: pbql selection\nFCM: NON-DROP FRAME\n\n')
     } finally {
@@ -259,29 +266,29 @@ describe('CLI main()', () => {
     }
   })
 
-  test('ffmpeg output requires --video-file and selected shots', () => {
-    expect(main([QUERY, '--out', 'ffmpeg'], io)).toBe(1)
+  test('ffmpeg output requires --video-file and selected shots', async () => {
+    expect(await main([QUERY, '--out', 'ffmpeg'], io)).toBe(1)
     expect(err[0]).toContain('--video-file')
-    expect(main([QUERY, '--out', 'ffmpeg',
+    expect(await main([QUERY, '--out', 'ffmpeg',
       '--video-file', 'game.mp4'], io)).toBe(0)
     expect(out[0]).toContain('ffmpeg -i game.mp4 -filter_complex')
-    expect(main([`FROM "${insightsFile}" WHERE false`,
+    expect(await main([`FROM "${insightsFile}" WHERE false`,
       '--out', 'ffmpeg', '--video-file', 'game.mp4'], io)).toBe(1)
     expect(err.at(-1)).toContain('nothing to cut')
   })
 
-  test('--fast is no longer a flag; it fails as an unknown option', () => {
-    expect(main([QUERY, '--out', 'ffmpeg',
+  test('--fast is no longer a flag; it fails as an unknown option', async () => {
+    expect(await main([QUERY, '--out', 'ffmpeg',
       '--video-file', 'game.mp4', '--fast'], io)).toBe(1)
     expect(err[0]).toContain("'--fast'")
     expect(err[0]).toContain(USAGE)
   })
 
-  test('unknown --out fails; unsupported insights warn on stderr', () => {
-    expect(main([QUERY, '--out', 'yaml'], io)).toBe(1)
+  test('unknown --out fails; unsupported insights warn on stderr', async () => {
+    expect(await main([QUERY, '--out', 'yaml'], io)).toBe(1)
     fs.writeFileSync(path.join(dir, 'old.json'),
       JSON.stringify({ version: '2.9.0', rallies: [] }))
-    expect(main([`FROM "${dir}" WHERE shot.speed = 50`], io)).toBe(0)
+    expect(await main([`FROM "${dir}" WHERE shot.speed = 50`], io)).toBe(0)
     expect(err.at(-1)).toContain('unsupported insights version')
     expect(JSON.parse(out.at(-1)).selectedShots).toHaveLength(1)
   })
