@@ -1,18 +1,5 @@
 import moo from 'moo'
 
-// ---- player references ------------------------------------------------
-// Two roots (the hitter of the current shot, and "me", the querying user)
-// each with the same relative forms. Keywords are case-insensitive but we
-// preserve the canonical spelling for the AST/printer.
-const relativePlayers = ['Teammate', 'Opponent1', 'Opponent2', 'OpponentLHS', 'OpponentRHS']
-function makePlayers (referencePlayer) {
-  const rootString = (referencePlayer === 'me') ? 'my' : (referencePlayer + 's')
-  return [referencePlayer, ...relativePlayers.map(x => rootString + x)]
-}
-export const PLAYER_NAMES = [...makePlayers('hitter'), ...makePlayers('me')]
-// lowercase form → canonical spelling (e.g. "myteammate" → "myTeammate")
-export const CANONICAL_PLAYERS = new Map(PLAYER_NAMES.map(p => [p.toLowerCase(), p]))
-
 // ---- keywords ----------------------------------------------------------
 // All keywords are case-insensitive. moo.keywords matches verbatim, so
 // we lowercase the identifier before the keyword lookup; token.text keeps
@@ -39,9 +26,9 @@ const KEYWORDS = {
   kw_shot: 'shot', // the shot object; also the singular duration unit alias
   kw_rally: 'rally', // the rally object; also the to-rally-boundary duration
   kw_game: 'game',
+  kw_me: 'me', // the querying user — the one player-root keyword
   unit_secs: ['secs', 'seconds', 'sec'], // aliases canonicalize to "secs"
-  unit_shots: 'shots',
-  player: PLAYER_NAMES.map(p => p.toLowerCase())
+  unit_shots: 'shots'
 }
 
 // A case-insensitive multi-word phrase: any whitespace between words. That

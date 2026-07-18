@@ -12,6 +12,35 @@ import {
   feetToKitchen, isOnFarSide, toPlayerFrame
 } from './geometry.js'
 
+// a game is singles when only two player slots are occupied
+function isSingles (game) {
+  return game.insights.session?.num_players === 2
+}
+
+// this team's partner: 0↔1, 2↔3
+const partnerOf = idx => idx ^ 1
+
+// the opposing pair, in player-id order, for a player on either team
+const opponentsOf = idx => idx < 2 ? [2, 3] : [0, 1]
+
+// LHS/RHS resolution: the opponent on `from`'s left/right at the moment of
+// `ctx`'s shot (left = smaller x in `from`'s own frame). In singles the lone
+// opponent answers both sides; unknown when any position is missing.
+function opponentBySide (ctx, from, wantLHS) {
+  const opponents = opponentsOf(from)
+  if (isSingles(ctx.game)) {
+    return opponents[0]
+  }
+  const rootPos = ctx.game.playerPosAtShot(ctx.shot, from)
+  const positions = opponents.map(idx => ctx.game.playerPosAtShot(ctx.shot, idx))
+  if (rootPos === undefined || positions.some(p => p === undefined)) {
+    return undefined
+  }
+  const [a, b] = positions.map(p => toPlayerFrame(p, isOnFarSide(rootPos)).x)
+  const [lhs, rhs] = a <= b ? opponents : [opponents[1], opponents[0]]
+  return wantLHS ? lhs : rhs
+}
+
 const SEQUENCES = ['serve', 'return', '3', '4', '5']
 
 function ballMovement (ctx) {
@@ -495,8 +524,9 @@ const GAME_PROPS = [
 ]
 
 // Player properties receive the player's index as well. Position-derived
-// properties are measured at the moment the current shot was hit, in the
-// player's own frame (their baseline is y=0).
+// properties are measured at the moment of the shot the player was reached
+// through (shot[k] for a `shot[k].hitter…` path, else the current shot), in
+// the player's own frame (their baseline is y=0).
 const PLAYER_PROPS = [
   {
     path: 'id',
@@ -660,6 +690,48 @@ const PLAYER_METHODS = [
   }
 ]
 
+// Relations navigate to another player. A relation's resolve(ctx, fromIdx)
+// returns the target player index (or undefined → unknown), where ctx pins
+// the shot moment that side-based relations (LHS/RHS) and player positions
+// are measured at. The engine walks a path's leading relation segments to
+// advance the player cursor before reading a scalar prop/method (see
+// evaluate.js and docs §5.4).
+const SHOT_RELATIONS = [
+  {
+    name: 'hitter',
+    doc: 'the player who hit this shot',
+    resolve: ctx => ctx.shot.player_id
+  }
+]
+
+const PLAYER_RELATIONS = [
+  {
+    name: 'teammate',
+    doc: 'this player\'s partner (unknown in singles)',
+    resolve: (ctx, from) => isSingles(ctx.game) ? undefined : partnerOf(from)
+  },
+  {
+    name: 'opponent1',
+    doc: 'the first opposing player, in player-id order (the lone opponent in singles)',
+    resolve: (ctx, from) => opponentsOf(from)[0]
+  },
+  {
+    name: 'opponent2',
+    doc: 'the second opposing player, in player-id order (unknown in singles)',
+    resolve: (ctx, from) => isSingles(ctx.game) ? undefined : opponentsOf(from)[1]
+  },
+  {
+    name: 'opponentLHS',
+    doc: 'the opponent on this player\'s left at the shot\'s moment (unknown if positions are missing)',
+    resolve: (ctx, from) => opponentBySide(ctx, from, true)
+  },
+  {
+    name: 'opponentRHS',
+    doc: 'the opponent on this player\'s right at the shot\'s moment (unknown if positions are missing)',
+    resolve: (ctx, from) => opponentBySide(ctx, from, false)
+  }
+]
+
 export function playerMatchesTag (ctx, playerIdx, pattern) {
   if (playerIdx === undefined) {
     return undefined
@@ -708,18 +780,35 @@ function globMatch (pattern, text) {
   return p === pattern.length
 }
 
-function toMaps (props, methods = []) {
+function toMaps (props, methods = [], relations = []) {
   return {
     props: new Map(props.map(p => [p.path, p])),
     methods: new Map(methods.map(m => [m.name, m])),
+    relations: new Map(relations.map(r => [r.name, r])),
     propList: props,
-    methodList: methods
+    methodList: methods,
+    relationList: relations
   }
 }
 
 export const REGISTRY = {
-  shot: toMaps(SHOT_PROPS, SHOT_METHODS),
+  shot: toMaps(SHOT_PROPS, SHOT_METHODS, SHOT_RELATIONS),
   rally: toMaps(RALLY_PROPS),
   game: toMaps(GAME_PROPS),
-  player: toMaps(PLAYER_PROPS, PLAYER_METHODS)
+  player: toMaps(PLAYER_PROPS, PLAYER_METHODS, PLAYER_RELATIONS)
+}
+
+// Walks the leading relation segments of a prop path, advancing the object
+// type across each player-transition (shot→hitter, player→teammate/…).
+// Returns the terminal object type and the remaining (scalar/method) path.
+// Shared by the analyzer and normalize(); the engine performs the same walk
+// while also resolving each relation to a concrete player (evaluate.js).
+export function walkRelations (base, path) {
+  let typeName = base.object
+  let i = 0
+  while (i < path.length && REGISTRY[typeName].relations.has(path[i])) {
+    typeName = 'player'
+    i++
+  }
+  return { typeName, rest: path.slice(i) }
 }

@@ -9,8 +9,7 @@ outputFile=src/lang/grammar-generated.js
 tmpFile="$(mktemp)"
 rm -f "$outputFile"
 yarn -s nearleyc src/lang/pbql.ne -o "$tmpFile"
-# the grammar header loads the lexer with require(); rewrite it as ESM imports
+# the grammar header loads the lexer with require(); rewrite it as an ESM import
 echo "import pbqlLexer from './lexer.js'" > "$outputFile"
-echo "import { CANONICAL_PLAYERS } from './lexer.js'" >> "$outputFile"
 grep -Fv 'require("./lexer.js")' "$tmpFile" >> "$outputFile"
 rm "$tmpFile"

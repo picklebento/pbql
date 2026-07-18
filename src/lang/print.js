@@ -59,7 +59,9 @@ export function printExpr (node) {
       return printLiteral(node.value)
     case 'prop': {
       const { base } = node
-      let text = base.object === 'player' ? base.name : base.object
+      // the only player root is `me`; hitter/teammate/opponent… are path
+      // segments, so player navigation prints straight from base + path
+      let text = base.object === 'player' ? base.root : base.object
       if ((base.object === 'shot' || base.object === 'rally') && base.offset !== 0) {
         text += `[${base.offset}]`
       }

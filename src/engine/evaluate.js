@@ -1,7 +1,6 @@
 // Expression evaluation with SQL/Kleene three-valued logic: missing
 // data evaluates to UNKNOWN, which propagates through comparisons and
 // arithmetic; WHERE keeps a shot only when the condition is exactly true.
-import { isOnFarSide, toPlayerFrame } from '../model/geometry.js'
 import { REGISTRY } from '../model/registry.js'
 
 export const UNKNOWN = Symbol('pbql.unknown')
@@ -12,57 +11,6 @@ const u = value =>
   value === undefined || (typeof value === 'number' && !Number.isFinite(value))
     ? UNKNOWN
     : value
-
-// which side is this team's partner: 0↔1, 2↔3
-const partnerOf = idx => idx ^ 1
-
-function isSingles (game) {
-  return game.insights.session?.num_players === 2
-}
-
-/**
- * Resolves a player reference (canonical spelling, e.g. "myOpponentLHS") to
- * a player index 0-3, or undefined when unresolvable (no "me" mapping,
- * singles teammate, unknown positions for LHS/RHS, …).
- */
-export function resolvePlayer (name, ctx) {
-  const root = name.startsWith('my') || name === 'me'
-    ? ctx.game.myPlayerIdx
-    : ctx.shot.player_id
-  if (root === undefined) {
-    return undefined
-  }
-  if (name === 'me' || name === 'hitter') {
-    return root
-  }
-  const rel = name.replace(/^(my|hitters)/, '')
-  if (rel === 'Teammate') {
-    return isSingles(ctx.game) ? undefined : partnerOf(root)
-  }
-  const opponents = root < 2 ? [2, 3] : [0, 1]
-  if (isSingles(ctx.game)) {
-    // the lone opponent answers Opponent1/LHS/RHS; there is no Opponent2
-    return rel === 'Opponent2' ? undefined : opponents[0]
-  }
-  if (rel === 'Opponent1') {
-    return opponents[0]
-  }
-  if (rel === 'Opponent2') {
-    return opponents[1]
-  }
-  // OpponentLHS/RHS: by side at the current shot, from the root player's
-  // point of view (left = smaller x in the root player's frame)
-  const rootPos = ctx.game.playerPosAtShot(ctx.shot, root)
-  const positions = opponents.map(idx => ctx.game.playerPosAtShot(ctx.shot, idx))
-  if (rootPos === undefined || rootPos === null ||
-      positions.some(p => p === undefined || p === null)) {
-    return undefined
-  }
-  const rootOnFarSide = isOnFarSide(rootPos)
-  const [a, b] = positions.map(p => toPlayerFrame(p, rootOnFarSide).x)
-  const [lhs, rhs] = a <= b ? opponents : [opponents[1], opponents[0]]
-  return rel === 'OpponentLHS' ? lhs : rhs
-}
 
 function comparable (a, b) {
   return typeof a === typeof b
@@ -94,14 +42,19 @@ export function asNumber (value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : UNKNOWN
 }
 
+// The typed path traversal (docs §5.4). Starting from the base — shot[k]/
+// rally[k]/game context, or the `me` player — walk the path: while the next
+// segment is a relation of the current type (shot→hitter; player→teammate/
+// opponent…), advance the player cursor in the appropriate shot context. The
+// remaining segments form a scalar-prop path or a method call in the current
+// type; zero remaining segments while the cursor is a player is an identity.
 function evalProp (node, ctx) {
   const { base } = node
-  let table = REGISTRY[base.object]
-  let subCtx = ctx
-  let playerIdx
-  if (base.object === 'player') {
-    table = REGISTRY.player
-    playerIdx = resolvePlayer(base.name, ctx)
+  let type = base.object
+  let subCtx = ctx // the shot/rally moment scalar props are measured at
+  let playerIdx // set once the cursor sits on a player
+  if (base.object === 'player') { // the `me` root
+    playerIdx = ctx.game.myPlayerIdx
     if (playerIdx === undefined) {
       return UNKNOWN
     }
@@ -120,8 +73,27 @@ function evalProp (node, ctx) {
     }
     subCtx = { ...ctx, rally: rallies[rallyIdx], rallyIdx }
   }
-  if (node.args) { // method call (analyzer guarantees it exists)
-    const method = table.methods.get(node.path[0])
+
+  // advance the cursor across leading relation segments
+  let i = 0
+  while (i < node.path.length) {
+    const relation = REGISTRY[type].relations.get(node.path[i])
+    if (relation === undefined) {
+      break
+    }
+    const nextIdx = relation.resolve(subCtx, playerIdx)
+    if (nextIdx === undefined) {
+      return UNKNOWN
+    }
+    playerIdx = nextIdx
+    type = 'player'
+    i++
+  }
+
+  const table = REGISTRY[type]
+  const rest = node.path.slice(i)
+  if (node.args) { // method call (analyzer guarantees it resolves)
+    const method = rest.length === 1 ? table.methods.get(rest[0]) : undefined
     if (method === undefined) {
       return UNKNOWN
     }
@@ -135,11 +107,11 @@ function evalProp (node, ctx) {
     }
     return u(method.apply(subCtx, playerIdx, args))
   }
-  if (node.path.length === 0) {
-    // a bare player reference is its identity (so hitter = me works)
-    return base.object === 'player' ? playerIdx : UNKNOWN
+  if (rest.length === 0) {
+    // a path ending AT a player is its identity (so shot.hitter = me works)
+    return type === 'player' ? playerIdx : UNKNOWN
   }
-  const prop = table.props.get(node.path.join('.'))
+  const prop = table.props.get(rest.join('.'))
   if (prop === undefined) {
     return UNKNOWN
   }

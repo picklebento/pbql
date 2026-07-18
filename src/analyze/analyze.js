@@ -2,7 +2,7 @@
 // unknown properties/methods/functions (with nearest-match suggestions),
 // arity problems, and obvious type mismatches. Also provides normalize(),
 // which rewrites accepted alias forms into canonical ones.
-import { REGISTRY } from '../model/registry.js'
+import { REGISTRY, walkRelations } from '../model/registry.js'
 
 // scalar functions usable anywhere; SELECT additionally allows aggregates
 export const SCALAR_FNS = new Map([
@@ -55,12 +55,9 @@ function suggest (name, candidates) {
     : undefined
 }
 
-function tableFor (base) {
-  return base.object === 'player' ? REGISTRY.player : REGISTRY[base.object]
-}
-
-// Rewrites the function spelling of a method — taggedWith(shot, "x") —
-// into its canonical method form: shot.taggedWith("x"). Returns a new tree.
+// Rewrites the function spelling of a method — taggedWith(shot, "x"),
+// taggedWith(shot.hitter, "x") — into its canonical method form:
+// shot.taggedWith("x"), shot.hitter.taggedWith("x"). Returns a new tree.
 export function normalize (node) {
   if (Array.isArray(node)) {
     return node.map(normalize)
@@ -70,15 +67,19 @@ export function normalize (node) {
   }
   if (node.kind === 'call' && node.args.length >= 1) {
     const [subject, ...rest] = node.args
-    if (subject.kind === 'prop' && subject.path.length === 0 && !subject.args &&
-        tableFor(subject.base).methods.has(node.name)) {
-      return normalize({
-        kind: 'prop',
-        base: subject.base,
-        path: [node.name],
-        args: rest,
-        loc: node.loc
-      })
+    // the subject must end AT an object/player (only relation segments, no
+    // scalar tail) whose terminal type owns the named method
+    if (subject.kind === 'prop' && !subject.args) {
+      const { typeName, rest: subRest } = walkRelations(subject.base, subject.path)
+      if (subRest.length === 0 && REGISTRY[typeName].methods.has(node.name)) {
+        return normalize({
+          kind: 'prop',
+          base: subject.base,
+          path: [...subject.path, node.name],
+          args: rest,
+          loc: node.loc
+        })
+      }
     }
   }
   const out = {}
@@ -94,10 +95,11 @@ function inferType (node) {
     case 'arith':
     case 'neg': return 'number'
     case 'prop': {
-      if (node.args || node.path.length === 0) {
-        return undefined // methods are boolean; bare players are identities
+      const { typeName, rest } = walkRelations(node.base, node.path)
+      if (node.args || rest.length === 0) {
+        return undefined // methods are boolean; player identities compare loosely
       }
-      return tableFor(node.base).props.get(node.path.join('.'))?.type
+      return REGISTRY[typeName].props.get(rest.join('.'))?.type
     }
     default: return undefined
   }
@@ -164,33 +166,37 @@ export function analyze (query) {
         return
       }
       case 'prop': {
-        const table = tableFor(node.base)
+        const { typeName, rest } = walkRelations(node.base, node.path)
+        const table = REGISTRY[typeName]
         if (node.args) {
           node.args.forEach(a => checkExpr(a, false))
-          const name = node.path[node.path.length - 1]
-          const method = node.path.length === 1 ? table.methods.get(name) : undefined
+          const name = rest[rest.length - 1]
+          const method = rest.length === 1 ? table.methods.get(name) : undefined
           if (method === undefined) {
             err(node, 'PBQL_UNKNOWN_METHOD',
-              `${node.base.object} has no method "${node.path.join('.')}"`,
-              hintFor(name, [...table.methods.keys()]))
+              `${typeName} has no method "${rest.join('.')}"`,
+              hintFor(name, [...table.methods.keys(), ...table.relations.keys()]))
           } else if (node.args.length !== method.args.length) {
             err(node, 'PBQL_BAD_ARITY',
               `${name}() takes ${method.args.length} argument(s), got ${node.args.length}`)
           }
           return
         }
-        if (node.path.length === 0) {
-          if (node.base.object !== 'player') {
+        if (rest.length === 0) {
+          // a path ending AT a player is an identity value; a bare shot/
+          // rally/game is not a value
+          if (typeName !== 'player') {
             err(node, 'PBQL_MISSING_PROPERTY',
-              `select a property of ${node.base.object} (e.g. ${node.base.object}.num)`)
+              `select a property of ${typeName} (e.g. ${typeName}.num)`)
           }
           return
         }
-        const key = node.path.join('.')
+        const key = rest.join('.')
         if (!table.props.has(key)) {
           err(node, 'PBQL_UNKNOWN_PROPERTY',
-            `${node.base.object === 'player' ? node.base.name : node.base.object} has no property "${key}"`,
-            hintFor(key, [...table.props.keys(), ...table.methods.keys()]))
+            `${typeName} has no property "${key}"`,
+            hintFor(key, [...table.props.keys(), ...table.methods.keys(),
+              ...table.relations.keys()]))
         }
         return
       }
