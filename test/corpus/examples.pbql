@@ -81,7 +81,7 @@ WHERE abs(shot.to.absX - shot.from.absX) > 15
 
 # Q: Serves hit from within 2 feet of the right sideline
 FROM "83gyqyc10y8f"
-WHERE shot.num = 1 AND shot.from.feetFromNearestSideline <= 2 AND shot.from.x > 10
+WHERE shot.num = 1 AND shot.from.feetToNearestSideline <= 2 AND shot.from.x > 10
 
 # Q: The shot right before every one of my resets, in the first ten rallies
 FROM "83gyqyc10y8f"
@@ -112,7 +112,7 @@ WHERE shot.num = 3 AND shot.type = "drop" AND shot.to.zone IN ("kitchen", "short
 
 # Q: Every ball hit at my left-side opponent's feet
 FROM "83gyqyc10y8f"
-WHERE hitter.team = me.team AND myOpponentLHS.distanceToNet <= 14 AND shot.to.zone != "out"
+WHERE hitter.team = me.team AND myOpponentLHS.feetToNet <= 14 AND shot.to.zone != "out"
 
 # Q: Balls launched exactly level or one degree downward
 FROM "83gyqyc10y8f"

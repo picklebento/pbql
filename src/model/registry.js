@@ -8,7 +8,7 @@
 // instance plus the shot being evaluated); player properties additionally
 // receive the player index.
 import {
-  distanceToNet, feetFromNearestBaseline, feetFromNearestSideline,
+  feetToNet, feetToNearestBaseline, feetToNearestSideline,
   feetToKitchen, isOnFarSide, toPlayerFrame
 } from './geometry.js'
 
@@ -36,25 +36,25 @@ function positionProps (prefix, doc, getPos, extras = []) {
   }
   const p = (path, type, unit, docStr, extract) =>
     ({ path: `${prefix}.${path}`, type, unit, doc: docStr, extract })
+  // height has no mirrored frame, so z and absZ share one accessor
+  const height = ctx => getPos(ctx)?.z
   return [
     p('x', 'number', 'feet', `${doc} — hitter-frame x (0-20, grows to the hitter's right)`,
       ctx => framed(ctx)?.x),
     p('y', 'number', 'feet', `${doc} — hitter-frame y (own baseline 0, net 22)`,
       ctx => framed(ctx)?.y),
-    p('z', 'number', 'feet', `${doc} — height above the ground`,
-      ctx => getPos(ctx)?.z),
+    p('z', 'number', 'feet', `${doc} — height above the ground`, height),
     p('absX', 'number', 'feet', `${doc} — raw court x (far-left corner origin)`,
       ctx => getPos(ctx)?.x),
     p('absY', 'number', 'feet', `${doc} — raw court y (far-left corner origin)`,
       ctx => getPos(ctx)?.y),
-    p('absZ', 'number', 'feet', `${doc} — height above the ground`,
-      ctx => getPos(ctx)?.z),
-    p('feetFromNearestSideline', 'number', 'feet', `${doc} — distance to the nearest sideline`,
-      ctx => mapPos(getPos(ctx), feetFromNearestSideline)),
-    p('feetFromNearestBaseline', 'number', 'feet', `${doc} — distance to the nearest baseline`,
-      ctx => mapPos(getPos(ctx), feetFromNearestBaseline)),
-    p('distanceToNet', 'number', 'feet', `${doc} — distance to the plane of the net`,
-      ctx => mapPos(getPos(ctx), distanceToNet)),
+    p('absZ', 'number', 'feet', `${doc} — height above the ground`, height),
+    p('feetToNearestSideline', 'number', 'feet', `${doc} — distance to the nearest sideline`,
+      ctx => mapPos(getPos(ctx), feetToNearestSideline)),
+    p('feetToNearestBaseline', 'number', 'feet', `${doc} — distance to the nearest baseline`,
+      ctx => mapPos(getPos(ctx), feetToNearestBaseline)),
+    p('feetToNet', 'number', 'feet', `${doc} — distance to the plane of the net`,
+      ctx => mapPos(getPos(ctx), feetToNet)),
     ...extras
   ]
 }
@@ -406,7 +406,7 @@ const RALLY_PROPS = [
   {
     path: 'winner',
     type: 'number',
-    unit: 'team (0|1)',
+    unit: '0|1',
     doc: 'which team won the rally',
     extract: ctx => ctx.rally.winning_team
   },
@@ -472,7 +472,7 @@ const GAME_PROPS = [
   {
     path: 'winner',
     type: 'number',
-    unit: 'team (0|1)',
+    unit: '0|1',
     doc: 'which team won the game (from the recorded outcome)',
     extract: ctx => {
       const outcome = ctx.game.insights.game_data?.game_outcome
@@ -573,27 +573,27 @@ const PLAYER_PROPS = [
     extract: (ctx, playerIdx) => mapPos(rawPlayerPos(ctx, playerIdx), feetToKitchen)
   },
   {
-    path: 'feetFromNearestSideline',
+    path: 'feetToNearestSideline',
     type: 'number',
     unit: 'feet',
     doc: 'distance to the nearest sideline at the current shot',
     extract: (ctx, playerIdx) =>
-      mapPos(rawPlayerPos(ctx, playerIdx), feetFromNearestSideline)
+      mapPos(rawPlayerPos(ctx, playerIdx), feetToNearestSideline)
   },
   {
-    path: 'feetFromNearestBaseline',
+    path: 'feetToNearestBaseline',
     type: 'number',
     unit: 'feet',
     doc: 'distance to the nearest baseline at the current shot',
     extract: (ctx, playerIdx) =>
-      mapPos(rawPlayerPos(ctx, playerIdx), feetFromNearestBaseline)
+      mapPos(rawPlayerPos(ctx, playerIdx), feetToNearestBaseline)
   },
   {
-    path: 'distanceToNet',
+    path: 'feetToNet',
     type: 'number',
     unit: 'feet',
     doc: 'distance to the net plane at the current shot',
-    extract: (ctx, playerIdx) => mapPos(rawPlayerPos(ctx, playerIdx), distanceToNet)
+    extract: (ctx, playerIdx) => mapPos(rawPlayerPos(ctx, playerIdx), feetToNet)
   }
 ]
 

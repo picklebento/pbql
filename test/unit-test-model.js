@@ -25,10 +25,10 @@ describe('geometry', () => {
   })
 
   test('distances to lines', () => {
-    expect(geometry.feetFromNearestSideline({ x: 3, y: 10 })).toBe(3)
-    expect(geometry.feetFromNearestSideline({ x: 18, y: 10 })).toBe(2)
-    expect(geometry.feetFromNearestBaseline({ x: 3, y: 40 })).toBe(4)
-    expect(geometry.distanceToNet({ x: 3, y: 15 })).toBe(7)
+    expect(geometry.feetToNearestSideline({ x: 3, y: 10 })).toBe(3)
+    expect(geometry.feetToNearestSideline({ x: 18, y: 10 })).toBe(2)
+    expect(geometry.feetToNearestBaseline({ x: 3, y: 40 })).toBe(4)
+    expect(geometry.feetToNet({ x: 3, y: 15 })).toBe(7)
   })
 
   test('feetToKitchen clamps to 0 at/inside the kitchen', () => {

@@ -32,17 +32,17 @@ export function toPlayerFrame (pos, onFarSide) {
 }
 
 // distance to the nearest sideline (identical in either frame)
-export function feetFromNearestSideline (pos) {
+export function feetToNearestSideline (pos) {
   return Math.min(pos.x, COURT.WIDTH - pos.x)
 }
 
 // distance to the nearest baseline (identical in either frame)
-export function feetFromNearestBaseline (pos) {
+export function feetToNearestBaseline (pos) {
   return Math.min(pos.y, COURT.LENGTH - pos.y)
 }
 
 // distance to the plane of the net
-export function distanceToNet (pos) {
+export function feetToNet (pos) {
   return Math.abs(pos.y - COURT.NET_Y)
 }
 

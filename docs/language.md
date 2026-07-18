@@ -147,7 +147,7 @@ game). Relative references derive from either root: `myTeammate`,
 
 Player properties include `id`, `team`, `name`, position (`pos.x`/`pos.y`
 in the player's own frame, `pos.absX`/`pos.absY` raw) at the current shot's
-hit time, and derived distances (`feetToKitchen`, `distanceToNet`, …).
+hit time, and derived distances (`feetToKitchen`, `feetToNet`, …).
 
 ### 5.5 Calling conventions
 

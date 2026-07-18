@@ -62,9 +62,9 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.from.absX` | number | feet | where the ball was struck — raw court x (far-left corner origin) |
 | `shot.from.absY` | number | feet | where the ball was struck — raw court y (far-left corner origin) |
 | `shot.from.absZ` | number | feet | where the ball was struck — height above the ground |
-| `shot.from.feetFromNearestSideline` | number | feet | where the ball was struck — distance to the nearest sideline |
-| `shot.from.feetFromNearestBaseline` | number | feet | where the ball was struck — distance to the nearest baseline |
-| `shot.from.distanceToNet` | number | feet | where the ball was struck — distance to the plane of the net |
+| `shot.from.feetToNearestSideline` | number | feet | where the ball was struck — distance to the nearest sideline |
+| `shot.from.feetToNearestBaseline` | number | feet | where the ball was struck — distance to the nearest baseline |
+| `shot.from.feetToNet` | number | feet | where the ball was struck — distance to the plane of the net |
 | `shot.from.zone` | string | "deep"|"mid"|"short"|"kitchen"|"net"|"out" | depth zone the ball was struck from |
 | `shot.to.x` | number | feet | where the ball's flight ended — hitter-frame x (0-20, grows to the hitter's right) |
 | `shot.to.y` | number | feet | where the ball's flight ended — hitter-frame y (own baseline 0, net 22) |
@@ -72,9 +72,9 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.to.absX` | number | feet | where the ball's flight ended — raw court x (far-left corner origin) |
 | `shot.to.absY` | number | feet | where the ball's flight ended — raw court y (far-left corner origin) |
 | `shot.to.absZ` | number | feet | where the ball's flight ended — height above the ground |
-| `shot.to.feetFromNearestSideline` | number | feet | where the ball's flight ended — distance to the nearest sideline |
-| `shot.to.feetFromNearestBaseline` | number | feet | where the ball's flight ended — distance to the nearest baseline |
-| `shot.to.distanceToNet` | number | feet | where the ball's flight ended — distance to the plane of the net |
+| `shot.to.feetToNearestSideline` | number | feet | where the ball's flight ended — distance to the nearest sideline |
+| `shot.to.feetToNearestBaseline` | number | feet | where the ball's flight ended — distance to the nearest baseline |
+| `shot.to.feetToNet` | number | feet | where the ball's flight ended — distance to the plane of the net |
 | `shot.to.zone` | string | "deep"|"mid"|"short"|"kitchen"|"net"|"out" | depth zone where the ball's flight ended |
 | `shot.peak.x` | number | feet | the highest point of the ball's flight — hitter-frame x (0-20, grows to the hitter's right) |
 | `shot.peak.y` | number | feet | the highest point of the ball's flight — hitter-frame y (own baseline 0, net 22) |
@@ -82,9 +82,9 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.peak.absX` | number | feet | the highest point of the ball's flight — raw court x (far-left corner origin) |
 | `shot.peak.absY` | number | feet | the highest point of the ball's flight — raw court y (far-left corner origin) |
 | `shot.peak.absZ` | number | feet | the highest point of the ball's flight — height above the ground |
-| `shot.peak.feetFromNearestSideline` | number | feet | the highest point of the ball's flight — distance to the nearest sideline |
-| `shot.peak.feetFromNearestBaseline` | number | feet | the highest point of the ball's flight — distance to the nearest baseline |
-| `shot.peak.distanceToNet` | number | feet | the highest point of the ball's flight — distance to the plane of the net |
+| `shot.peak.feetToNearestSideline` | number | feet | the highest point of the ball's flight — distance to the nearest sideline |
+| `shot.peak.feetToNearestBaseline` | number | feet | the highest point of the ball's flight — distance to the nearest baseline |
+| `shot.peak.feetToNet` | number | feet | the highest point of the ball's flight — distance to the plane of the net |
 | `shot.isHitOnSide(side)` | boolean | | whether the ball was struck on the given half ("left"|"right") of the court in the hitter's frame (right = x >= 10) |
 | `shot.taggedWith(pattern)` | boolean | | whether the hitter matches this name pattern (case-insensitive, * wildcard; untagged players match their default "Player N" name) or exact email |
 | `shot.inHighlight(kind)` | boolean | | whether the shot falls inside a highlight of the given kind ("atp", "erne", "hands_battle", "long_rally", "poach", "sequence") |
@@ -100,7 +100,7 @@ The rally containing the current shot. `rally[k]` addresses neighboring rallies 
 | `rally.startTime` | number | seconds | when in the video the rally starts |
 | `rally.endTime` | number | seconds | when in the video the rally ends |
 | `rally.duration` | number | seconds | how long the rally lasted |
-| `rally.winner` | number | team (0|1) | which team won the rally |
+| `rally.winner` | number | 0|1 | which team won the rally |
 | `rally.allPlayersReachedKitchen` | boolean |  | whether every player reached the kitchen line this rally |
 
 ## game
@@ -115,7 +115,7 @@ The session (one game of a possibly multi-game video) containing the shot.
 | `game.numRallies` | number |  | how many rallies the game contains |
 | `game.duration` | number | seconds | first rally start to last rally end |
 | `game.avgShots` | number |  | average shots per rally |
-| `game.winner` | number | team (0|1) | which team won the game (from the recorded outcome) |
+| `game.winner` | number | 0|1 | which team won the game (from the recorded outcome) |
 
 ## player
 
@@ -133,8 +133,8 @@ Any player reference: `hitter`, `me`, `myTeammate`, `myOpponent1/2`, `myOpponent
 | `player.pos.absX` | number | feet | raw court x at the current shot |
 | `player.pos.absY` | number | feet | raw court y at the current shot |
 | `player.feetToKitchen` | number | feet | distance still to cover to reach their kitchen line (0 at/inside it) |
-| `player.feetFromNearestSideline` | number | feet | distance to the nearest sideline at the current shot |
-| `player.feetFromNearestBaseline` | number | feet | distance to the nearest baseline at the current shot |
-| `player.distanceToNet` | number | feet | distance to the net plane at the current shot |
+| `player.feetToNearestSideline` | number | feet | distance to the nearest sideline at the current shot |
+| `player.feetToNearestBaseline` | number | feet | distance to the nearest baseline at the current shot |
+| `player.feetToNet` | number | feet | distance to the net plane at the current shot |
 | `player.taggedWith(pattern)` | boolean | | whether this player matches this name pattern (case-insensitive, * wildcard; untagged players match their default "Player N" name) or exact email |
 
