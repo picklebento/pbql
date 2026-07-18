@@ -24,6 +24,10 @@ function framesToTimecode (frames, fps) {
  * @param {number} [args.fps] frame rate (insights `camera.fps`; default 30)
  */
 export function toEDL ({ title, clips, fps = 30 }) {
+  // Frames are counted at the true rate, but NDF timecode digits roll over
+  // at a nominal integer base (29.97 → 30), like real CMX exporters — a
+  // fractional modulus would put non-integers in the frame field.
+  const timecodeFps = Math.round(fps)
   const lines = [`TITLE: ${title}`, 'FCM: NON-DROP FRAME', '']
   let recFrames = 0
   clips.forEach((clip, i) => {
@@ -32,8 +36,8 @@ export function toEDL ({ title, clips, fps = 30 }) {
     const lengthFrames = srcOut - srcIn
     const num = String(i + 1).padStart(3, '0')
     lines.push(`${num}  AX       V    C        ` +
-      `${framesToTimecode(srcIn, fps)} ${framesToTimecode(srcOut, fps)} ` +
-      `${framesToTimecode(recFrames, fps)} ${framesToTimecode(recFrames + lengthFrames, fps)}`)
+      `${framesToTimecode(srcIn, timecodeFps)} ${framesToTimecode(srcOut, timecodeFps)} ` +
+      `${framesToTimecode(recFrames, timecodeFps)} ${framesToTimecode(recFrames + lengthFrames, timecodeFps)}`)
     recFrames += lengthFrames
   })
   return lines.join('\n') + '\n'
