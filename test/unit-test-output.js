@@ -135,11 +135,9 @@ describe('ffmpegCommands', () => {
   const clips = [{ sMs: 500, eMs: 2000 }, { sMs: 10000, eMs: 12500 }]
 
   test('emits one frame-accurate filter_complex command', () => {
-    const { steps } = ffmpegCommands({
+    const { argv, command } = ffmpegCommands({
       input: 'in.mp4', clips, output: 'out.mp4'
     })
-    expect(steps).toHaveLength(1)
-    const [{ argv, command }] = steps
     expect(argv[0]).toBe('ffmpeg')
     const filter = argv[argv.indexOf('-filter_complex') + 1]
     expect(filter).toContain('[0:v]trim=start=0.500:end=2.000,setpts=PTS-STARTPTS[v0]')

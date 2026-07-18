@@ -17,8 +17,8 @@ export function toCommandString (argv) {
  * @param {string} args.input source video path
  * @param {Array<{sMs: number, eMs: number}>} args.clips ranges to keep
  * @param {string} args.output output video path
- * @returns {{steps: Array<{argv: Array<string>, command: string}>}} the
- *   commands to run (always exactly one step)
+ * @returns {{argv: Array<string>, command: string}} the command to run,
+ *   as an argv array and its shell-quoted string form
  */
 export function ffmpegCommands ({ input, clips, output }) {
   if (clips.length === 0) {
@@ -35,5 +35,5 @@ export function ffmpegCommands ({ input, clips, output }) {
   filters.push(`${pads.join('')}concat=n=${clips.length}:v=1:a=1[v][a]`)
   const argv = ['ffmpeg', '-i', input, '-filter_complex', filters.join(';'),
     '-map', '[v]', '-map', '[a]', output]
-  return { steps: [{ argv, command: toCommandString(argv) }] }
+  return { argv, command: toCommandString(argv) }
 }

@@ -173,12 +173,12 @@ export async function main (argv, io) {
       if (clips.length === 0) {
         return fail(io, 'no shots selected; nothing to cut')
       }
-      const { steps } = ffmpegCommands({
+      const { command } = ffmpegCommands({
         input: values['video-file'],
         clips,
         output: values['output-file']
       })
-      io.stdout(steps.map(s => s.command).join('\n'))
+      io.stdout(command)
       return 0
     }
     default:
