@@ -94,6 +94,21 @@ export async function main (argv, io) {
     return 0
   }
 
+  // numeric flags are validated up front, whatever the output format
+  const number = text => (text.trim() === '' ? NaN : Number(text))
+  const me = values.me === undefined ? undefined : number(values.me)
+  if (me !== undefined && (!Number.isInteger(me) || me < 0 || me > 3)) {
+    return fail(io, `--me must be an integer 0-3, got "${values.me}"\n${USAGE}`)
+  }
+  const numeric = {}
+  for (const flag of ['merge-gap', 'max-secs-beyond-rally']) {
+    numeric[flag] = number(values[flag])
+    if (!Number.isFinite(numeric[flag]) || numeric[flag] < 0) {
+      return fail(io, `--${flag} must be a finite non-negative number, ` +
+        `got "${values[flag]}"\n${USAGE}`)
+    }
+  }
+
   let text
   if (values.file !== undefined) {
     text = fs.readFileSync(values.file, 'utf8')
@@ -107,7 +122,7 @@ export async function main (argv, io) {
     return emitExploreLinks(text, io)
   }
 
-  const meta = values.me === undefined ? {} : { myPlayerIdx: parseInt(values.me) }
+  const meta = me === undefined ? {} : { myPlayerIdx: me }
   // resolve the query's FROM sources; parse errors are left for runQuery
   // below so they print with positions like any other
   const query = parse(text)
@@ -124,7 +139,7 @@ export async function main (argv, io) {
   const result = runQuery({
     text,
     games,
-    options: { maxSecsBeyondRally: parseFloat(values['max-secs-beyond-rally']) }
+    options: { maxSecsBeyondRally: numeric['max-secs-beyond-rally'] }
   })
   if (result.errors) {
     return reportErrors(io, result.errors)
@@ -133,7 +148,7 @@ export async function main (argv, io) {
     io.stderr(`warning: ${warning.vid}: ${warning.message}`)
   }
 
-  const mergeGapMs = parseFloat(values['merge-gap']) * 1000
+  const mergeGapMs = numeric['merge-gap'] * 1000
   switch (values.out) {
     case 'json':
       io.stdout(JSON.stringify(toSelectedShotsJSON(result), null, 2))

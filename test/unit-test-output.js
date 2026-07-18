@@ -96,6 +96,18 @@ describe('toEDL', () => {
       ].join('\n'))
   })
 
+  test('fractional rates keep integer frames via the nominal base', () => {
+    // 60.06s at 29.97fps is round(60.06 × 29.97) = 1800 frames, which is
+    // exactly 00:01:00:00 at the nominal 30-frame NDF base
+    const edl = toEDL({ title: 'T', clips: [{ sMs: 0, eMs: 60060 }], fps: 29.97 })
+    expect(edl).toContain(
+      '00:00:00:00 00:01:00:00 00:00:00:00 00:01:00:00')
+    // 1.001s → round(29.99997) = 30 frames → 00:00:01:00, never "00:00:00:30"
+    // with a fractional remainder in the frame field
+    expect(toEDL({ title: 'T', clips: [{ sMs: 0, eMs: 1001 }], fps: 29.97 }))
+      .toContain('00:00:00:00 00:00:01:00')
+  })
+
   test('handles hour-scale timecodes and defaults to 30fps', () => {
     const edl = toEDL({ title: 'T', clips: [{ sMs: 3661000, eMs: 3662000 }], fps: 30 })
     expect(edl).toContain('01:01:01:00 01:01:02:00')
@@ -159,6 +171,31 @@ describe('CLI main()', () => {
     expect(await main([QUERY, '--out', 'edl', '--fps', '60'], io)).toBe(1) // removed flag
     expect(err[4]).toContain(USAGE)
   })
+
+  test('--me must be an integer 0-3', async () => {
+    for (const bad of ['4', '-1', '1.5', 'zed', '', '2x']) {
+      err = []
+      expect(await main([QUERY, `--me=${bad}`], io)).toBe(1)
+      expect(err[0]).toContain('--me must be an integer 0-3')
+      expect(err[0]).toContain(USAGE)
+    }
+  })
+
+  test('--merge-gap and --max-secs-beyond-rally must be finite and >= 0',
+    async () => {
+      for (const flag of ['--merge-gap', '--max-secs-beyond-rally']) {
+        for (const bad of ['-0.5', 'fast', 'Infinity', 'NaN', ' ']) {
+          err = []
+          expect(await main([QUERY, `${flag}=${bad}`], io)).toBe(1)
+          expect(err[0]).toContain(
+            `${flag} must be a finite non-negative number`)
+          expect(err[0]).toContain(USAGE)
+        }
+      }
+      // valid values still work end-to-end
+      expect(await main([QUERY, '--merge-gap', '1',
+        '--max-secs-beyond-rally', '0'], io)).toBe(0)
+    })
 
   test('FROM names files, directories, and globs', async () => {
     expect(await main([`FROM "${insightsFile}" WHERE shot.speed = 50`], io))
