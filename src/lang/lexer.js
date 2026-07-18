@@ -44,12 +44,15 @@ const KEYWORDS = {
   player: PLAYER_NAMES.map(p => p.toLowerCase())
 }
 
-// a case-insensitive multi-word phrase: any whitespace between words
+// A case-insensitive multi-word phrase: any whitespace between words. That
+// whitespace can include newlines ("ORDER\nBY"), so the rule declares
+// lineBreaks — otherwise moo's line/col accounting drifts for every token
+// that follows.
 function ciPhrase (phrase) {
   const source = phrase.split(' ').map(word =>
     word.split('').map(ch => `[${ch.toUpperCase()}${ch.toLowerCase()}]`).join('')
   ).join('\\s+')
-  return new RegExp(source + '\\b')
+  return { match: new RegExp(source + '\\b'), lineBreaks: true }
 }
 
 const lexer = moo.compile({

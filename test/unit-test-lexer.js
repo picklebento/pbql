@@ -73,6 +73,17 @@ describe('pbql lexer', () => {
       .toEqual(['contextBefore', 'contextAfter', 'orderBy'])
   })
 
+  test('newlines inside multi-word keywords keep later positions right', () => {
+    const tokens = lex('ORDER\nBY x')
+    expect(tokens.map(t => t.type)).toEqual(['orderBy', 'identifier'])
+    expect(tokens[1].line).toBe(2) // "x" is on line 2, column 4
+    expect(tokens[1].col).toBe(4)
+    const multi = lex('CONTEXT\n\nBEFORE 2secs')
+    expect(multi.map(t => t.type)).toEqual(['contextBefore', 'int', 'unit_secs'])
+    expect(multi[1].line).toBe(3)
+    expect(multi[1].col).toBe(8)
+  })
+
   test('player references are case-insensitive', () => {
     const tokens = lex('me MYTEAMMATE myOpponentLHS hittersOpponent2 HITTER')
     expect(tokens.map(t => t.type)).toEqual(Array(5).fill('player'))
