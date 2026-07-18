@@ -674,13 +674,38 @@ export function playerMatchesTag (ctx, playerIdx, pattern) {
     return undefined
   }
   // name glob: case-insensitive, * matches any run of characters
-  const re = new RegExp(
-    `^${pattern.split('*').map(escapeRegExp).join('.*')}$`, 'i')
-  return re.test(name)
+  return globMatch(pattern.toLowerCase(), name.toLowerCase())
 }
 
-function escapeRegExp (s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+// Iterative two-pointer wildcard match (* = any run of characters). Linear
+// scanning with single-star backtracking — unlike a backtracking regex, a
+// pathological pattern (many stars) cannot blow up combinatorially.
+function globMatch (pattern, text) {
+  pattern = pattern.replace(/\*+/g, '*') // consecutive stars act as one
+  let p = 0 // position in pattern
+  let t = 0 // position in text
+  let starP = -1 // pattern position after the most recent *
+  let starT = 0 // text position that * was last stretched to
+  while (t < text.length) {
+    if (p < pattern.length && pattern[p] === '*') {
+      starP = ++p
+      starT = t
+    } else if (p < pattern.length && pattern[p] === text[t]) {
+      p++
+      t++
+    } else if (starP !== -1) {
+      // stretch the last * one character further and retry after it
+      p = starP
+      t = ++starT
+    } else {
+      return false
+    }
+  }
+  // trailing * matches the empty run
+  if (p < pattern.length && pattern[p] === '*') {
+    p++
+  }
+  return p === pattern.length
 }
 
 function toMaps (props, methods = []) {

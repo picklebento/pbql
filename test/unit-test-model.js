@@ -241,6 +241,26 @@ describe('registry', () => {
     expect(playerMatchesTag(ctx, 0, 'Player 1')).toBe(true)
   })
 
+  test('playerMatchesTag: glob edge cases', () => {
+    expect(playerMatchesTag(farShotCtx, 0, 'Alice*')).toBe(true) // trailing *
+    expect(playerMatchesTag(farShotCtx, 0, 'A**l*e')).toBe(true) // ** acts as *
+    expect(playerMatchesTag(farShotCtx, 0, '*')).toBe(true)
+    expect(playerMatchesTag(farShotCtx, 0, 'Ali')).toBe(false) // prefix only
+    expect(playerMatchesTag(farShotCtx, 0, 'Alicee')).toBe(false)
+    expect(playerMatchesTag(farShotCtx, 0, 'a*b')).toBe(false)
+  })
+
+  test('pathological wildcard patterns cannot blow up the matcher', () => {
+    // 20 stars against a 60-char near-match: a backtracking regex takes
+    // minutes on this input; the two-pointer scan must stay instant
+    const meta = { players: [{ name: 'a'.repeat(59) + 'b' }] }
+    const ctx = { game: new Game({ ...makeDoublesGame(), meta }) }
+    const pattern = '*a'.repeat(20)
+    const startMs = Date.now()
+    expect(playerMatchesTag(ctx, 0, pattern)).toBe(false)
+    expect(Date.now() - startMs).toBeLessThan(50)
+  })
+
   test('shot methods: inHighlight matches kind + rally + time window', () => {
     const inHighlight = REGISTRY.shot.methods.get('inHighlight')
     const smashCtx = { ...farShotCtx, shot: game.rallies[0].shots[2], shotIdx: 2 }
