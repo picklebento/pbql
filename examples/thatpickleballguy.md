@@ -16,7 +16,7 @@ How to use these:
 - Queries assume you are tagged in the game so `me` resolves (with the CLI,
   pass `--me N`).
 - Missing data evaluates to *unknown* and `WHERE` keeps only *true* — so a
-  filter like `shot.quality.selection < 0.4` quietly skips shots the AI
+  filter like `shot.quality.overall < 0.4` quietly skips shots the AI
   couldn't score. That is usually what you want.
 - Where a video teaches something shot data can't see directly (grip, swing
   mechanics, footwork), the query is an honest approximation and says so in
@@ -51,18 +51,6 @@ WHERE shot.hitter = me AND shot.sequence = "serve"
 ORDER BY shot.speed DESC
 ```
 
-### "[They Banned His Genius Serve, Now He Does This](https://www.youtube.com/watch?v=YyN9lJMwkh8)" (2025)
-
-Zane Navratil's post-ban weapon: heavy topspin, landed deep.
-
-> Find my topspin serves that landed deep, biggest spin first.
-
-```sql
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.spin.class = "topspin" AND shot.to.zone = "deep"
-ORDER BY shot.spin.rpm DESC
-```
-
 ### "[5 Ridiculous Pickleball Strategies That Just Might Work](https://www.youtube.com/watch?v=ZZFeoUK54Fk)" (2024)
 
 > Did anyone actually try a lob serve? Show any serve that arced way up,
@@ -87,17 +75,6 @@ a serve whose apex was 12+ feet up.
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.sequence = "return" AND shot.to.zone = "deep"
 CONTEXT AFTER 1 shot
-```
-
-### "[They say don't slice returns. This pro does anyway.](https://www.youtube.com/watch?v=V6fIzk2Sv1c)" (2026)
-
-> Pull up my slice returns as a spreadsheet — where did they land and how
-> low did they cross the net?
-
-```sql
-SELECT shot.hitTime AS "when (s)", shot.to.zone AS "depth", shot.heightOverNet AS "ft over net"
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "return" AND shot.verticalType = "slice"
 ```
 
 ### "[5 Advanced Pickleball Return Strategies to Outplay Your Opponents](https://www.youtube.com/watch?v=p27Gq140UjQ)" (2024)
@@ -157,10 +134,10 @@ LIMIT 15
 ### "[3rd Shot Drop vs. Drive: Which to use and WHEN?](https://www.youtube.com/watch?v=LnTAm5pAr9c)" (2023)
 
 > Give me a spreadsheet of every third shot I hit — drop or drive — with
-> choice and execution scores so I can compare.
+> execution scores and outcomes so I can compare.
 
 ```sql
-SELECT shot.type, shot.speed AS "mph", shot.quality.selection AS "choice", shot.quality.execution AS "execution", shot.winnerType
+SELECT shot.type, shot.speed AS "mph", shot.quality.execution AS "execution", shot.winnerType
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.sequence = "3"
 ORDER BY shot.hitTime
@@ -189,15 +166,6 @@ ORDER BY shot.quality.overall
 LIMIT 20
 ```
 
-### "[This Lesson Fixed My Twoey Dink (10 minute masterclass)](https://www.youtube.com/watch?v=-QCXqwrkVDw)" (2025)
-
-> Find every two-handed dink I hit.
-
-```sql
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.type = "dink" AND shot.strokeType = "two-handed"
-```
-
 ### "[7 Reasons You Pop Up Dinks (and how to avoid them)](https://www.youtube.com/watch?v=RhcsiwavxYg)" (2024)
 
 > Show my dinks that popped up — and what the other team did about it.
@@ -221,30 +189,6 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.type = "dink" AND rally.allPlayersReachedKitchen AND rally.numShots >= 12
 ```
 
-### "[On Court w/ #1 IN THE WORLD Anna-Leigh: Kitchen Strategy Masterclass](https://www.youtube.com/watch?v=gVjhEVqMqQY)" (2025)
-
-> Find the moments an opponent's dink sat up and I made them pay.
-
-```sql
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot[-1].errors.deadDink = "exploited"
-CONTEXT BEFORE 2 shots
-```
-
-*Note:* teams alternate shots within a rally, so `shot[-1]` is always the
-other side's ball; `"exploited"` means the dead dink was capitalized on —
-and since I hit the next shot, the exploiting was mine.
-
-### "[These 5 Kitchen Mistakes Are Ruining Your Game](https://www.youtube.com/watch?v=g1i3GJ5Q8pk)" (2024)
-
-> Find my dinks that sat up asking to be attacked.
-
-```sql
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND exists(shot.errors.deadDink)
-CONTEXT AFTER 1 shot
-```
-
 ## Speedups, flicks & hands battles
 
 ### "[Everything to Know About \"Speed Ups\" In Pickleball](https://www.youtube.com/watch?v=pCXvUVoBcVo)" (2023)
@@ -256,16 +200,6 @@ CONTEXT AFTER 1 shot
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.isSpeedup
 CONTEXT AFTER 2 shots
-```
-
-### "[How Pros Decide WHEN to Attack | (Ft. Augie Ge)](https://www.youtube.com/watch?v=Sp_TIdRFOAA)" (2025)
-
-> Show the speedups where I attacked the wrong ball.
-
-```sql
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.isSpeedup AND shot.quality.selection < 0.4
-CONTEXT AFTER 1 shot
 ```
 
 ### "[On-Court Masterclass with World #5 Tyra Black (Her hands are crazy!!)](https://www.youtube.com/watch?v=FW2uIWvKR5U)" (2025)
@@ -294,11 +228,12 @@ WHERE shot.inHighlight("hands_battle")
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeType = "forehand" AND shot.from.z < 3
+WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeSide = "right" AND shot.from.z < 3
 ```
 
 *Note:* there is no "flick" classification; contact below net height
-(~3 ft) on a speedup is the closest signature.
+(~3 ft) on a speedup is the closest signature. `shot.strokeSide = "right"`
+is the forehand side for right-handers.
 
 ### "[How to Hit a Backhand Flick (The Ultimate Guide)](https://www.youtube.com/watch?v=6kRQFJomZwg)" (2026)
 
@@ -306,8 +241,10 @@ WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeType = "forehand" AND s
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeType = "backhand" AND shot.from.z < 3
+WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeSide = "left" AND shot.from.z < 3
 ```
+
+*Note:* `shot.strokeSide = "left"` is the backhand side for right-handers.
 
 ## Resets & defense
 
@@ -358,16 +295,6 @@ WHERE shot.hitter = me AND shot.type = "smash"
 CONTEXT BEFORE 1 shot
 ```
 
-### "[The Ultimate Two-Handed Backhand Lesson (w/ Roscoe Bellamy)](https://www.youtube.com/watch?v=7dPD2ejpHdI)" (2026) / "[2024's Best New Shot: The Two-Handed Backhand](https://www.youtube.com/watch?v=KrxcKFjvuV8)" (2023)
-
-> Collect all my two-handed backhands, best first, to review my form.
-
-```sql
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.strokeType = "two-handed"
-ORDER BY shot.quality.overall DESC
-```
-
 ## Poaching & ernes
 
 ### "[Why Men's and Women's Doubles Look So Different](https://www.youtube.com/watch?v=xxIpb_FWwQs)" (2026)
@@ -406,19 +333,6 @@ CONTEXT BEFORE 2 shots
 FROM "83gyqyc10y8f"
 WHERE shot.hitter.team != me.team AND shot.direction = "DownTheMiddle" AND shot.to.zone != "out"
 ```
-
-### "[7 Strategies To Use When Playing Pickleball With A LEFTY (ft. Tanner Tomassi)](https://www.youtube.com/watch?v=Pj3oSDspTH4)" (2024)
-
-> Spot the lefty: show opponent forehands struck on the left side of the
-> body.
-
-```sql
-FROM "83gyqyc10y8f"
-WHERE shot.hitter.team != me.team AND shot.strokeType = "forehand" AND shot.strokeSide = "left"
-```
-
-*Note:* handedness isn't recorded directly; a forehand released on the left
-side of the body means a left-hander (or a very committed run-around).
 
 ### "[The #1 Doubles Strategy New Players Must Know](https://www.youtube.com/watch?v=29MxOqfOVhU)" (2024)
 
@@ -505,18 +419,6 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.errors.faults.net
 ```
 
-### "[3 Pickleball Kitchen Rules New Players Get Wrong](https://www.youtube.com/watch?v=C84yW8a5uUE)" (2025)
-
-> Did I ever volley while in the kitchen? Show the violations.
-
-```sql
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.errors.faults.kitchen
-```
-
-*Note:* of the kitchen rules the video covers, the volley-in-the-kitchen
-fault is the one shot data detects.
-
 ### "[STOP Hitting Out Balls (3 On-Court Drills)](https://www.youtube.com/watch?v=XD0U6uirhA8)" (2024) / "[How to Let Out Balls Go in Pickleball](https://www.youtube.com/watch?v=Kf1gUaLvOkM)" (2024)
 
 > Catch me playing balls that were sailing out.
@@ -552,9 +454,193 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.type = "drop"
 ```
 
+## Waiting on the data
+
+The entries below are written against fields the CV / data-extraction
+pipeline doesn't populate yet (some are being removed from PBQL until the
+data exists). The lessons are still worth targeting, so they stay here with
+their citations for the day the data arrives. Each keeps its original query
+in a plain (non-validated) block, notes what's missing, and — where an
+honest approximation exists — offers a runnable **Meanwhile:** query.
+
+### "[They Banned His Genius Serve, Now He Does This](https://www.youtube.com/watch?v=YyN9lJMwkh8)" (2025)
+
+Zane Navratil's post-ban weapon: heavy topspin, landed deep.
+
+> Find my topspin serves that landed deep, biggest spin first.
+
+```
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.spin.class = "topspin" AND shot.to.zone = "deep"
+ORDER BY shot.spin.rpm DESC
+```
+
+**Missing:** ball spin (`shot.spin.*`) — spin estimation was removed from
+the pipeline in 2024 and needs new CV output.
+
+**Meanwhile:** rank your deep serves by speed instead — see the deep-serve
+query under "3 Tricks to immediately Add SERIOUS POWER to Your Serve" in
+the Serves section.
+
+### "[They say don't slice returns. This pro does anyway.](https://www.youtube.com/watch?v=V6fIzk2Sv1c)" (2026)
+
+> Pull up my slice returns as a spreadsheet — where did they land and how
+> low did they cross the net?
+
+```
+SELECT shot.hitTime AS "when (s)", shot.to.zone AS "depth", shot.heightOverNet AS "ft over net"
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.sequence = "return" AND shot.verticalType = "slice"
+```
+
+**Missing:** spin-based stroke classes — in practice `shot.verticalType`
+only ever reports strike height (`dig`/`neutral`/`overhead`); `"slice"` was
+never implemented.
+
+### "[This Lesson Fixed My Twoey Dink (10 minute masterclass)](https://www.youtube.com/watch?v=-QCXqwrkVDw)" (2025)
+
+> Find every two-handed dink I hit.
+
+```
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.type = "dink" AND shot.strokeType = "two-handed"
+```
+
+**Missing:** two-handed detection — today `shot.strokeType` is a pure
+mirror of `shot.strokeSide` that assumes a right-handed player.
+
+**Meanwhile:** review your backhand-side dinks — the twoey candidates —
+assuming you're right-handed (backhand side):
+
+```sql
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.type = "dink" AND shot.strokeSide = "left"
+```
+
+### "[On Court w/ #1 IN THE WORLD Anna-Leigh: Kitchen Strategy Masterclass](https://www.youtube.com/watch?v=gVjhEVqMqQY)" (2025)
+
+> Find the moments an opponent's dink sat up and I made them pay.
+
+```
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot[-1].errors.deadDink = "exploited"
+CONTEXT BEFORE 2 shots
+```
+
+**Missing:** dead-dink detection (`shot.errors.deadDink`) — the pipeline
+doesn't produce it yet.
+
+**Meanwhile:** pop-up detection is real (`"potential"`|`"exploited"`, where
+`"exploited"` means the next side volleyed it) — catch the opponent dinks
+that sat up and were punished:
+
+```sql
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot[-1].type = "dink" AND shot[-1].errors.popup = "exploited"
+CONTEXT BEFORE 2 shots
+```
+
+*Note:* teams alternate shots within a rally, so `shot[-1]` is always the
+other side's ball — and since I hit the next shot, the exploiting was mine.
+
+### "[These 5 Kitchen Mistakes Are Ruining Your Game](https://www.youtube.com/watch?v=g1i3GJ5Q8pk)" (2024)
+
+> Find my dinks that sat up asking to be attacked.
+
+```
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND exists(shot.errors.deadDink)
+CONTEXT AFTER 1 shot
+```
+
+**Missing:** dead-dink detection (`shot.errors.deadDink`) — the pipeline
+doesn't produce it yet.
+
+**Meanwhile:** the popup-based equivalent — which coincides with the "7
+Reasons You Pop Up Dinks" query in the Dinking & kitchen play section:
+
+```sql
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.type = "dink" AND exists(shot.errors.popup)
+CONTEXT AFTER 1 shot
+```
+
+### "[How Pros Decide WHEN to Attack | (Ft. Augie Ge)](https://www.youtube.com/watch?v=Sp_TIdRFOAA)" (2025)
+
+> Show the speedups where I attacked the wrong ball.
+
+```
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.isSpeedup AND shot.quality.selection < 0.4
+CONTEXT AFTER 1 shot
+```
+
+**Missing:** shot-selection scoring — `shot.quality.selection` is a stub
+that only ever emits a constant 0 on fault shots.
+
+**Meanwhile:** an honest reframing — the speedups I *executed* badly, not
+necessarily the wrong balls to attack:
+
+```sql
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.isSpeedup AND shot.quality.overall < 0.4
+CONTEXT AFTER 1 shot
+```
+
+### "[The Ultimate Two-Handed Backhand Lesson (w/ Roscoe Bellamy)](https://www.youtube.com/watch?v=7dPD2ejpHdI)" (2026) / "[2024's Best New Shot: The Two-Handed Backhand](https://www.youtube.com/watch?v=KrxcKFjvuV8)" (2023)
+
+> Collect all my two-handed backhands, best first, to review my form.
+
+```
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.strokeType = "two-handed"
+ORDER BY shot.quality.overall DESC
+```
+
+**Missing:** two-handed detection — today `shot.strokeType` is a pure
+mirror of `shot.strokeSide` that assumes a right-handed player.
+
+**Meanwhile:** review your backhand-side strokes, assuming you're
+right-handed (backhand side):
+
+```sql
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.strokeSide = "left"
+ORDER BY shot.quality.overall DESC
+```
+
+### "[7 Strategies To Use When Playing Pickleball With A LEFTY (ft. Tanner Tomassi)](https://www.youtube.com/watch?v=Pj3oSDspTH4)" (2024)
+
+> Spot the lefty: show opponent forehands struck on the left side of the
+> body.
+
+```
+FROM "83gyqyc10y8f"
+WHERE shot.hitter.team != me.team AND shot.strokeType = "forehand" AND shot.strokeSide = "left"
+```
+
+**Missing:** real handedness — `shot.strokeType` currently mirrors
+`shot.strokeSide` assuming right-handedness, which makes a left-side
+forehand logically impossible to record. Handedness is planned for the
+augmented insights.
+
+### "[3 Pickleball Kitchen Rules New Players Get Wrong](https://www.youtube.com/watch?v=C84yW8a5uUE)" (2025)
+
+> Did I ever volley while in the kitchen? Show the violations.
+
+```
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.errors.faults.kitchen
+```
+
+**Missing:** kitchen-fault detection — `shot.errors.faults.kitchen` is a
+hardcoded stub that is always false.
+
 ---
 
 *Surveyed: 116 long-form uploads on the channel (July 2023 – July 2026),
 77 with full dates/descriptions; 45 entries above cover 49 instructional
-videos. Every query validates against the PBQL analyzer and is printed in
-canonical `print(parse(q).ast)` form.*
+videos — 36 runnable today, 9 waiting on data. Every runnable query
+validates against the PBQL analyzer and is printed in canonical
+`print(parse(q).ast)` form; the plain-block originals under "Waiting on the
+data" are exempt until their fields ship.*
