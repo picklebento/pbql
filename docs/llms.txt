@@ -38,6 +38,14 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   speed by player) in one query; with it, every SELECT/ORDER BY item
   must be an aggregate or one of the group keys, and CONTEXT is not
   allowed.
+- WHERE is required in every query — there is no bare FROM … GROUP BY.
+  When no filter is wanted (count everything, a whole-game breakdown),
+  write WHERE true.
+- Counting or aggregating RALLIES ("how many rallies …", average rally
+  length): every shot in a rally carries the rally's properties, so an
+  unanchored count()/avg() counts shots, not rallies. Anchor with
+  shot.num = 1 (exactly one shot per rally) alongside the rally
+  condition so each rally counts once.
 - Computing rates ("how often do we win when …"): if the condition can
   hold at most once per rally (who served, a shot.num = 1 fact), one
   query is enough — avg(<condition>) is a rate (booleans average as
