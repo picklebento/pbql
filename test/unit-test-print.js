@@ -137,6 +137,21 @@ describe('print()', () => {
     ].join('\n'))
   })
 
+  test('extreme magnitudes print decimal-only, never e-notation', () => {
+    // 0.0000001 is 1e-7: String() would render it with an exponent, which
+    // the lexer cannot reparse — the printer must expand it
+    expect(roundtrips('FROM "f" WHERE shot.speed = 0.0000001'))
+      .toContain('shot.speed = 0.0000001')
+    expect(roundtrips('FROM "f" WHERE shot.speed = 0.00000015'))
+      .toContain('shot.speed = 0.00000015')
+    expect(roundtrips('FROM "f" WHERE shot.speed = 1000000000000000000000000'))
+      .toContain('shot.speed = 1000000000000000000000000')
+    expect(roundtrips('FROM "f" WHERE true CONTEXT BEFORE 0.0000001secs'))
+      .toContain('CONTEXT BEFORE 0.0000001secs')
+    expect(roundtrips('FROM "f" WHERE true LIMIT 1000000000000000000000000'))
+      .toContain('LIMIT 1000000000000000000000000')
+  })
+
   test('prints sources as quoted strings, escapes included (D17)', () => {
     expect(roundtrips('from "abc123def456:2" , "games/*.json" WHERE true'))
       .toBe('FROM "abc123def456:2", "games/*.json"\nWHERE true')

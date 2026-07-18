@@ -20,8 +20,31 @@ function quote (s) {
   return `"${s.replace(/[\\"]/g, ch => '\\' + ch)}"`
 }
 
+// Numbers print in plain decimal notation: JS renders extreme magnitudes
+// with an exponent ("1e-7", "1e+21"), which the lexer does not admit, so
+// the exponent is expanded. The expansion is exact (same digits, shifted
+// point), so the printed text reparses to the identical value.
+function printNumber (value) {
+  const text = String(value)
+  const match = text.match(/^(-?)(\d)(?:\.(\d+))?e([+-]\d+)$/)
+  if (match === null) {
+    return text
+  }
+  // JS e-notation always has a single integer digit, so the point lands
+  // either at/below zero or at/past the end of the digits
+  const [, sign, whole, frac = '', exp] = match
+  const digits = whole + frac
+  const point = whole.length + Number(exp)
+  return point <= 0
+    ? `${sign}0.${'0'.repeat(-point)}${digits}`
+    : sign + digits + '0'.repeat(point - digits.length)
+}
+
 function printLiteral (value) {
-  return typeof value === 'string' ? quote(value) : String(value)
+  if (typeof value === 'string') {
+    return quote(value)
+  }
+  return typeof value === 'number' ? printNumber(value) : String(value)
 }
 
 // prints child, parenthesized when its binding is too loose for the slot
@@ -81,8 +104,8 @@ export function printDuration (dur) {
     return 'rally'
   }
   return dur.unit === 'secs'
-    ? `${dur.value}${dur.value === 1 ? 'sec' : 'secs'}`
-    : `${dur.value} ${dur.value === 1 ? 'shot' : 'shots'}`
+    ? `${printNumber(dur.value)}${dur.value === 1 ? 'sec' : 'secs'}`
+    : `${printNumber(dur.value)} ${dur.value === 1 ? 'shot' : 'shots'}`
 }
 
 function isZeroDur (dur) {
@@ -112,7 +135,7 @@ export function print (query) {
     ).join(', '))
   }
   if (query.limit !== null) {
-    lines.push(`LIMIT ${query.limit}`)
+    lines.push(`LIMIT ${printNumber(query.limit)}`)
   }
   return lines.join('\n')
 }

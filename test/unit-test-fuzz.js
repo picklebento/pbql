@@ -13,7 +13,11 @@ const playerArb = fc.constantFrom('me', 'hitter', 'myTeammate', 'hittersOpponent
 const stringArb = fc.stringMatching(/^[ -~]{0,12}$/) // printable ascii incl. " and \
 const numberArb = fc.oneof(
   fc.integer({ min: 0, max: 9999 }),
-  fc.integer({ min: 0, max: 99999 }).map(n => n / 10))
+  fc.integer({ min: 0, max: 99999 }).map(n => n / 10),
+  // extreme magnitudes (1e-7, 1e21, denormals, …) must print decimal-only:
+  // the lexer has no e-notation, so the printer expands the exponent
+  fc.double({ min: 0, noNaN: true, noDefaultInfinity: true })
+    .map(n => (Object.is(n, -0) ? 0 : n)))
 const literalArb = fc.oneof(numberArb, stringArb, fc.boolean())
 
 const baseArb = fc.oneof(
