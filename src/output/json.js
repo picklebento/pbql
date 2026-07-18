@@ -1,7 +1,6 @@
 // The machine-facing result shape: what the Shot Explorer consumes
 // (0-based indices; explore URLs take rallyNum.shotNum = idx + 1).
-
-const secs = ms => Math.round(ms) / 1000
+import { msToSecs as secs } from './secs.js'
 
 export function toSelectedShotsJSON (result) {
   const out = {

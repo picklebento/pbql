@@ -1,5 +1,6 @@
 // RFC 4180 CSV output: SELECT projections, or a fixed useful column set
 // for plain shot lists.
+import { msToSecs } from './secs.js'
 
 function cell (value) {
   if (value === null || value === undefined) {
@@ -34,9 +35,9 @@ export function shotsToCSV (result) {
     shot.sessionIdx,
     shot.rallyIdx,
     shot.shotIdx,
-    shot.hitMs === undefined ? null : shot.hitMs / 1000,
-    shot.window.sMs / 1000,
-    shot.window.eMs / 1000
+    shot.hitMs === undefined ? null : msToSecs(shot.hitMs),
+    msToSecs(shot.window.sMs),
+    msToSecs(shot.window.eMs)
   ])
   return toCSV(columns, rows)
 }

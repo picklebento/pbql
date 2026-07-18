@@ -49,6 +49,21 @@ describe('toSelectedShotsJSON', () => {
     expect(toSelectedShotsJSON(result).selectedShots[0].hitTimeSecs).toBeNull()
     expect(shotsToCSV(result)).toContain('a,0,0,0,,0.001,0.002')
   })
+
+  test('JSON and CSV print identical seconds for the same result', () => {
+    // a fractional-ms window edge (58000 − 500.5 = 57499.5ms) makes the
+    // shared round-to-ms rule observable in both outputs
+    const result = runQuery({
+      text: 'FROM "x" WHERE shot.speed = 50 CONTEXT BEFORE 0.5005secs',
+      games: [makeDoublesGame()]
+    })
+    const [json] = toSelectedShotsJSON(result).selectedShots
+    const row = shotsToCSV(result).trim().split('\r\n')[1].split(',')
+    expect(json.window.sSecs).toBe(57.5) // not the unrounded 57.4995
+    expect(Number(row[4])).toBe(json.hitTimeSecs)
+    expect(Number(row[5])).toBe(json.window.sSecs)
+    expect(Number(row[6])).toBe(json.window.eSecs)
+  })
 })
 
 describe('CSV', () => {
