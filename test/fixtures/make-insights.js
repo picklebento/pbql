@@ -52,10 +52,12 @@ export function makeDoublesInsights () {
       kitchen_rallies: 1
     },
     player_data: [
-      { team: 0, name: 'Player 1', avatar_id: 0 },
-      { team: 0, name: 'Player 2', avatar_id: 1 },
+      // handedness is host-augmented data (absent in bucket insights): p0
+      // right, p1 left, p2 untagged, p3 "both" (unusable for strokeType)
+      { team: 0, name: 'Player 1', avatar_id: 0, handedness: 'right' },
+      { team: 0, name: 'Player 2', avatar_id: 1, handedness: 'left' },
       { team: 1, name: 'Player 3', avatar_id: 2 },
-      { team: 1, name: 'Player 4', avatar_id: 3 }
+      { team: 1, name: 'Player 4', avatar_id: 3, handedness: 'both' }
     ],
     highlights: [
       { kind: 'atp', s: 17500, e: 19500, score: 0.9, rally_idx: 0, shot_idx: 2 }
@@ -81,8 +83,7 @@ export function makeDoublesInsights () {
             speed: 35,
             playerPositions: [{ x: 5, y: 2 }, { x: 15, y: 3 }, { x: 4, y: 41 }, { x: 16, y: 42 }],
             extra: {
-              stroke_type: 'forehand',
-              stroke_side: 'right',
+              stroke_side: 'right', // p0 is right-handed: a forehand
               vertical_type: 'neutral',
               is_volley: false
             }
@@ -98,7 +99,8 @@ export function makeDoublesInsights () {
             type: 'drop',
             quality: { overall: 0.9, execution: 0.9, selection: 0.9 },
             playerPositions: [{ x: 5, y: 10 }, { x: 15, y: 8 }, { x: 15, y: 40 }, { x: 16, y: 41 }],
-            extra: { is_volley: false, errors: { popup: 'potential' } }
+            // p2's handedness is untagged, so this stroke has no strokeType
+            extra: { is_volley: false, stroke_side: 'left', errors: { popup: 'potential' } }
           }),
           makeShot({ // p1 smashes a volley winner
             playerId: 1,
@@ -115,6 +117,7 @@ export function makeDoublesInsights () {
             playerPositions: [{ x: 5, y: 14 }, { x: 14, y: 12 }, { x: 6, y: 26 }, { x: 15, y: 28 }],
             extra: {
               is_volley: true,
+              stroke_side: 'right', // p1 is left-handed: a backhand
               winner_type: 'clean',
               shooter_movement_from_last_shot: { x: 1, y: 2 }
             }
@@ -197,7 +200,8 @@ export function makeDoublesInsights () {
             speed: 50,
             quality: { overall: 0.85 },
             playerPositions: [{ x: 5, y: 15 }, { x: 14, y: 15 }, { x: 7, y: 27 }, { x: 15, y: 29 }],
-            extra: { is_volley: true, is_speedup: true }
+            // p1 is left-handed, so a left-side stroke is a forehand
+            extra: { is_volley: true, is_speedup: true, stroke_side: 'left' }
           }),
           makeShot({ // p3 sails it long
             playerId: 3,
@@ -210,6 +214,7 @@ export function makeDoublesInsights () {
             quality: { overall: 0.3 },
             playerPositions: [{ x: 6, y: 16 }, { x: 14, y: 16 }, { x: 8, y: 28 }, { x: 15, y: 30 }],
             extra: {
+              stroke_side: 'right', // p3's handedness is "both": no strokeType
               errors: {
                 unforced: true,
                 faults: {

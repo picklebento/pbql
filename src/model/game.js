@@ -124,6 +124,16 @@ export class Game {
     return this.insights.player_data?.[playerIdx]?.team ?? (playerIdx < 2 ? 0 : 1)
   }
 
+  // The player's handedness, when the serving layer augmented the insights
+  // with it (player_data[p].handedness, from the tagged user's profile;
+  // bucket-fetched insights lack it). Only "left"/"right" are usable —
+  // "both" (or anything unexpected) cannot orient a stroke, so it reads as
+  // unknown here.
+  playerHandedness (playerIdx) {
+    const handedness = this.insights.player_data?.[playerIdx]?.handedness
+    return handedness === 'left' || handedness === 'right' ? handedness : undefined
+  }
+
   get myPlayerIdx () {
     return this.meta.myPlayerIdx
   }

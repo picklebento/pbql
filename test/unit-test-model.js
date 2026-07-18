@@ -87,6 +87,16 @@ describe('Game', () => {
     expect(untagged.myPlayerIdx).toBeUndefined()
   })
 
+  test('playerHandedness only surfaces the orientable values', () => {
+    expect(game.playerHandedness(0)).toBe('right')
+    expect(game.playerHandedness(1)).toBe('left')
+    expect(game.playerHandedness(2)).toBeUndefined() // untagged
+    expect(game.playerHandedness(3)).toBeUndefined() // "both" cannot orient
+    const bare = makeDoublesGame()
+    delete bare.insights.player_data // bucket-shaped insights
+    expect(new Game(bare).playerHandedness(0)).toBeUndefined()
+  })
+
   test('team falls back to the id convention without player_data', () => {
     const bare = makeDoublesGame()
     delete bare.insights.player_data

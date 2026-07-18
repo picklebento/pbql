@@ -48,6 +48,19 @@ describe('runQuery: filtering', () => {
     expect(shotsWhere('exists(shot.winnerType)')).toEqual([[0, 2]])
   })
 
+  test('strokeType: strokeSide oriented by host-augmented handedness', () => {
+    // by hand: (0,0) right-handed p0 strikes right-side → forehand; (2,2)
+    // LEFT-handed p1 strikes left-side → forehand (the mirror image)
+    expect(shotsWhere('shot.strokeType = "forehand"')).toEqual([[0, 0], [2, 2]])
+    // (0,2) left-handed p1 strikes right-side → backhand (the inversion)
+    expect(shotsWhere('shot.strokeType = "backhand"')).toEqual([[0, 2]])
+    // every other stroke is unknown: p2's handedness is untagged ((0,1)
+    // has a known strokeSide), p3's is "both" ((2,3) likewise), and the
+    // rest have no strokeSide at all
+    expect(shotsWhere('exists(shot.strokeType)'))
+      .toEqual([[0, 0], [0, 2], [2, 2]])
+  })
+
   test('methods: taggedWith by name glob and by email; inHighlight', () => {
     expect(shotsWhere('shot.taggedWith("bob")')).toEqual([[0, 2], [2, 2]])
     expect(shotsWhere('shot.taggedWith("ALICE@EXAMPLE.COM")'))

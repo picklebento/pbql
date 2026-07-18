@@ -397,3 +397,10 @@ names, the identity of `me`, and tag data come from the host application —
 they are not part of the insights file. Queries never reference raw insights
 field names; the [data dictionary](data-dictionary.md) is the complete
 public surface.
+
+Some fields exist only when the **serving layer augments** the insights
+with user data (they are absent from files fetched straight from the
+public bucket): `player_data[p].handedness` (`"left"|"right"|"both"`, from
+the tagged player's profile) powers `shot.strokeType` — without it (or for
+`"both"`-handed players) `strokeType` is unknown, while `shot.strokeSide`
+always works.

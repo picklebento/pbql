@@ -27,6 +27,7 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.type` | string | "drive"|"drop"|"dink"|"lob"|"smash"|"atp"|"erne" | the shot classification; never set on serves and returns (use shot.sequence for those) |
 | `shot.verticalType` | string | "dig"|"neutral"|"overhead" | the vertical character of the stroke, from strike height (dig ≤ 2.5ft, overhead ≥ 6ft) |
 | `shot.strokeSide` | string | "left"|"right" | which side of the body the stroke was made on |
+| `shot.strokeType` | string | "forehand"|"backhand" | forehand or backhand, from strokeSide and the hitter's handedness; needs host-augmented insights carrying handedness (strokeSide always works) |
 | `shot.winnerType` | string | "clean"|"forced_fault" | how this shot won the rally; unknown if it did not |
 | `shot.quality.overall` | number | 0-1 | combined execution + selection quality (1 is best) |
 | `shot.quality.execution` | number | 0-1 | how well the shot was executed |

@@ -171,6 +171,23 @@ const SHOT_PROPS = [
     extract: ctx => ctx.shot.stroke_side
   },
   {
+    path: 'strokeType',
+    type: 'string',
+    unit: '"forehand"|"backhand"',
+    doc: 'forehand or backhand, from strokeSide and the hitter\'s handedness; ' +
+      'needs host-augmented insights carrying handedness (strokeSide always works)',
+    extract: ctx => {
+      const handedness = ctx.game.playerHandedness(ctx.shot.player_id)
+      const side = ctx.shot.stroke_side
+      if (handedness === undefined || (side !== 'left' && side !== 'right')) {
+        return undefined
+      }
+      // a stroke on the paddle-hand side is a forehand; the mirror image
+      // holds for left-handers
+      return side === handedness ? 'forehand' : 'backhand'
+    }
+  },
+  {
     path: 'winnerType',
     type: 'string',
     unit: '"clean"|"forced_fault"',
