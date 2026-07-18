@@ -54,7 +54,7 @@ export class Game {
    * @param {number} args.sessionIdx 0-based session index within the video
    * @param {object} args.insights parsed insights JSON (augmented names)
    * @param {object} [args.meta] host-supplied metadata: players
-   *   ([{uid, name}] by player index), myPlayerIdx, videoName
+   *   ([{uid?, name?, addr?}] by player index), myPlayerIdx, videoName
    */
   constructor ({ vid, sessionIdx, insights, meta }) {
     validateInsights(insights)
@@ -92,7 +92,7 @@ export class Game {
     return shot.resulting_ball_movement?.trajectory?.end?.ms ?? shot.end_ms
   }
 
-  // the hitter's court position when the shot was hit, or undefined
+  // the given player's court position when the shot was hit, or undefined
   playerPosAtShot (shot, playerIdx) {
     return shot.player_positions?.[playerIdx] ?? undefined
   }
