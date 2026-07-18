@@ -2,8 +2,10 @@
 // its own flight, widened by the CONTEXT clauses. Durations are
 // positive magnitudes; `shots` units never cross rally boundaries (and add
 // the covered shots to the result as context); `secs` units may spill past
-// the rally by at most maxSecsBeyondRally (default 3s); min = cap,
-// max = floor, with identical meaning for BEFORE and AFTER.
+// the rally by at most maxSecsBeyondRally (default 3s), hard-bounded by the
+// video itself (start always; end when the insights carry the video
+// duration); min = cap, max = floor, with identical meaning for BEFORE and
+// AFTER.
 
 export const DEFAULT_MAX_SECS_BEYOND_RALLY = 3
 
@@ -46,14 +48,16 @@ function resolve (dur, side, ctx, opts) {
       contextShots: contextRange(ctx, shotIdx + 1, target + 1)
     }
   }
-  // secs: may spill past the rally's bounds by at most the allowed amount
-  // (the video start is a hard floor; its end is not in the insights data)
+  // secs: may spill past the rally's bounds by at most the allowed amount.
+  // The video's start is a hard floor; its end is a hard ceiling too when
+  // host-augmented insights carry the video duration (bucket files don't,
+  // so windows may then extend into the trailing footage)
   const spillMs = opts.maxSecsBeyondRally * 1000
   if (before) {
     const limit = Math.max(0, rally.start_ms - spillMs)
     return { edgeMs: Math.max(limit, anchor - dur.value * 1000), contextShots: [] }
   }
-  const limit = rally.end_ms + spillMs
+  const limit = Math.min(rally.end_ms + spillMs, game.videoDurationMs ?? Infinity)
   return { edgeMs: Math.min(limit, anchor + dur.value * 1000), contextShots: [] }
 }
 

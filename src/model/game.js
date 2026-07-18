@@ -137,4 +137,13 @@ export class Game {
   get myPlayerIdx () {
     return this.meta.myPlayerIdx
   }
+
+  // The whole video's duration (ms), when the serving layer augmented the
+  // insights with it (session.videoDurationMs; bucket-fetched insights
+  // lack it). Values that cannot bound a video (non-numbers, non-finite,
+  // <= 0) read as absent.
+  get videoDurationMs () {
+    const ms = this.insights.session?.videoDurationMs
+    return typeof ms === 'number' && Number.isFinite(ms) && ms > 0 ? ms : undefined
+  }
 }

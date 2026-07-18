@@ -474,6 +474,14 @@ const GAME_PROPS = [
     }
   },
   {
+    path: 'videoDuration',
+    type: 'number',
+    unit: 'seconds',
+    doc: 'the whole video\'s duration; only present in host-augmented insights ' +
+      '(bucket files lack it)',
+    extract: ctx => msToSecs(ctx.game.videoDurationMs)
+  },
+  {
     path: 'avgShots',
     type: 'number',
     doc: 'average shots per rally',

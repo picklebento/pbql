@@ -236,6 +236,25 @@ describe('runQuery: context windows', () => {
     })
   })
 
+  test('secs windows clamp at the video\'s end when its duration is known', () => {
+    const game = makeDoublesGame()
+    game.insights.session.videoDurationMs = 65500 // just past rally 3's end
+    const windowOf = text => runQuery({ text, games: [game] }).shots[0].window
+    const query = 'FROM "x" WHERE shot.speed = 50 ' +
+      'CONTEXT BEFORE 12secs CONTEXT AFTER 12secs'
+    // absent the duration this window would be 47000..67000 (±3s spill)
+    expect(windowOf(query)).toEqual({ sMs: 47000, eMs: 65500 })
+    // windows that never reach the video's end are untouched
+    expect(windowOf('FROM "x" WHERE shot.speed = 50 CONTEXT AFTER 1secs').eMs)
+      .toBe(60000)
+    // a duration no video can have (zero, negative, non-numeric, infinite)
+    // reads as absent: the plain spill limit applies
+    for (const bogus of [0, -1, '65500', JSON.parse('1e400')]) {
+      game.insights.session.videoDurationMs = bogus
+      expect(windowOf(query).eMs).toBe(67000)
+    }
+  })
+
   test('a rally-opening shot has nothing before it', () => {
     const result = runQuery({
       text: 'FROM "x" WHERE rally.num = 3 AND shot.num = 1 CONTEXT BEFORE 2 shots',

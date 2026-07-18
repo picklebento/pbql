@@ -110,6 +110,7 @@ The session (one game of a possibly multi-game video) containing the shot.
 | `game.startTime` | number | seconds | when in the video the game starts (its first rally's start) |
 | `game.endTime` | number | seconds | when in the video the game ends (its last rally's end) |
 | `game.duration` | number | seconds | first rally start to last rally end (game.startTime + game.duration = game.endTime) |
+| `game.videoDuration` | number | seconds | the whole video's duration; only present in host-augmented insights (bucket files lack it) |
 | `game.avgShots` | number |  | average shots per rally |
 | `game.winner` | number | 0|1 | which team won the game (from the recorded outcome) |
 

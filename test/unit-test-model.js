@@ -201,6 +201,15 @@ describe('registry', () => {
     }
   })
 
+  test('game.videoDuration surfaces only from augmented insights', () => {
+    const props = REGISTRY.game.props
+    expect(props.get('videoDuration').extract(farShotCtx)).toBeUndefined()
+    const augmented = makeDoublesGame()
+    augmented.insights.session.videoDurationMs = 65500
+    expect(props.get('videoDuration')
+      .extract({ ...farShotCtx, game: new Game(augmented) })).toBe(65.5)
+  })
+
   test('player properties measure at the current shot', () => {
     const props = REGISTRY.player.props
     // at rally 0 shot 1, p1 stands at (15, 8): near side, x' = 20 − 15 = 5
