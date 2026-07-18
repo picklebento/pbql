@@ -115,7 +115,7 @@ export function makeDoublesInsights () {
             playerPositions: [{ x: 5, y: 14 }, { x: 14, y: 12 }, { x: 6, y: 26 }, { x: 15, y: 28 }],
             extra: {
               is_volley: true,
-              winner_type: 'winner',
+              winner_type: 'clean',
               shooter_movement_from_last_shot: { x: 1, y: 2 }
             }
           })
@@ -275,7 +275,7 @@ export function makeSinglesInsights () {
           to: { x: 4, y: 8, z: 0.3 },
           isFinal: true,
           playerPositions: [{ x: 6, y: 6 }, null, { x: 12, y: 40 }, null],
-          extra: { winner_type: 'winner' }
+          extra: { winner_type: 'clean' }
         })
       ]
     }]

@@ -245,7 +245,8 @@ describe('coverage edges', () => {
 
   test('abs of real numbers; IN with an unknown lhs', () => {
     expect(shotsWhere('abs(0 - shot.speed) = 50')).toEqual([[2, 2]])
-    expect(shotsWhere('shot.winnerType IN ("winner", "ace")')).toEqual([[0, 2]])
+    // (0,2) is "clean"; "forced_fault" is valid but matches nothing
+    expect(shotsWhere('shot.winnerType IN ("clean", "forced_fault")')).toEqual([[0, 2]])
   })
 
   test('IN is an OR chain: unknown comparisons propagate per Kleene', () => {
@@ -418,10 +419,10 @@ describe('runQuery: GROUP BY', () => {
 
   test('a null key sorts last even when its group forms first', () => {
     // winnerType is unknown on (0,0) — the first group created — and
-    // known ("winner") only on (0,2)
+    // known ("clean") only on (0,2)
     const result = group(
       'SELECT shot.winnerType, count() FROM "x" WHERE true GROUP BY shot.winnerType')
-    expect(result.rows).toEqual([['winner', 1], [null, 8]])
+    expect(result.rows).toEqual([['clean', 1], [null, 8]])
   })
 
   test('boolean aggregates are per-group rates', () => {
