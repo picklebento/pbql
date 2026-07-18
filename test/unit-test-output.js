@@ -57,6 +57,16 @@ describe('CSV', () => {
       .toBe('a,"b,c"\r\n"x,y","he said ""hi"""\r\n,3\r\n')
   })
 
+  test('neutralizes spreadsheet formula injection in string cells', () => {
+    // OWASP CSV-injection guard: leading = + - @ tab CR get a quote prefix
+    expect(toCSV(['name'], [
+      ['=SUM(A1)'], ['+1'], ['-owned'], ['@cmd'], ['\ttab'], ['\rcr'], ['safe']
+    ])).toBe('name\r\n\'=SUM(A1)\r\n\'+1\r\n\'-owned\r\n\'@cmd\r\n' +
+      '\'\ttab\r\n"\'\rcr"\r\nsafe\r\n')
+    // only strings are guarded: negative numbers export cleanly
+    expect(toCSV(['n'], [[-4], [-0.5]])).toBe('n\r\n-4\r\n-0.5\r\n')
+  })
+
   test('shot lists get fixed columns; SELECT results use theirs', () => {
     const result = runQuery({
       text: 'FROM "x" WHERE shot.speed = 50',

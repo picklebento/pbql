@@ -5,7 +5,13 @@ function cell (value) {
   if (value === null || value === undefined) {
     return ''
   }
-  const text = String(value)
+  let text = String(value)
+  // OWASP CSV-injection guard: a leading = + - @ tab or CR would make a
+  // spreadsheet treat the cell as a formula, so prefix string values with
+  // a single quote. Numbers (e.g. -4) are not affected.
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) {
+    text = `'${text}`
+  }
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
 

@@ -268,6 +268,11 @@ purely cosmetic — units never change). Aggregates `count()`, `sum(x)`,
 aggregate and non-aggregate expressions is a validation error (there is no
 GROUP BY). Aggregates skip unknown inputs; `count()` counts selected shots.
 
+In CSV output, a string cell that starts with `=`, `+`, `-`, `@`, tab, or
+carriage return is prefixed with a single quote so spreadsheets import it
+as text instead of executing it as a formula (the OWASP CSV-injection
+guard). Numeric cells (e.g. `-4`) are unaffected.
+
 ## 7. Errors
 
 Every phase (lex, parse, validate, evaluate) reports
