@@ -114,9 +114,17 @@ describe('parse()', () => {
     expect(parseWhere('rally[2].winner = 1').lhs.base).toEqual({ object: 'rally', offset: 2 })
   })
 
-  test('player references canonicalize their spelling', () => {
-    expect(parseWhere('MYTEAMMATE.name = "x"').lhs.base)
-      .toEqual({ object: 'player', name: 'myTeammate' })
+  test('the me root parses as a player base; relations are path segments', () => {
+    const me = parseWhere('me.teammate.name = "x"').lhs
+    expect(me.base).toEqual({ object: 'player', root: 'me' })
+    expect(me.path).toEqual(['teammate', 'name'])
+    // shot.hitter navigates from a shot base; hitter is just a path segment
+    const hitter = parseWhere('shot[1].hitter.opponentLHS = me').lhs
+    expect(hitter.base).toEqual({ object: 'shot', offset: 1 })
+    expect(hitter.path).toEqual(['hitter', 'opponentLHS'])
+    // a path ending AT a player carries an empty scalar tail (identity)
+    expect(parseWhere('shot.hitter = me').lhs)
+      .toMatchObject({ base: { object: 'shot', offset: 0 }, path: ['hitter'] })
   })
 
   test('keywords are legal path segments', () => {
@@ -137,7 +145,7 @@ describe('parse()', () => {
   })
 
   test('string escapes resolve in the AST', () => {
-    expect(parseWhere('hitter.name = "say \\"hi\\" \\\\"').rhs.value)
+    expect(parseWhere('shot.hitter.name = "say \\"hi\\" \\\\"').rhs.value)
       .toBe('say "hi" \\')
   })
 
@@ -165,7 +173,7 @@ describe('parse()', () => {
 
   test('SELECT items take optional AS labels', () => {
     const { ast } = parse(
-      'SELECT shot.speed AS "mph", hitter.name FROM "f" WHERE true')
+      'SELECT shot.speed AS "mph", shot.hitter.name FROM "f" WHERE true')
     expect(ast.select.map(s => s.label)).toEqual(['mph', null])
   })
 

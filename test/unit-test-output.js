@@ -268,7 +268,7 @@ describe('CLI main()', () => {
   test('reads the query from a file; honors --me', async () => {
     const queryFile = path.join(dir, 'q.pbql')
     fs.writeFileSync(queryFile,
-      `FROM "${insightsFile}" WHERE hitter = me`)
+      `FROM "${insightsFile}" WHERE shot.hitter = me`)
     expect(await main(['-f', queryFile, '--me', '1'], io)).toBe(0)
     const json = JSON.parse(out[0])
     expect(json.selectedShots).toHaveLength(2) // Bob's shots

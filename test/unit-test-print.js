@@ -160,8 +160,17 @@ describe('print()', () => {
   })
 
   test('omits default (zero) context and prints escaped strings', () => {
-    const printed = roundtrips('FROM "f" WHERE hitter.name = "say \\"hi\\" \\\\"')
-    expect(printed).toBe('FROM "f"\nWHERE hitter.name = "say \\"hi\\" \\\\"')
+    const printed = roundtrips('FROM "f" WHERE shot.hitter.name = "say \\"hi\\" \\\\"')
+    expect(printed).toBe('FROM "f"\nWHERE shot.hitter.name = "say \\"hi\\" \\\\"')
+  })
+
+  test('prints player navigation: me root and shot.hitter relations', () => {
+    expect(roundtrips('FROM "f" WHERE me.teammate.feetToKitchen <= 2'))
+      .toContain('me.teammate.feetToKitchen <= 2')
+    expect(roundtrips('FROM "f" WHERE shot[1].hitter.opponentLHS.name = "Joe"'))
+      .toContain('shot[1].hitter.opponentLHS.name = "Joe"')
+    expect(roundtrips('FROM "f" WHERE shot.hitter = me'))
+      .toContain('shot.hitter = me')
   })
 })
 

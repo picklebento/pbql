@@ -84,9 +84,12 @@ describe('pbql lexer', () => {
     expect(multi[1].col).toBe(8)
   })
 
-  test('player references are case-insensitive', () => {
-    const tokens = lex('me MYTEAMMATE myOpponentLHS hittersOpponent2 HITTER')
-    expect(tokens.map(t => t.type)).toEqual(Array(5).fill('player'))
+  test('me is the sole player-root keyword; relations lex as identifiers', () => {
+    // "me" is case-insensitive like every keyword; hitter/teammate/opponent*
+    // are ordinary identifiers reached by path navigation
+    const tokens = lex('me ME hitter teammate opponentLHS opponent2')
+    expect(tokens.map(t => t.type)).toEqual([
+      'kw_me', 'kw_me', 'identifier', 'identifier', 'identifier', 'identifier'])
   })
 
   test('punctuation', () => {

@@ -31,12 +31,12 @@ describe('runQuery: filtering', () => {
     expect(shotsWhere('shot.num IN (1)')).toEqual([[0, 0], [1, 0], [2, 0]])
   })
 
-  test('hitter = me resolves through host metadata', () => {
-    expect(shotsWhere('hitter = me')).toEqual([[0, 0], [1, 1], [2, 0]])
+  test('shot.hitter = me resolves through host metadata', () => {
+    expect(shotsWhere('shot.hitter = me')).toEqual([[0, 0], [1, 1], [2, 0]])
     // without a "me" mapping the predicate is unknown, never true
     const game = makeDoublesGame()
     game.meta = {}
-    const result = runQuery({ text: 'FROM "x" WHERE hitter = me', games: [game] })
+    const result = runQuery({ text: 'FROM "x" WHERE shot.hitter = me', games: [game] })
     expect(result.shots).toEqual([])
   })
 
@@ -56,23 +56,29 @@ describe('runQuery: filtering', () => {
     expect(shotsWhere('shot.inHighlight("atp")')).toEqual([[0, 2]])
   })
 
-  test('relative player references, including LHS/RHS by position', () => {
+  test('player navigation, including LHS/RHS by position', () => {
     // near-side hitter p1 at (14,12): his frame reflects x, so p3
     // (abs x=15 → x'=5) is his LHS and p2 (abs x=6 → x'=14) his RHS
-    expect(shotsWhere('rally.num = 1 AND shot.num = 3 AND hittersOpponentLHS.name = "Dan"'))
+    expect(shotsWhere('rally.num = 1 AND shot.num = 3 AND shot.hitter.opponentLHS.name = "Dan"'))
       .toEqual([[0, 2]])
-    expect(shotsWhere('rally.num = 1 AND shot.num = 3 AND hittersOpponentRHS.name = "Carol"'))
+    expect(shotsWhere('rally.num = 1 AND shot.num = 3 AND shot.hitter.opponentRHS.name = "Carol"'))
       .toEqual([[0, 2]])
     // far-side hitter p2 at (14,42): his frame keeps x, so p0 (abs x=6)
     // is on p2's left and p1 (abs x=15) on his right
-    expect(shotsWhere('rally.num = 2 AND shot.num = 1 AND hittersOpponentLHS.name = "Alice"'))
+    expect(shotsWhere('rally.num = 2 AND shot.num = 1 AND shot.hitter.opponentLHS.name = "Alice"'))
       .toEqual([[1, 0]])
-    expect(shotsWhere('myTeammate.name = "Bob"')).toHaveLength(9) // true for every shot
-    expect(shotsWhere('hittersOpponent1.name = "Carol"'))
+    expect(shotsWhere('me.teammate.name = "Bob"')).toHaveLength(9) // true for every shot
+    expect(shotsWhere('shot.hitter.opponent1.name = "Carol"'))
       .toEqual([[0, 0], [0, 2], [1, 1], [2, 0], [2, 2]]) // shots by team 0
     // LHS/RHS are unknown when positions are missing (the sparse shot)
-    expect(shotsWhere('rally.num = 2 AND shot.num = 2 AND hittersOpponentLHS.name = "Carol"'))
+    expect(shotsWhere('rally.num = 2 AND shot.num = 2 AND shot.hitter.opponentLHS.name = "Carol"'))
       .toEqual([])
+    // multi-hop: the hitter's teammate, targeting the next shot's hitter
+    expect(shotsWhere('shot.hitter.teammate = shot[1].hitter'))
+      .toEqual([]) // partners never hit consecutive shots in the fixtures
+    // forward targeting: the shot right before Bob's winner
+    expect(shotsWhere('exists(shot[1].winnerType) AND shot[1].hitter.taggedWith("Bob*")'))
+      .toEqual([[0, 1]]) // shot (0,1)'s successor (0,2) is Bob's winner
   })
 
   test('relative shots and rallies; out-of-range is unknown', () => {
@@ -190,9 +196,9 @@ describe('runQuery: context windows', () => {
 })
 
 describe('coverage edges', () => {
-  test('doubles Opponent2 and player-subject methods', () => {
-    expect(shotsWhere('myOpponent2.name = "Dan"')).toHaveLength(9)
-    expect(shotsWhere('myTeammate.taggedWith("b*")')).toHaveLength(9)
+  test('doubles opponent2 and player-subject methods', () => {
+    expect(shotsWhere('me.opponent2.name = "Dan"')).toHaveLength(9)
+    expect(shotsWhere('me.teammate.taggedWith("b*")')).toHaveLength(9)
   })
 
   test('method args that are unknown make the call unknown', () => {
@@ -252,6 +258,8 @@ describe('coverage edges', () => {
     const where = text => parse(`FROM "f" WHERE ${text}`).ast.where
     expect(evalExpr(where('shot.nope'), ctx)).toBe(UNKNOWN)
     expect(evalExpr(where('shot.nope(1)'), ctx)).toBe(UNKNOWN)
+    // a method whose remaining path isn't a single terminal segment
+    expect(evalExpr(where('shot.quality.taggedWith("x")'), ctx)).toBe(UNKNOWN)
     expect(evalExpr(where('foo(1)'), ctx)).toBe(UNKNOWN)
     expect(evalExpr(where('shot'), ctx)).toBe(UNKNOWN) // bare non-player object
     const bareCtx = { game, rally: {}, rallyIdx: 0, shot: {}, shotIdx: 0 }
@@ -310,6 +318,30 @@ describe('runQuery: SELECT', () => {
     expect(result.rows).toEqual([[null, null, null, null]])
   })
 
+  test('boolean aggregates: sum counts trues, avg is a rate', () => {
+    // is_volley is present on (0,0)=false, (0,1)=false, (0,2)=true, (2,2)=true
+    const result = runQuery({
+      text: 'SELECT sum(shot.isVolley) AS "volleys", avg(shot.isVolley) AS "rate" ' +
+        'FROM "x" WHERE exists(shot.isVolley)',
+      games: [makeDoublesGame()]
+    })
+    expect(result.rows).toEqual([[2, 0.5]]) // 2 of 4 known volleys
+    // a comparison as an aggregate argument: my team's rally-win rate over
+    // the first shot of each rally (rallies 0 and 2 won by team 0, 1 by team 1)
+    const rate = runQuery({
+      text: 'SELECT avg(rally.winner = me.team) AS "win rate", sum(rally.winner = me.team) ' +
+        'FROM "x" WHERE shot.num = 1',
+      games: [makeDoublesGame()]
+    })
+    expect(rate.rows).toEqual([[2 / 3, 2]])
+    // strings still skip: min/max over a boolean fold to 0/1
+    const mm = runQuery({
+      text: 'SELECT min(shot.isVolley), max(shot.isVolley) FROM "x" WHERE exists(shot.isVolley)',
+      games: [makeDoublesGame()]
+    })
+    expect(mm.rows).toEqual([[0, 1]])
+  })
+
   test('mixing aggregates with per-shot expressions is an error', () => {
     const result = runQuery({
       text: 'SELECT count(), shot.num FROM "x" WHERE true',
@@ -323,10 +355,10 @@ describe('runQuery: inputs and errors', () => {
   test('singles: teammate/opponent2 unknown, lone opponent answers LHS', () => {
     const games = [makeSinglesGame()]
     const run = text => runQuery({ text, games }).shots.map(s => [s.rallyIdx, s.shotIdx])
-    expect(run('FROM "x" WHERE myOpponent1.name = "Carol"')).toHaveLength(2)
-    expect(run('FROM "x" WHERE myTeammate.name = "Carol"')).toEqual([])
-    expect(run('FROM "x" WHERE hittersOpponent2.name = "Carol"')).toEqual([])
-    expect(run('FROM "x" WHERE hittersOpponentLHS.name = "Carol"'))
+    expect(run('FROM "x" WHERE me.opponent1.name = "Carol"')).toHaveLength(2)
+    expect(run('FROM "x" WHERE me.teammate.name = "Carol"')).toEqual([])
+    expect(run('FROM "x" WHERE shot.hitter.opponent2.name = "Carol"')).toEqual([])
+    expect(run('FROM "x" WHERE shot.hitter.opponentLHS.name = "Carol"'))
       .toEqual([[0, 0]])
   })
 
@@ -410,7 +442,7 @@ describe('runQuery: inputs and errors', () => {
   test('warns when "me" is referenced but not tagged in a game', () => {
     const game = makeDoublesGame()
     game.meta = {}
-    const result = runQuery({ text: 'FROM "x" WHERE hitter = me', games: [game] })
+    const result = runQuery({ text: 'FROM "x" WHERE shot.hitter = me', games: [game] })
     expect(result.shots).toEqual([]) // unknown semantics are unchanged
     expect(result.warnings).toEqual([{
       vid: 'testvid00001',
@@ -420,17 +452,17 @@ describe('runQuery: inputs and errors', () => {
     }])
   })
 
-  test('my… references in SELECT/ORDER BY warn once; hitter refs never do', () => {
+  test('me references in SELECT/ORDER BY warn once; hitter refs never do', () => {
     const game = makeDoublesGame()
     game.meta = {}
     const my = runQuery({
-      text: 'SELECT myTeammate.name FROM "x" WHERE true ORDER BY me.team',
+      text: 'SELECT me.teammate.name FROM "x" WHERE true ORDER BY me.team',
       games: [game]
     })
     expect(my.warnings).toEqual([
       expect.objectContaining({ code: 'PBQL_ME_NOT_TAGGED' })])
     const hitters = runQuery({
-      text: 'FROM "x" WHERE hittersOpponent1.name = "Carol"',
+      text: 'FROM "x" WHERE shot.hitter.opponent1.name = "Carol"',
       games: [makeDoublesGame(), game]
     })
     expect(hitters.warnings).toEqual([])
@@ -438,7 +470,7 @@ describe('runQuery: inputs and errors', () => {
 
   test('no me warning when the game has a myPlayerIdx', () => {
     const result = runQuery({
-      text: 'FROM "x" WHERE hitter = me',
+      text: 'FROM "x" WHERE shot.hitter = me',
       games: [makeDoublesGame()]
     })
     expect(result.warnings).toEqual([])
@@ -447,7 +479,7 @@ describe('runQuery: inputs and errors', () => {
   test('warns per unmatched taggedWith pattern, naming the pattern', () => {
     const result = runQuery({
       text: 'FROM "x" WHERE shot.taggedWith("zed*") OR ' +
-        'shot.taggedWith("nobody@example.com") OR myTeammate.taggedWith("bob")',
+        'shot.taggedWith("nobody@example.com") OR me.teammate.taggedWith("bob")',
       games: [makeDoublesGame()]
     })
     expect(result.warnings).toEqual([ // "bob" matches, so no third warning
@@ -493,7 +525,7 @@ describe('runQuery: inputs and errors', () => {
     const untagged = makeSinglesGame()
     untagged.meta = { players: untagged.meta.players } // drop myPlayerIdx
     const result = runQuery({
-      text: 'FROM "x" WHERE hitter = me AND shot.taggedWith("bob")',
+      text: 'FROM "x" WHERE shot.hitter = me AND shot.taggedWith("bob")',
       games: [makeDoublesGame(), untagged] // doubles resolves both
     })
     expect(result.warnings).toEqual([
@@ -524,7 +556,7 @@ describe('default "Player N" names', () => {
     // even with no player_data at all, the "Player N" fallback holds
     delete game.insights.player_data
     const bare = runQuery({
-      text: 'FROM "v" WHERE hitter.name = "Player 3"',
+      text: 'FROM "v" WHERE shot.hitter.name = "Player 3"',
       games: [{ ...game, insights: game.insights }]
     })
     expect(bare.shots).toHaveLength(3)

@@ -16,10 +16,26 @@ function analyzeWhere (expr) {
 describe('analyze()', () => {
   test('accepts every corpus-style construct', () => {
     expect(analyzeWhere(
-      'shot.isVolley AND hitter = me AND shot.quality.overall >= 0.5 AND ' +
+      'shot.isVolley AND shot.hitter = me AND shot.quality.overall >= 0.5 AND ' +
       'shot.taggedWith("A*") AND exists(shot.winnerType) AND ' +
       'min(shot.from.x, shot.to.x) < 10 AND NOT rally.winner = me.team'))
       .toEqual([])
+  })
+
+  test('validates player navigation: relations, identity, scalar tails', () => {
+    // multi-hop relations, then a scalar; identity comparisons; me root
+    expect(analyzeWhere(
+      'shot.hitter.opponentLHS.feetToKitchen <= 2 AND ' +
+      'me.teammate.name = "Anna" AND shot[1].hitter = me AND ' +
+      'shot.hitter != shot[-1].hitter AND me.opponentRHS.taggedWith("Ben*")'))
+      .toEqual([])
+    // an unknown relation/prop after a valid player transition is caught,
+    // reported against the terminal type (player)
+    const [bad] = analyzeWhere('shot.hitter.feetToKichen > 1')
+    expect(bad.message).toBe('player has no property "feetToKichen"')
+    expect(bad.hint).toBe('did you mean "feetToKitchen"?')
+    // a relation used on the wrong type is just an unknown property there
+    expect(analyzeWhere('shot.teammate = me')[0].code).toBe('PBQL_UNKNOWN_PROPERTY')
   })
 
   test('unknown property gets a nearest-match hint with its position', () => {
@@ -34,9 +50,9 @@ describe('analyze()', () => {
     })
   })
 
-  test('unknown player property names the player reference', () => {
-    const [error] = analyzeWhere('myTeammate.feetToKichen > 1')
-    expect(error.message).toBe('myTeammate has no property "feetToKichen"')
+  test('unknown player property names the player type after navigation', () => {
+    const [error] = analyzeWhere('me.teammate.feetToKichen > 1')
+    expect(error.message).toBe('player has no property "feetToKichen"')
     expect(error.hint).toBe('did you mean "feetToKitchen"?')
   })
 
@@ -55,9 +71,12 @@ describe('analyze()', () => {
       .toBe('PBQL_UNKNOWN_METHOD')
   })
 
-  test('bare non-player objects are not values', () => {
+  test('bare non-player objects are not values; players are (identity)', () => {
     expect(analyzeWhere('shot = 1')[0].code).toBe('PBQL_MISSING_PROPERTY')
-    expect(analyzeWhere('hitter = me')).toEqual([])
+    expect(analyzeWhere('rally = 1')[0].message)
+      .toBe('select a property of rally (e.g. rally.num)')
+    expect(analyzeWhere('shot.hitter = me')).toEqual([])
+    expect(analyzeWhere('me = shot.hitter')).toEqual([])
   })
 
   test('unknown and misused functions', () => {
@@ -119,15 +138,25 @@ describe('normalize()', () => {
     expect(stripLoc(normalize(ast))).toEqual(stripLoc(canonical))
   })
 
-  test('rewrites player-subject methods and validates post-rewrite', () => {
-    const { ast } = parse('FROM "f" WHERE taggedWith(myTeammate, "A*")')
+  test('rewrites player-subject methods, appending to the navigation path', () => {
+    const { ast } = parse('FROM "f" WHERE taggedWith(me.teammate, "A*")')
     const normalized = normalize(ast)
     expect(analyze(normalized).errors).toEqual([])
     expect(normalized.where).toMatchObject({
       kind: 'prop',
-      base: { object: 'player', name: 'myTeammate' },
-      path: ['taggedWith']
+      base: { object: 'player', root: 'me' },
+      path: ['teammate', 'taggedWith'],
+      args: [{ kind: 'lit', value: 'A*' }]
     })
+    // the same for a hitter reached from a shot base
+    const { ast: h } = parse('FROM "f" WHERE taggedWith(shot.hitter, "B*")')
+    expect(normalize(h).where).toMatchObject({
+      base: { object: 'shot', offset: 0 },
+      path: ['hitter', 'taggedWith']
+    })
+    // subjects with a scalar tail are not method subjects — left alone
+    const { ast: keep } = parse('FROM "f" WHERE taggedWith(shot.hitter.name, "B*")')
+    expect(normalize(keep).where.kind).toBe('call')
   })
 
   test('leaves regular functions and non-method calls alone', () => {

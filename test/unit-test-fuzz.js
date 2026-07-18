@@ -7,9 +7,11 @@ import { parse, print } from '../src/index.js'
 import { stripLoc } from './helpers.js'
 
 const identArb = fc.constantFrom('speed', 'isVolley', 'quality', 'x', 'foo_2')
-// includes keywords on purpose: they are legal path segments
-const segArb = fc.constantFrom('speed', 'overall', 'video', 'true', 'from', 'secs')
-const playerArb = fc.constantFrom('me', 'hitter', 'myTeammate', 'hittersOpponentRHS')
+// includes keywords (legal path segments) and player relation/root names
+// (`hitter`, `teammate`, `me`, …), which are ordinary segments in the AST
+const segArb = fc.constantFrom(
+  'speed', 'overall', 'video', 'true', 'from', 'secs',
+  'hitter', 'teammate', 'opponentLHS', 'me')
 const stringArb = fc.stringMatching(/^[ -~]{0,12}$/) // printable ascii incl. " and \
 const numberArb = fc.oneof(
   fc.integer({ min: 0, max: 9999 }),
@@ -27,7 +29,8 @@ const inLiteralArb = fc.oneof(
 
 const baseArb = fc.oneof(
   fc.record({ object: fc.constant('game') }),
-  fc.record({ object: fc.constant('player'), name: playerArb }),
+  // the sole player root is `me`; hitter/teammate/opponent… ride in the path
+  fc.record({ object: fc.constant('player'), root: fc.constant('me') }),
   fc.record({
     object: fc.constantFrom('shot', 'rally'),
     offset: fc.integer({ min: -3, max: 3 })
