@@ -131,6 +131,19 @@ SELECT avg(rally.winner = me.team) AS "win rate"
 FROM "83gyqyc10y8f"
 WHERE shot.num = 1
 
+# Q: My win rate by shot type — how do rallies go when I hit each kind of shot?
+SELECT shot.type, avg(rally.winner = me.team) AS "win rate", count()
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me
+GROUP BY shot.type
+
+# Q: Average ball speed for each stroke type, fastest first
+SELECT shot.strokeType, avg(shot.speed) AS "mph"
+FROM "83gyqyc10y8f"
+WHERE exists(shot.speed)
+GROUP BY shot.strokeType
+ORDER BY avg(shot.speed) DESC
+
 # Q: Shots from every rally that came right after a rally my team lost
 FROM "83gyqyc10y8f"
 WHERE exists(rally[-1].winner) AND rally[-1].winner != me.team

@@ -12,6 +12,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
       -- the CLI also takes a file ("game.json"), a directory (every
       -- *.json beneath it), or a glob ("games/*.json")
     WHERE condition                      -- required
+    [GROUP BY expr, ...]            -- one output row per group
     [CONTEXT BEFORE duration]       -- widen each clip backward
     [CONTEXT AFTER duration]        -- widen each clip forward
     [ORDER BY expr [ASC|DESC], ...]
@@ -32,6 +33,10 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   shot.inHighlight("atp"). Utilities are functions: min, max, exists,
   abs, kph (mph→km/h), toMs, toSecs.
 - Times are seconds; distances feet; speeds mph; quality 0-1 (1 best).
+- GROUP BY computes per-group breakdowns (win rate by shot type, avg
+  speed by player) in one query; with it, every SELECT/ORDER BY item
+  must be an aggregate or one of the group keys, and CONTEXT is not
+  allowed.
 - Use SELECT only when the question asks for values or aggregates
   (counts, averages, a spreadsheet of numbers). Questions that find or
   show shots — including superlatives like "the fastest shot" (use
@@ -344,6 +349,21 @@ Q: What fraction of rallies did my team win? (one number)
     SELECT avg(rally.winner = me.team) AS "win rate"
     FROM "83gyqyc10y8f"
     WHERE shot.num = 1
+
+Q: My win rate by shot type — how do rallies go when I hit each kind of shot?
+
+    SELECT shot.type, avg(rally.winner = me.team) AS "win rate", count()
+    FROM "83gyqyc10y8f"
+    WHERE shot.hitter = me
+    GROUP BY shot.type
+
+Q: Average ball speed for each stroke type, fastest first
+
+    SELECT shot.strokeType, avg(shot.speed) AS "mph"
+    FROM "83gyqyc10y8f"
+    WHERE exists(shot.speed)
+    GROUP BY shot.strokeType
+    ORDER BY avg(shot.speed) DESC
 
 Q: Shots from every rally that came right after a rally my team lost
 

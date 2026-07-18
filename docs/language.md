@@ -11,6 +11,7 @@ every deviation is a bug. Property-by-property details live in the generated
 [SELECT expr [AS "label"] [, ...]]
 FROM "source" [, ...]
 WHERE condition
+[GROUP BY expr [, ...]]
 [CONTEXT BEFORE duration]
 [CONTEXT AFTER duration]
 [ORDER BY expr [ASC|DESC] [, ...]]
@@ -22,13 +23,15 @@ A query conceptually builds one row per **shot** across all games named by
 shot's video window per `CONTEXT`, sorts, limits, and outputs. Without
 `SELECT`, the output is the selected shots themselves (for the Shot Explorer,
 EDL, or ffmpeg); with `SELECT`, it is one projected row per shot (CSV/JSON),
-or a single row if every selected expression is an aggregate.
+or a single row if every selected expression is an aggregate. `GROUP BY`
+(§6.7) changes the output to one row per group; it requires `SELECT` and
+excludes `CONTEXT`.
 
 ## 2. Lexical structure
 
 - **Keywords** are case-insensitive (`FROM` ≡ `from` ≡ `From`). Canonical
   form is UPPERCASE for clause keywords and lowercase for everything else.
-  Multi-word keywords (`CONTEXT BEFORE`, `CONTEXT AFTER`,
+  Multi-word keywords (`CONTEXT BEFORE`, `CONTEXT AFTER`, `GROUP BY`,
   `ORDER BY`) allow any whitespace between the words.
 - **Identifiers** (property names, function names) are case-sensitive:
   `shot.isVolley`, not `shot.isvolley`.
@@ -288,11 +291,13 @@ ORDER BY shot.speed DESC, shot.hitTime
 
 Stable sort across all games; `ASC` is the default; unknown values sort
 last regardless of direction. Without `ORDER BY`, results keep video order
-(by game, rally, shot).
+(by game, rally, shot). With `GROUP BY`, `ORDER BY` sorts the grouped rows
+instead (§6.7).
 
 ### 6.5 LIMIT
 
-`LIMIT n` keeps the first n rows after ordering, across all games.
+`LIMIT n` keeps the first n rows after ordering, across all games (with
+`GROUP BY`, the first n grouped rows).
 
 ### 6.6 SELECT
 
@@ -303,8 +308,9 @@ SELECT shot.hitter.name, shot.speed AS "mph", shot.type
 One row per selected shot; `AS "label"` names the output column (labels are
 purely cosmetic — units never change). Aggregates `count()`, `sum(x)`,
 `avg(x)`, `min(x)`, `max(x)` collapse the result to a single row; mixing
-aggregate and non-aggregate expressions is a validation error (there is no
-GROUP BY). Aggregates coerce their inputs to numbers and skip unknowns:
+aggregate and non-aggregate expressions is a validation error unless the
+non-aggregates are `GROUP BY` keys (§6.7). Aggregates coerce their inputs
+to numbers and skip unknowns:
 **booleans fold to 1/0** (so `sum(<condition>)` counts matches and
 `avg(<condition>)` is a rate, e.g. `avg(rally.winner = me.team)`), finite
 numbers pass through, and anything else (strings, …) is unknown and skipped;
@@ -314,6 +320,44 @@ In CSV output, a string cell that starts with `=`, `+`, `-`, `@`, tab, or
 carriage return is prefixed with a single quote so spreadsheets import it
 as text instead of executing it as a formula (the OWASP CSV-injection
 guard). Numeric cells (e.g. `-4`) are unaffected.
+
+### 6.7 GROUP BY
+
+```sql
+SELECT shot.type, avg(rally.winner = me.team) AS "win rate"
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me
+GROUP BY shot.type
+```
+
+`GROUP BY expr [, ...]` partitions the `WHERE`-selected shots by the tuple
+of key-expression values and outputs **one row per group** instead of
+shots. A shot whose key value is unknown is never dropped: it joins the
+group whose key is null for that component (the key outputs as null).
+
+Because grouped output is rows, not shots:
+
+- `SELECT` is required (`PBQL_GROUP_BY_NO_SELECT`), and every `SELECT` and
+  `ORDER BY` expression must be an aggregate call or structurally equal to
+  one of the group keys (`PBQL_NOT_GROUPED`). `ORDER BY` aggregates need
+  not appear in `SELECT`.
+- `CONTEXT BEFORE`/`AFTER` cannot be combined with `GROUP BY`
+  (`PBQL_GROUP_BY_CONTEXT`).
+
+Aggregates evaluate per group — `count()` counts the group's shots and
+`avg(<condition>)` is a per-group rate, with the same coercion rules as
+§6.6. Group keys are constant within their group and evaluate once per
+group. Keys may not themselves contain aggregates.
+
+Row order: `ORDER BY` sorts the rows by its aggregate/key expressions
+(unknown/null values last regardless of direction) and `LIMIT` keeps the
+first n rows. Without `ORDER BY`, rows sort **ascending by key tuple**:
+numbers numerically, strings lexicographically (code-unit order), `false`
+before `true`, null keys last, and — across types, which a single key
+expression cannot produce today — booleans before numbers before strings.
+
+There is no `HAVING` (future work): pre-filter shots in `WHERE`, or filter
+the grouped rows downstream.
 
 ## 7. Errors
 
