@@ -130,3 +130,21 @@ WHERE shot.hitter.taggedWith("Ben*") AND shot.to.zone != "out" AND shot.hitter.o
 SELECT avg(rally.winner = me.team) AS "win rate"
 FROM "83gyqyc10y8f"
 WHERE shot.num = 1
+
+# Q: Shots from every rally that came right after a rally my team lost
+FROM "83gyqyc10y8f"
+WHERE exists(rally[-1].winner) AND rally[-1].winner != me.team
+
+# Q: Shots from rallies where team 0 went on to win the very next rally
+FROM "83gyqyc10y8f"
+WHERE rally[1].winner = 0
+
+# Q: The five fastest shots
+FROM "83gyqyc10y8f"
+WHERE exists(shot.speed)
+ORDER BY shot.speed DESC
+LIMIT 5
+
+# Q: Shots that weren't confirmed volleys, including ones with no volley data
+FROM "83gyqyc10y8f"
+WHERE NOT shot.isVolley OR NOT exists(shot.isVolley)
