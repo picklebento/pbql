@@ -118,13 +118,18 @@ function gameFromFile (file) {
  * @returns {Promise<Array<{vid: string, sessionIdx: number,
  *   insights: object}>>} one entry per game, in FROM order; vid is the
  *   file's basename without .json
- * @throws {Error} when a source matches nothing, the pb.vision service
+ * @throws {Error} when a source is blank or matches nothing, the pb.vision service
  *   rejects the vid (unknown / never processed / still processing /
  *   failed), or the requested session does not exist
  */
 export async function resolveSources (sources, { cwd = process.cwd() } = {}) {
   const games = []
   for (const source of sources) {
+    if (source.trim() === '') {
+      // "" would otherwise resolve as the cwd and sweep everything under it
+      throw new Error(`"${source}" is blank — each FROM source must name ` +
+        'a video id, file, directory, or glob')
+    }
     const vidRef = parseVidSource(source)
     if (vidRef !== null) {
       games.push(await fetchVidGame(vidRef, source))

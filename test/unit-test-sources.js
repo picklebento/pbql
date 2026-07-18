@@ -52,6 +52,13 @@ describe('resolveSources', () => {
       .toEqual(['a', 'b'])
   })
 
+  test('empty or blank sources are rejected, never resolved as the cwd', async () => {
+    for (const source of ['', ' ', '\t\n']) {
+      await expect(resolveSources([source], { cwd: dir }))
+        .rejects.toThrow('each FROM source must name a video id')
+    }
+  })
+
   test('sources that match nothing name the offending string', async () => {
     await expect(resolveSources(['nowhere/*.json'], { cwd: dir }))
       .rejects.toThrow('"nowhere/*.json" matched nothing')
