@@ -94,8 +94,7 @@ describe('Game', () => {
     expect([0, 1, 2, 3].map(i => bareGame.playerTeam(i))).toEqual([0, 0, 1, 1])
   })
 
-  test('exposes game end and per-shot player positions', () => {
-    expect(game.endOfGameMs).toBe(64000)
+  test('exposes per-shot player positions', () => {
     expect(game.playerPosAtShot(game.rallies[0].shots[0], 2)).toEqual({ x: 4, y: 41 })
     expect(game.playerPosAtShot(sparseCtx.shot, 0)).toBeUndefined()
   })

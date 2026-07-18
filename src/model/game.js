@@ -127,10 +127,4 @@ export class Game {
   get myPlayerIdx () {
     return this.meta.myPlayerIdx
   }
-
-  // last video ms of the game (for clamping context windows)
-  get endOfGameMs () {
-    const { rallies } = this
-    return rallies[rallies.length - 1].end_ms
-  }
 }

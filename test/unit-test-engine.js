@@ -378,6 +378,26 @@ describe('runQuery: inputs and errors', () => {
       .toBe(UNKNOWN)
   })
 
+  test('durations with a missing end_ms are unknown, never NaN', () => {
+    const game = makeDoublesGame()
+    delete game.insights.rallies[1].end_ms // rally.duration → NaN pre-mapping
+    delete game.insights.rallies[2].end_ms // game.duration uses the last rally
+    // the selected shot is in rally 0, whose own timing stays intact
+    const rows = runQuery({
+      text: 'SELECT rally[1].duration, game.duration FROM "x" ' +
+        'WHERE rally.num = 1 AND shot.num = 1',
+      games: [game]
+    })
+    expect(rows.rows).toEqual([[null, null]])
+    // exists() sees the same unknowns (NaN never leaks out as a value)
+    const missing = runQuery({
+      text: 'FROM "x" WHERE rally.num = 1 AND shot.num = 1 AND ' +
+        'NOT exists(rally[1].duration) AND NOT exists(game.duration)',
+      games: [game]
+    })
+    expect(missing.shots.map(s => [s.rallyIdx, s.shotIdx])).toEqual([[0, 0]])
+  })
+
   test('warns when "me" is referenced but not tagged in a game', () => {
     const game = makeDoublesGame()
     game.meta = {}
