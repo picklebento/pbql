@@ -351,6 +351,97 @@ describe('runQuery: SELECT', () => {
   })
 })
 
+describe('runQuery: GROUP BY', () => {
+  const group = text => runQuery({ text, games: [makeDoublesGame()] })
+
+  test('one row per key, default order ascending with the null key last', () => {
+    // types: drive ×5, drop, smash, speedup, and the sparse shot (unknown)
+    const result = group('SELECT shot.type, count() FROM "x" WHERE true GROUP BY shot.type')
+    expect(result.columns).toEqual(['shot.type', 'count()'])
+    expect(result.rows).toEqual([
+      ['drive', 5], ['drop', 1], ['smash', 1], ['speedup', 1], [null, 1]])
+    // the shot list itself is unaffected by grouping (video order)
+    expect(result.shots).toHaveLength(9)
+  })
+
+  test('multi-key tuples: nulls group per component and sort last', () => {
+    // isVolley is known on (0,0)=F, (0,1)=F, (0,2)=T, (2,2)=T; unknown else
+    const result = group('SELECT shot.isVolley, shot.type, count() FROM "x" ' +
+      'WHERE true GROUP BY shot.isVolley, shot.type')
+    expect(result.rows).toEqual([
+      [false, 'drive', 1],
+      [false, 'drop', 1],
+      [true, 'smash', 1],
+      [true, 'speedup', 1],
+      [null, 'drive', 4], // (1,0), (2,0), (2,1), (2,3)
+      [null, null, 1] // the sparse shot: both keys unknown
+    ])
+  })
+
+  test('a null key sorts last even when its group forms first', () => {
+    // winnerType is unknown on (0,0) — the first group created — and
+    // known ("winner") only on (0,2)
+    const result = group(
+      'SELECT shot.winnerType, count() FROM "x" WHERE true GROUP BY shot.winnerType')
+    expect(result.rows).toEqual([['winner', 1], [null, 8]])
+  })
+
+  test('boolean aggregates are per-group rates', () => {
+    // team 0 hit 5 shots in rallies won 0,0,1,0,0 → 4/5; team 1 hit 4 in
+    // rallies won 0,1,0,0 → 1/4
+    const result = group('SELECT shot.hitter.team, ' +
+      'avg(rally.winner = shot.hitter.team) AS "win rate", ' +
+      'sum(rally.winner = shot.hitter.team) FROM "x" WHERE true ' +
+      'GROUP BY shot.hitter.team')
+    expect(result.rows).toEqual([[0, 0.8, 4], [1, 0.25, 1]])
+  })
+
+  test('ORDER BY an aggregate DESC with LIMIT keeps the top rows', () => {
+    const result = group('SELECT shot.type, count() FROM "x" WHERE true ' +
+      'GROUP BY shot.type ORDER BY count() DESC LIMIT 2')
+    // stable: the four 1-count groups keep video order, drop first
+    expect(result.rows).toEqual([['drive', 5], ['drop', 1]])
+    // LIMIT applies to rows, never to the selected shots
+    expect(result.shots).toHaveLength(9)
+  })
+
+  test('ORDER BY aggregates need not be selected; null aggregates sort last', () => {
+    // the sparse shot's null-type group has no speeds → avg null → last
+    const result = group('SELECT shot.type FROM "x" WHERE true ' +
+      'GROUP BY shot.type ORDER BY avg(shot.speed) DESC')
+    expect(result.rows).toEqual(
+      [['speedup'], ['smash'], ['drive'], ['drop'], [null]])
+  })
+
+  test('ORDER BY a key DESC still sorts the null key last', () => {
+    const result = group('SELECT shot.type, avg(shot.speed) AS "mph" FROM "x" ' +
+      'WHERE true GROUP BY shot.type ORDER BY shot.type DESC')
+    expect(result.rows).toEqual([
+      ['speedup', 50], ['smash', 45], ['drop', 20], ['drive', 32.6], [null, null]])
+  })
+
+  test('an unknown key everywhere makes one null-key group (and warns for me)', () => {
+    const game = makeDoublesGame()
+    game.meta = {} // me is not tagged: me.team is unknown for every shot
+    const result = runQuery({
+      text: 'SELECT me.team AS "team", count() FROM "x" WHERE true GROUP BY me.team',
+      games: [game]
+    })
+    expect(result.rows).toEqual([[null, 9]])
+    expect(result.warnings).toEqual([
+      expect.objectContaining({ code: 'PBQL_ME_NOT_TAGGED' })])
+  })
+
+  test('grouped analyzer errors surface through runQuery', () => {
+    expect(group('SELECT shot.speed FROM "x" WHERE true GROUP BY shot.type')
+      .errors[0].code).toBe('PBQL_NOT_GROUPED')
+    expect(group('FROM "x" WHERE true GROUP BY shot.type').errors[0].code)
+      .toBe('PBQL_GROUP_BY_NO_SELECT')
+    expect(group('SELECT count() FROM "x" WHERE true GROUP BY shot.type ' +
+      'CONTEXT BEFORE 1 shot').errors[0].code).toBe('PBQL_GROUP_BY_CONTEXT')
+  })
+})
+
 describe('runQuery: inputs and errors', () => {
   test('singles: teammate/opponent2 unknown, lone opponent answers LHS', () => {
     const games = [makeSinglesGame()]

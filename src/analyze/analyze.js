@@ -1,7 +1,9 @@
 // Semantic validation of a parsed query against the property registry:
 // unknown properties/methods/functions (with nearest-match suggestions),
-// arity problems, and obvious type mismatches. Also provides normalize(),
-// which rewrites accepted alias forms into canonical ones.
+// arity problems, obvious type mismatches, and the GROUP BY rules. Also
+// provides normalize(), which rewrites accepted alias forms into canonical
+// ones.
+import { printExpr } from '../lang/print.js'
 import { REGISTRY, walkRelations } from '../model/registry.js'
 
 // scalar functions usable anywhere; SELECT additionally allows aggregates
@@ -23,6 +25,22 @@ export const AGGREGATE_FNS = new Map([
   ['min', { minArgs: 1, maxArgs: 1 }],
   ['max', { minArgs: 1, maxArgs: 1 }]
 ])
+
+// An aggregate-shaped call: one of the row-collapsing functions at its
+// aggregate arity (count() alone is 0-ary; min/max with 2+ args are the
+// scalar functions). The analyzer and the engine share this test.
+export function isAggregateCall (expr) {
+  return expr.kind === 'call' && AGGREGATE_FNS.has(expr.name) &&
+    expr.args.length === (expr.name === 'count' ? 0 : 1)
+}
+
+// structural AST equality ignoring source positions — the GROUP BY rule:
+// a SELECT/ORDER BY expression "is" a group key when the trees match
+function sameExpr (a, b) {
+  const strip = node => JSON.stringify(node, (key, value) =>
+    key === 'loc' ? undefined : value)
+  return strip(a) === strip(b)
+}
 
 function levenshtein (a, b) {
   const rows = [[...Array(b.length + 1).keys()]]
@@ -232,12 +250,44 @@ export function analyze (query) {
     return match === undefined ? undefined : `did you mean "${match}"?`
   }
 
+  // GROUP BY output is one row per group, so it needs a SELECT, cannot
+  // carry per-shot context windows, and holds every SELECT and ORDER BY
+  // expression to an aggregate or one of the group keys
+  function checkGrouping () {
+    const { groupBy } = query
+    if (query.select === null) {
+      err(groupBy[0], 'PBQL_GROUP_BY_NO_SELECT',
+        'GROUP BY produces rows, not shots: add a SELECT of aggregates ' +
+        'and/or group keys')
+    }
+    const isDefault = d => d.kind === 'dur' && d.unit === 'secs' && d.value === 0
+    if (!isDefault(query.context.before) || !isDefault(query.context.after)) {
+      err(groupBy[0], 'PBQL_GROUP_BY_CONTEXT',
+        'CONTEXT cannot be combined with GROUP BY: grouped results are ' +
+        'rows, not shots')
+    }
+    const isKey = expr => groupBy.some(key => sameExpr(key, expr))
+    for (const { expr } of [...(query.select ?? []), ...(query.orderBy ?? [])]) {
+      if (!isAggregateCall(expr) && !isKey(expr)) {
+        err(expr, 'PBQL_NOT_GROUPED',
+          `"${printExpr(expr)}" must be an aggregate or a GROUP BY key`)
+      }
+    }
+  }
+
+  const grouped = Boolean(query.groupBy)
   for (const item of query.select ?? []) {
     checkExpr(item.expr, true)
   }
   checkExpr(query.where, false)
+  for (const key of query.groupBy ?? []) {
+    checkExpr(key, false) // keys are per-shot values; aggregates can't nest
+  }
   for (const item of query.orderBy ?? []) {
-    checkExpr(item.expr, false)
+    checkExpr(item.expr, grouped) // grouped rows may order by aggregates
+  }
+  if (grouped) {
+    checkGrouping()
   }
   return { errors }
 }

@@ -106,6 +106,58 @@ describe('analyze()', () => {
     expect(analyzeWhere('shot.speed > min(1, 2)')).toEqual([])
   })
 
+  test('GROUP BY: keys and aggregates in SELECT and ORDER BY are valid', () => {
+    expect(analyzeQuery(
+      'SELECT shot.type, avg(rally.winner = me.team) AS "win rate" FROM "f" ' +
+      'WHERE shot.hitter = me GROUP BY shot.type')).toEqual([])
+    // ORDER BY may use aggregates (even ones not in SELECT) and keys
+    expect(analyzeQuery(
+      'SELECT shot.type, shot.hitter.team, count() FROM "f" WHERE true ' +
+      'GROUP BY shot.type, shot.hitter.team ' +
+      'ORDER BY avg(shot.speed) DESC, shot.type')).toEqual([])
+  })
+
+  test('GROUP BY: non-key, non-aggregate expressions are PBQL_NOT_GROUPED', () => {
+    const [select] = analyzeQuery(
+      'SELECT shot.speed FROM "f" WHERE true GROUP BY shot.type')
+    expect(select).toMatchObject({
+      code: 'PBQL_NOT_GROUPED',
+      message: '"shot.speed" must be an aggregate or a GROUP BY key'
+    })
+    // key matching is structural: shot[1].type is not the key shot.type
+    expect(analyzeQuery(
+      'SELECT shot[1].type FROM "f" WHERE true GROUP BY shot.type')[0].code)
+      .toBe('PBQL_NOT_GROUPED')
+    // 2-ary min() is the scalar function, not the aggregate
+    expect(analyzeQuery(
+      'SELECT count() FROM "f" WHERE true GROUP BY shot.type ' +
+      'ORDER BY min(shot.speed, 1)')[0]).toMatchObject({
+      code: 'PBQL_NOT_GROUPED',
+      message: '"min(shot.speed, 1)" must be an aggregate or a GROUP BY key'
+    })
+  })
+
+  test('GROUP BY needs a SELECT and cannot carry CONTEXT', () => {
+    expect(analyzeQuery('FROM "f" WHERE true GROUP BY shot.type')[0])
+      .toMatchObject({ code: 'PBQL_GROUP_BY_NO_SELECT', line: 1, col: 30 })
+    expect(analyzeQuery('SELECT count() FROM "f" WHERE true GROUP BY shot.type ' +
+      'CONTEXT BEFORE 1 shot')[0].code).toBe('PBQL_GROUP_BY_CONTEXT')
+    expect(analyzeQuery('SELECT count() FROM "f" WHERE true GROUP BY shot.type ' +
+      'CONTEXT AFTER 2secs')[0].code).toBe('PBQL_GROUP_BY_CONTEXT')
+  })
+
+  test('GROUP BY keys are checked and cannot hold aggregates', () => {
+    expect(analyzeQuery('SELECT count() FROM "f" WHERE true GROUP BY shot.tpye')[0])
+      .toMatchObject({ code: 'PBQL_UNKNOWN_PROPERTY', hint: 'did you mean "type"?' })
+    expect(analyzeQuery('SELECT count() FROM "f" WHERE true GROUP BY count()')[0].code)
+      .toBe('PBQL_UNKNOWN_FUNCTION')
+  })
+
+  test('ORDER BY aggregates stay invalid without GROUP BY', () => {
+    expect(analyzeQuery('FROM "f" WHERE true ORDER BY count()')[0].code)
+      .toBe('PBQL_UNKNOWN_FUNCTION')
+  })
+
   test('handmade nodes without positions default to 1:1', () => {
     const { errors } = analyze({
       select: null,
