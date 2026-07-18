@@ -188,13 +188,13 @@ export function makeDoublesInsights () {
             playerPositions: [{ x: 5, y: 8 }, { x: 15, y: 9 }, { x: 10, y: 38 }, { x: 15, y: 39 }]
           }),
           makeShot({ // the game's fastest shot; hit by p1 at the kitchen line
+            // (a speedup is the is_speedup flag on a drive, never a type)
             playerId: 1,
             startMs: 58000,
             endMs: 59000,
             from: { x: 14, y: 15, z: 3.5 },
             to: { x: 4, y: 30, z: 0.4 },
             speed: 50,
-            type: 'speedup',
             quality: { overall: 0.85 },
             playerPositions: [{ x: 5, y: 15 }, { x: 14, y: 15 }, { x: 7, y: 27 }, { x: 15, y: 29 }],
             extra: { is_volley: true, is_speedup: true }

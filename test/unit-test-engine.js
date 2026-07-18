@@ -261,7 +261,7 @@ describe('coverage edges', () => {
 
   test('remaining runtime operators: !=, +, *', () => {
     expect(shotsWhere('shot.type != "drive"'))
-      .toEqual([[0, 1], [0, 2], [2, 2]])
+      .toEqual([[0, 1], [0, 2]])
     expect(shotsWhere('shot.num + 1 = 2')).toHaveLength(3)
     expect(shotsWhere('shot.num * 2 = 4')).toHaveLength(3)
   })
@@ -394,11 +394,11 @@ describe('runQuery: GROUP BY', () => {
   const group = text => runQuery({ text, games: [makeDoublesGame()] })
 
   test('one row per key, default order ascending with the null key last', () => {
-    // types: drive ×5, drop, smash, speedup, and the sparse shot (unknown)
+    // types: drive ×6, drop, smash, and the sparse shot (unknown)
     const result = group('SELECT shot.type, count() FROM "x" WHERE true GROUP BY shot.type')
     expect(result.columns).toEqual(['shot.type', 'count()'])
     expect(result.rows).toEqual([
-      ['drive', 5], ['drop', 1], ['smash', 1], ['speedup', 1], [null, 1]])
+      ['drive', 6], ['drop', 1], ['smash', 1], [null, 1]])
     // the shot list itself is unaffected by grouping (video order)
     expect(result.shots).toHaveLength(9)
   })
@@ -410,8 +410,8 @@ describe('runQuery: GROUP BY', () => {
     expect(result.rows).toEqual([
       [false, 'drive', 1],
       [false, 'drop', 1],
+      [true, 'drive', 1],
       [true, 'smash', 1],
-      [true, 'speedup', 1],
       [null, 'drive', 4], // (1,0), (2,0), (2,1), (2,3)
       [null, null, 1] // the sparse shot: both keys unknown
     ])
@@ -438,8 +438,8 @@ describe('runQuery: GROUP BY', () => {
   test('ORDER BY an aggregate DESC with LIMIT keeps the top rows', () => {
     const result = group('SELECT shot.type, count() FROM "x" WHERE true ' +
       'GROUP BY shot.type ORDER BY count() DESC LIMIT 2')
-    // stable: the four 1-count groups keep video order, drop first
-    expect(result.rows).toEqual([['drive', 5], ['drop', 1]])
+    // stable: the three 1-count groups keep video order, drop first
+    expect(result.rows).toEqual([['drive', 6], ['drop', 1]])
     // LIMIT applies to rows, never to the selected shots
     expect(result.shots).toHaveLength(9)
   })
@@ -448,15 +448,16 @@ describe('runQuery: GROUP BY', () => {
     // the sparse shot's null-type group has no speeds → avg null → last
     const result = group('SELECT shot.type FROM "x" WHERE true ' +
       'GROUP BY shot.type ORDER BY avg(shot.speed) DESC')
+    // avg speeds: smash 45, drive (35+38+30+30+50+30)/6 = 35.5, drop 20
     expect(result.rows).toEqual(
-      [['speedup'], ['smash'], ['drive'], ['drop'], [null]])
+      [['smash'], ['drive'], ['drop'], [null]])
   })
 
   test('ORDER BY a key DESC still sorts the null key last', () => {
     const result = group('SELECT shot.type, avg(shot.speed) AS "mph" FROM "x" ' +
       'WHERE true GROUP BY shot.type ORDER BY shot.type DESC')
     expect(result.rows).toEqual([
-      ['speedup', 50], ['smash', 45], ['drop', 20], ['drive', 32.6], [null, null]])
+      ['smash', 45], ['drop', 20], ['drive', 35.5], [null, null]])
   })
 
   test('an unknown key everywhere makes one null-key group (and warns for me)', () => {

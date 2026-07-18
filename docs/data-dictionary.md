@@ -24,14 +24,14 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.isPoach` | boolean |  | whether the hitter took a ball on their partner's side |
 | `shot.isPassing` | boolean |  | whether the shot passed the nearest opponent untouched |
 | `shot.isPutaway` | boolean |  | whether the shot was a putaway |
-| `shot.type` | string | "smash"|"lob"|"dink"|"drop"|"drive"|"volley"|"reset"|"speedup" | the shot classification |
+| `shot.type` | string | "drive"|"drop"|"dink"|"lob"|"smash"|"atp"|"erne" | the shot classification; never set on serves and returns (use shot.sequence for those) |
 | `shot.verticalType` | string | "dig"|"neutral"|"overhead" | the vertical character of the stroke, from strike height (dig ≤ 2.5ft, overhead ≥ 6ft) |
 | `shot.strokeSide` | string | "left"|"right" | which side of the body the stroke was made on |
 | `shot.winnerType` | string | "clean"|"forced_fault" | how this shot won the rally; unknown if it did not |
 | `shot.quality.overall` | number | 0-1 | combined execution + selection quality (1 is best) |
 | `shot.quality.execution` | number | 0-1 | how well the shot was executed |
 | `shot.speed` | number | mph | ball speed after the hit |
-| `shot.direction` | string | "DownTheMiddle"|"DownTheLineLeft"|… | named direction the ball traveled |
+| `shot.direction` | string | "DownTheMiddle"|"DownTheLineLeft"|"DownTheLineRight"|"MidCrossLeft"|"MidCrossRight"|"LeftToMiddle"|"RightToMiddle"|"LeftCrossRight"|"RightCrossLeft" | named direction the ball traveled |
 | `shot.yaw` | number | degrees | horizontal launch angle (0 = toward the hitter's left sideline, 90 = straight at the net) |
 | `shot.pitch` | number | degrees | vertical launch angle (0 = flat, 90 = straight up) |
 | `shot.distance` | number | feet | how far the ball flew before contact with anything |
@@ -58,7 +58,7 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.from.feetToNearestSideline` | number | feet | where the ball was struck — distance to the nearest sideline |
 | `shot.from.feetToNearestBaseline` | number | feet | where the ball was struck — distance to the nearest baseline |
 | `shot.from.feetToNet` | number | feet | where the ball was struck — distance to the plane of the net |
-| `shot.from.zone` | string | "deep"|"mid"|"short"|"kitchen"|"net"|"out" | depth zone the ball was struck from |
+| `shot.from.zone` | string | "deep"|"mid"|"short"|"kitchen" | depth zone the ball was struck from |
 | `shot.to.x` | number | feet | where the ball's flight ended — hitter-frame x (0-20, grows to the hitter's right) |
 | `shot.to.y` | number | feet | where the ball's flight ended — hitter-frame y (own baseline 0, net 22) |
 | `shot.to.z` | number | feet | where the ball's flight ended — height above the ground |

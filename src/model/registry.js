@@ -152,8 +152,8 @@ const SHOT_PROPS = [
   {
     path: 'type',
     type: 'string',
-    unit: '"smash"|"lob"|"dink"|"drop"|"drive"|"volley"|"reset"|"speedup"',
-    doc: 'the shot classification',
+    unit: '"drive"|"drop"|"dink"|"lob"|"smash"|"atp"|"erne"',
+    doc: 'the shot classification; never set on serves and returns (use shot.sequence for those)',
     extract: ctx => ctx.shot.shot_type
   },
   {
@@ -201,7 +201,7 @@ const SHOT_PROPS = [
   {
     path: 'direction',
     type: 'string',
-    unit: '"DownTheMiddle"|"DownTheLineLeft"|…',
+    unit: '"DownTheMiddle"|"DownTheLineLeft"|"DownTheLineRight"|"MidCrossLeft"|"MidCrossRight"|"LeftToMiddle"|"RightToMiddle"|"LeftCrossRight"|"RightCrossLeft"',
     doc: 'named direction the ball traveled',
     extract: ctx => ballMovement(ctx)?.angles?.direction
   },
@@ -323,7 +323,10 @@ const SHOT_PROPS = [
     [{
       path: 'from.zone',
       type: 'string',
-      unit: '"deep"|"mid"|"short"|"kitchen"|"net"|"out"',
+      // strike zones never include "net"/"out": production derives the
+      // start zone from a shot event, and only net events map to "net" and
+      // out-of-bounds bounces to "out"
+      unit: '"deep"|"mid"|"short"|"kitchen"',
       doc: 'depth zone the ball was struck from',
       extract: ctx => trajectory(ctx)?.start?.zone
     }]),

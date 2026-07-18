@@ -120,8 +120,10 @@ flight ended), `shot.peak` (apex). Each has hitter-relative coordinates
 `x`/`y`/`z` — mirrored so the hitter's own baseline is `y = 0`, the net is
 `y = 22`, and `x` grows toward the hitter's right (0–20) — plus raw court
 coordinates `absX`/`absY`/`absZ` (origin at the far-left corner relative to
-the camera). `shot.from.zone` / `shot.to.zone` give the depth zone
-(`"deep"|"mid"|"short"|"kitchen"|"net"|"out"`).
+the camera). `shot.from.zone` / `shot.to.zone` give the depth zone:
+`"deep"|"mid"|"short"|"kitchen"` for `from.zone`, plus `"net"|"out"` for
+`to.zone` only (a flight can end at the net or out, but strikes always
+happen from a court zone).
 
 ### 5.2 `rally`, and relative rallies `rally[k]`
 
