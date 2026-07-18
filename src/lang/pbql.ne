@@ -30,15 +30,16 @@
 @lexer pbqlLexer
 @preprocessor module
 
-query -> select:? from where ctxBefore:? ctxAfter:? orderBy:? limit:?
+query -> select:? from where groupBy:? ctxBefore:? ctxAfter:? orderBy:? limit:?
   {% d => ({
        kind: 'query',
        select: d[0],
        sources: d[1],
        where: d[2],
-       context: { before: d[3] ?? ZERO_DUR(), after: d[4] ?? ZERO_DUR() },
-       orderBy: d[5],
-       limit: d[6]
+       groupBy: d[3],
+       context: { before: d[4] ?? ZERO_DUR(), after: d[5] ?? ZERO_DUR() },
+       orderBy: d[6],
+       limit: d[7]
      }) %}
 
 # ---- SELECT ---------------------------------------------------------------
@@ -186,6 +187,14 @@ duration ->
        } %}
 # the singular "shot" is an accepted alias for the shots unit
 shotsUnit -> %unit_shots {% id %} | %kw_shot {% id %}
+
+# ---- GROUP BY --------------------------------------------------------------
+# grouped output is one row per key tuple; the analyzer holds SELECT and
+# ORDER BY expressions to aggregates or group keys (docs §6.7)
+groupBy -> %groupBy groupList {% d => d[1] %}
+groupList ->
+    expr                  {% d => [d[0]] %}
+  | groupList %comma expr {% d => [...d[0], d[2]] %}
 
 # ---- ORDER BY / LIMIT ------------------------------------------------------
 orderBy -> %orderBy orderList {% d => d[1] %}

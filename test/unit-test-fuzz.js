@@ -133,6 +133,7 @@ const queryArb = fc.record({
       { minLength: 1, maxLength: 3 })),
   sources: fc.array(sourceArb, { minLength: 1, maxLength: 3 }),
   where: exprArb,
+  groupBy: fc.constant(null),
   context: fc.record({ before: durArb, after: durArb }),
   orderBy: fc.option(
     fc.array(fc.record({ expr: exprArb, dir: fc.constantFrom('asc', 'desc') }),
@@ -140,9 +141,39 @@ const queryArb = fc.record({
   limit: fc.option(fc.integer({ min: 0, max: 100000 }))
 })
 
+// aggregate calls at their aggregate arity (count 0-ary, the rest unary)
+const aggregateArb = fc.oneof(
+  fc.constant({ kind: 'call', name: 'count', args: [] }),
+  fc.record({
+    name: fc.constantFrom('sum', 'avg', 'min', 'max'),
+    arg: exprArb
+  }).map(({ name, arg }) => ({ kind: 'call', name, args: [arg] })))
+
+// grouped queries honor the analyzer's shape: SELECT is present and every
+// SELECT/ORDER BY expression is a group key or an aggregate, and context
+// stays at its (unprintable) zero default
+const groupedQueryArb = fc.array(exprArb, { minLength: 1, maxLength: 2 })
+  .chain(groupBy => {
+    const itemArb = fc.oneof(fc.constantFrom(...groupBy), aggregateArb)
+    return fc.record({
+      kind: fc.constant('query'),
+      select: fc.array(fc.record({ expr: itemArb, label: fc.option(stringArb) }),
+        { minLength: 1, maxLength: 3 }),
+      sources: fc.array(sourceArb, { minLength: 1, maxLength: 3 }),
+      where: exprArb,
+      groupBy: fc.constant(groupBy),
+      context: fc.constant(
+        { before: { kind: 'dur', unit: 'secs', value: 0 }, after: { kind: 'dur', unit: 'secs', value: 0 } }),
+      orderBy: fc.option(
+        fc.array(fc.record({ expr: itemArb, dir: fc.constantFrom('asc', 'desc') }),
+          { minLength: 1, maxLength: 2 })),
+      limit: fc.option(fc.integer({ min: 0, max: 100000 }))
+    })
+  })
+
 describe('print/parse roundtrip (property-based)', () => {
   test('any canonical AST survives print → parse unchanged', () => {
-    fc.assert(fc.property(queryArb, query => {
+    fc.assert(fc.property(fc.oneof(queryArb, groupedQueryArb), query => {
       const printed = print(query)
       const { ast, errors } = parse(printed)
       if (errors) {

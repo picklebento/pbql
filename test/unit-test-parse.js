@@ -35,9 +35,26 @@ describe('parse()', () => {
     expect(ast.select).toBeNull()
     expect(ast.sources).toEqual(['f'])
     expect(stripLoc(ast.where)).toEqual({ kind: 'lit', value: true })
+    expect(ast.groupBy).toBeNull()
     expect(ast.context).toEqual({ before: ZERO, after: ZERO })
     expect(ast.orderBy).toBeNull()
     expect(ast.limit).toBeNull()
+  })
+
+  test('GROUP BY takes a comma list of key expressions', () => {
+    const { ast, errors } = parse(
+      'SELECT count() FROM "f" WHERE true GROUP BY shot.type, shot.hitter.team')
+    expect(errors).toBeUndefined()
+    expect(stripLoc(ast.groupBy)).toEqual([
+      { kind: 'prop', base: { object: 'shot', offset: 0 }, path: ['type'] },
+      { kind: 'prop', base: { object: 'shot', offset: 0 }, path: ['hitter', 'team'] }
+    ])
+  })
+
+  test('GROUP BY is case-insensitive with any whitespace between the words', () => {
+    const { ast, errors } = parse('SELECT count() FROM "f" WHERE true group \n By shot.type')
+    expect(errors).toBeUndefined()
+    expect(ast.groupBy).toHaveLength(1)
   })
 
   test('FROM takes a comma list of opaque quoted strings', () => {

@@ -137,6 +137,28 @@ describe('print()', () => {
     ].join('\n'))
   })
 
+  test('prints GROUP BY canonically between WHERE and ORDER BY', () => {
+    const printed = roundtrips(
+      'select shot.type, count() from "f" where true group by shot.type ' +
+      'order by count() desc limit 3')
+    expect(printed).toBe([
+      'SELECT shot.type, count()',
+      'FROM "f"',
+      'WHERE true',
+      'GROUP BY shot.type',
+      'ORDER BY count() DESC',
+      'LIMIT 3'
+    ].join('\n'))
+    // multiple keys keep their comma list
+    expect(roundtrips(
+      'SELECT count() FROM "f" WHERE true GROUP BY shot.type, shot.hitter.team'))
+      .toContain('GROUP BY shot.type, shot.hitter.team')
+    // GROUP BY + CONTEXT is an analyzer error, but it still prints/reparses
+    expect(roundtrips(
+      'SELECT count() FROM "f" WHERE true GROUP BY shot.type CONTEXT BEFORE 2secs'))
+      .toBe('SELECT count()\nFROM "f"\nWHERE true\nGROUP BY shot.type\nCONTEXT BEFORE 2secs')
+  })
+
   test('extreme magnitudes print decimal-only, never e-notation', () => {
     // 0.0000001 is 1e-7: String() would render it with an exponent, which
     // the lexer cannot reparse — the printer must expand it

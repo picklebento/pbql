@@ -584,6 +584,7 @@
       }
     ]
   },
+  "groupBy": null,
   "context": {
     "before": {
       "kind": "durfn",

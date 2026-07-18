@@ -53,6 +53,7 @@ const lexer = moo.compile({
   // multi-word section keywords (must precede the identifier rule)
   contextBefore: ciPhrase('CONTEXT BEFORE'),
   contextAfter: ciPhrase('CONTEXT AFTER'),
+  groupBy: ciPhrase('GROUP BY'),
   orderBy: ciPhrase('ORDER BY'),
   leftParen: '(',
   rightParen: ')',

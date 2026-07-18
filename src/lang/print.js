@@ -124,6 +124,9 @@ export function print (query) {
   // sources are opaque strings; hosts interpret them
   lines.push('FROM ' + query.sources.map(quote).join(', '))
   lines.push('WHERE ' + printExpr(query.where))
+  if (query.groupBy) {
+    lines.push('GROUP BY ' + query.groupBy.map(printExpr).join(', '))
+  }
   const { before, after } = query.context
   if (!isZeroDur(before)) {
     lines.push('CONTEXT BEFORE ' + printDuration(before))
