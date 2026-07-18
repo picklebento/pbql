@@ -159,8 +159,8 @@ const SHOT_PROPS = [
   {
     path: 'verticalType',
     type: 'string',
-    unit: '"dig"|"topspin"|"slice"|"lob"|"neutral"',
-    doc: 'the vertical character of the stroke',
+    unit: '"dig"|"neutral"|"overhead"',
+    doc: 'the vertical character of the stroke, from strike height (dig ≤ 2.5ft, overhead ≥ 6ft)',
     extract: ctx => ctx.shot.vertical_type
   },
   {
@@ -173,7 +173,7 @@ const SHOT_PROPS = [
   {
     path: 'winnerType',
     type: 'string',
-    unit: '"winner"|"ace"|"forced_fault"|"unforced_fault"',
+    unit: '"clean"|"forced_fault"',
     doc: 'how this shot won the rally; unknown if it did not',
     extract: ctx => ctx.shot.winner_type
   },
