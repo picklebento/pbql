@@ -271,7 +271,9 @@ One row per selected shot; `AS "label"` names the output column (labels are
 purely cosmetic — units never change). Aggregates `count()`, `sum(x)`,
 `avg(x)`, `min(x)`, `max(x)` collapse the result to a single row; mixing
 aggregate and non-aggregate expressions is a validation error (there is no
-GROUP BY). Aggregates skip unknown inputs; `count()` counts selected shots.
+GROUP BY). Aggregates coerce their inputs by the same rule as scalar
+functions — anything but a finite number is unknown — and skip unknowns;
+`count()` counts selected shots.
 
 In CSV output, a string cell that starts with `=`, `+`, `-`, `@`, tab, or
 carriage return is prefixed with a single quote so spreadsheets import it

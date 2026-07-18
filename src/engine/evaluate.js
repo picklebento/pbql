@@ -88,7 +88,9 @@ function compare (op, a, b) {
   }
 }
 
-function asNumber (value) {
+// The numeric-coercion rule shared by scalar functions, arithmetic, unary
+// minus, and the SELECT aggregates: anything but a finite number is UNKNOWN.
+export function asNumber (value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : UNKNOWN
 }
 

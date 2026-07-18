@@ -301,6 +301,15 @@ describe('runQuery: SELECT', () => {
     expect(empty.rows).toEqual([[0, null]])
   })
 
+  test('aggregates coerce inputs like scalar functions: non-numbers skip', () => {
+    // sum over a string property must yield null, never string concatenation
+    const result = runQuery({
+      text: 'SELECT sum(shot.type), avg(shot.type), min(shot.type), max(shot.type) FROM "x" WHERE true',
+      games: [makeDoublesGame()]
+    })
+    expect(result.rows).toEqual([[null, null, null, null]])
+  })
+
   test('mixing aggregates with per-shot expressions is an error', () => {
     const result = runQuery({
       text: 'SELECT count(), shot.num FROM "x" WHERE true',

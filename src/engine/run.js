@@ -8,7 +8,7 @@ import { printExpr } from '../lang/print.js'
 import { Game, InvalidInsightsError, UnsupportedInsightsError } from '../model/game.js'
 import { playerMatchesTag } from '../model/registry.js'
 
-import { UNKNOWN, evalExpr } from './evaluate.js'
+import { UNKNOWN, asNumber, evalExpr } from './evaluate.js'
 import { computeWindow } from './window.js'
 
 function isAggregateItem (item) {
@@ -79,9 +79,9 @@ function project (query, selected) {
       if (expr.name === 'count') {
         return selected.length
       }
-      const values = selected
-        .map(ctx => evalExpr(expr.args[0], ctx))
-        .filter(v => v !== UNKNOWN) // aggregates skip unknown inputs
+      const values = selected // aggregates coerce like scalar functions:
+        .map(ctx => asNumber(evalExpr(expr.args[0], ctx)))
+        .filter(v => v !== UNKNOWN) // non-numbers are skipped as unknown
       if (values.length === 0) {
         return null
       }
