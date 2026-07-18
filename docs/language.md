@@ -230,7 +230,9 @@ BEFORE/AFTER):
   the rally: on a rally's second shot, `BEFORE 5 shots` includes only one.
 - `X secs` — stretch the window by X seconds of video time. May spill past
   the rally's own start/end by at most `maxSecsBeyondRally` (an engine
-  option, default **3s**), and never past the video's bounds.
+  option, default **3s**). Windows are clamped at 0 at the video's start;
+  there is no clamp at the video's end, because insights doesn't know the
+  video's duration (trailing footage exists past the last rally).
 - `rally` — to the rally's boundary (what the Shot Explorer calls
   `numBefore=999`).
 - `min(a, b)` / `max(a, b)` — resolve each alternative **per shot** to a
