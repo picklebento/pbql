@@ -11,7 +11,8 @@
     ".": {
       "browser": "./src/browser.js",
       "default": "./src/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "bin": {
     "pbql": "./bin/pbql.js"
