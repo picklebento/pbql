@@ -87,8 +87,13 @@ cmpExpr ->
     {% d => ({ kind: 'in', lhs: d[0], list: d[3], loc: loc(d[1]) }) %}
   | addExpr {% id %}
 literalList ->
-    literal                    {% d => [d[0]] %}
-  | literalList %comma literal {% d => [...d[0], d[2]] %}
+    inLiteral                    {% d => [d[0]] %}
+  | literalList %comma inLiteral {% d => [...d[0], d[2]] %}
+# IN lists admit signed numbers ("IN (-1, 2)"), matching "= -1" legality;
+# everywhere else negation stays the unary - operator on expressions
+inLiteral ->
+    literal        {% id %}
+  | %minus number  {% d => -d[1] %}
 addExpr ->
     addExpr addOp mulExpr {% d => ({ kind: 'arith', op: d[1], lhs: d[0], rhs: d[2] }) %}
   | mulExpr               {% id %}

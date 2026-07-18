@@ -113,3 +113,7 @@ WHERE shot.num = 3 AND shot.type = "drop" AND shot.to.zone IN ("kitchen", "short
 # Q: Every ball hit at my left-side opponent's feet
 FROM "83gyqyc10y8f"
 WHERE hitter.team = me.team AND myOpponentLHS.distanceToNet <= 14 AND shot.to.zone != "out"
+
+# Q: Balls launched exactly level or one degree downward
+FROM "83gyqyc10y8f"
+WHERE shot.pitch IN (0, -1)

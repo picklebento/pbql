@@ -195,11 +195,20 @@ export function evalExpr (node, ctx) {
     case 'cmp':
       return compare(node.op, evalExpr(node.lhs, ctx), evalExpr(node.rhs, ctx))
     case 'in': {
+      // the spec's OR-chain expansion: x IN (a, b) ≡ x = a OR x = b, with
+      // Kleene OR (any true → true; any unknown and no true → unknown)
       const lhs = evalExpr(node.lhs, ctx)
-      if (lhs === UNKNOWN) {
-        return UNKNOWN
+      let sawUnknown = false
+      for (const value of node.list) {
+        const matches = compare('=', lhs, value)
+        if (matches === true) {
+          return true
+        }
+        if (matches !== false) {
+          sawUnknown = true
+        }
       }
-      return node.list.some(value => comparable(lhs, value) && lhs === value)
+      return sawUnknown ? UNKNOWN : false
     }
     case 'not': {
       const value = evalExpr(node.arg, ctx)

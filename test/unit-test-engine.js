@@ -204,6 +204,16 @@ describe('coverage edges', () => {
     expect(shotsWhere('shot.winnerType IN ("winner", "ace")')).toEqual([[0, 2]])
   })
 
+  test('IN is an OR chain: unknown comparisons propagate per Kleene', () => {
+    // 2 = "x" is unknown at runtime (types differ), so the whole IN is
+    // unknown — not false — and NOT of it must not match anything
+    expect(shotsWhere('NOT (min(2, 3) IN ("x", "y"))')).toEqual([])
+    // ...but one true element decides the chain regardless of unknowns
+    expect(shotsWhere('min(2, 3) IN ("x", 2)')).toHaveLength(9)
+    // signed numeric literals evaluate end-to-end
+    expect(shotsWhere('shot.num IN (-1, 1)')).toEqual([[0, 0], [1, 0], [2, 0]])
+  })
+
   test('remaining runtime operators: !=, +, *', () => {
     expect(shotsWhere('shot.type != "drive"'))
       .toEqual([[0, 1], [0, 2], [2, 2]])

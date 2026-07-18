@@ -105,6 +105,10 @@ describe('parse()', () => {
     })
   })
 
+  test('IN admits signed numeric literals, matching "= -1" legality', () => {
+    expect(parseWhere('shot.pitch IN (-1, 2, -3.5)').list).toEqual([-1, 2, -3.5])
+  })
+
   test('relative shot/rally references carry offsets', () => {
     expect(parseWhere('shot[-1].isVolley').base).toEqual({ object: 'shot', offset: -1 })
     expect(parseWhere('rally[2].winner = 1').lhs.base).toEqual({ object: 'rally', offset: 2 })

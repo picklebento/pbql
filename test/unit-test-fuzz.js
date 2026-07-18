@@ -19,6 +19,11 @@ const numberArb = fc.oneof(
   fc.double({ min: 0, noNaN: true, noDefaultInfinity: true })
     .map(n => (Object.is(n, -0) ? 0 : n)))
 const literalArb = fc.oneof(numberArb, stringArb, fc.boolean())
+// IN lists additionally admit signed numeric literals (never -0: it prints
+// as "0", which reparses as +0)
+const inLiteralArb = fc.oneof(
+  literalArb,
+  numberArb.map(n => -n).filter(n => !Object.is(n, -0)))
 
 const baseArb = fc.oneof(
   fc.record({ object: fc.constant('game') }),
@@ -63,7 +68,7 @@ const { expr: exprArb } = fc.letrec(tie => ({
   }).map(n => ({ kind: 'cmp', ...n })),
   inNode: fc.record({
     lhs: tie('numeric'),
-    list: fc.array(literalArb, { minLength: 1, maxLength: 3 })
+    list: fc.array(inLiteralArb, { minLength: 1, maxLength: 3 })
   }).map(n => ({ kind: 'in', ...n })),
   not: tie('bool').map(arg => ({ kind: 'not', arg })),
   // canonical junctions never directly nest their own kind (the grammar

@@ -66,7 +66,10 @@ Highest to lowest; comparisons do not chain (`a < b < c` is an error).
 8. `OR`
 
 `AND`/`OR` are left-associative; parentheses group as usual. `x IN (a, b, c)`
-is exactly `x = a OR x = b OR x = c`.
+is exactly `x = a OR x = b OR x = c` — including the Kleene rules of §4
+(any element matching → `true`; otherwise any unknown comparison → unknown).
+The list holds literal values only; numeric elements may be signed
+(`shot.pitch IN (0, -1)`), just as `= -1` is legal.
 
 ## 4. Types and unknown
 
