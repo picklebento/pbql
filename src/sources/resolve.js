@@ -54,7 +54,7 @@ async function fetchVidGame ({ vid, sessionIdx }, source) {
     insights = await fetchVidInsights({ vid, sessionIdx })
   } catch (err) {
     // fetch-vid errors don't know which FROM string they came from
-    throw new Error(`"${source}": ${err.message}`)
+    throw new Error(`"${source}": ${err.message}`, { cause: err })
   }
   writeCache(cache, insights)
   return { vid, sessionIdx, insights }

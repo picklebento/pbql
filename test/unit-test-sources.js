@@ -141,8 +141,9 @@ describe('resolveSources', () => {
 
     test('sessions past the first never exist on engines ≤ 132', async () => {
       responses = [version(132)]
-      await expect(resolveSources(['ab12cd34ef56:2'])).rejects.toThrow(
-        '"ab12cd34ef56:2": session 2 not found for this video')
+      const err = await resolveSources(['ab12cd34ef56:2']).catch(e => e)
+      expect(err.message).toBe('"ab12cd34ef56:2": session 2 not found for this video')
+      expect(err.cause.message).toBe('session 2 not found for this video')
       expect(calls).toHaveLength(1) // the bucket is never asked
     })
 
