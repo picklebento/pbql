@@ -37,6 +37,16 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   speed by player) in one query; with it, every SELECT/ORDER BY item
   must be an aggregate or one of the group keys, and CONTEXT is not
   allowed.
+- Computing rates ("how often do we win when …"): if the condition can
+  hold at most once per rally (who served, a shot.num = 1 fact), one
+  query is enough — avg(<condition>) is a rate (booleans average as
+  1/0), and GROUP BY gives per-group rates. But when the condition can
+  occur MULTIPLE times in one rally (e.g. "rallies where I hit a
+  drop"), a shot-level avg over-counts rallies with several matching
+  shots: instead SELECT rally.num, rally.winner with the condition,
+  dedupe the rallies yourself, and divide — or run two such queries
+  and divide the deduped rally counts. Never present a shot-weighted
+  average as a per-point rate.
 - Use SELECT only when the question asks for values or aggregates
   (counts, averages, a spreadsheet of numbers). Questions that find or
   show shots — including superlatives like "the fastest shot" (use
@@ -349,6 +359,18 @@ Q: What fraction of rallies did my team win? (one number)
     SELECT avg(rally.winner = me.team) AS "win rate"
     FROM "83gyqyc10y8f"
     WHERE shot.num = 1
+
+Q: How often did my team win the rally when we served? (serving happens once per rally, so one avg works)
+
+    SELECT avg(rally.winner = me.team) AS "win rate when we serve"
+    FROM "83gyqyc10y8f"
+    WHERE shot.num = 1 AND shot.hitter.team = me.team
+
+Q: Rallies where I hit at least one drop, with each rally's winner — drops repeat within a rally, so dedupe these rows before computing a win rate
+
+    SELECT rally.num, rally.winner
+    FROM "83gyqyc10y8f"
+    WHERE shot.hitter = me AND shot.type = "drop"
 
 Q: My win rate by shot type — how do rallies go when I hit each kind of shot?
 

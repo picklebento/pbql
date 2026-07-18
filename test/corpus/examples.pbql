@@ -131,6 +131,16 @@ SELECT avg(rally.winner = me.team) AS "win rate"
 FROM "83gyqyc10y8f"
 WHERE shot.num = 1
 
+# Q: How often did my team win the rally when we served? (serving happens once per rally, so one avg works)
+SELECT avg(rally.winner = me.team) AS "win rate when we serve"
+FROM "83gyqyc10y8f"
+WHERE shot.num = 1 AND shot.hitter.team = me.team
+
+# Q: Rallies where I hit at least one drop, with each rally's winner — drops repeat within a rally, so dedupe these rows before computing a win rate
+SELECT rally.num, rally.winner
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.type = "drop"
+
 # Q: My win rate by shot type — how do rallies go when I hit each kind of shot?
 SELECT shot.type, avg(rally.winner = me.team) AS "win rate", count()
 FROM "83gyqyc10y8f"
