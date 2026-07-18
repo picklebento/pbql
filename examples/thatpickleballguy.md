@@ -29,7 +29,7 @@ How to use these:
 
 ## Serves
 
-### "Give me 10 minutes and I'll fix your serve forever." (2025)
+### "[Give me 10 minutes and I'll fix your serve forever.](https://www.youtube.com/watch?v=qazUxtEX_-4)" (2025)
 
 > Show every serve I missed — into the net, short, or out — so I can see
 > what's breaking down.
@@ -39,7 +39,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.hasFault
 ```
 
-### "3 Tricks to immediately Add SERIOUS POWER to Your Serve" (2025) / "7 Reasons Your Serve Has No Power (& How to Serve Harder)" (2024)
+### "[3 Tricks to immediately Add SERIOUS POWER to Your Serve](https://www.youtube.com/watch?v=XZXix27vyvg)" (2025) / "[7 Reasons Your Serve Has No Power (& How to Serve Harder)](https://www.youtube.com/watch?v=V0HhlLojf0k)" (2024)
 
 > Rank my serves by speed and show where each one landed — are my hardest
 > serves still finding the deep zone?
@@ -51,7 +51,7 @@ WHERE shot.hitter = me AND shot.sequence = "serve"
 ORDER BY shot.speed DESC
 ```
 
-### "They Banned His Genius Serve, Now He Does This" (2025)
+### "[They Banned His Genius Serve, Now He Does This](https://www.youtube.com/watch?v=YyN9lJMwkh8)" (2025)
 
 Zane Navratil's post-ban weapon: heavy topspin, landed deep.
 
@@ -63,7 +63,7 @@ WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.spin.class = "topspi
 ORDER BY shot.spin.rpm DESC
 ```
 
-### "5 Ridiculous Pickleball Strategies That Just Might Work" (2024)
+### "[5 Ridiculous Pickleball Strategies That Just Might Work](https://www.youtube.com/watch?v=ZZFeoUK54Fk)" (2024)
 
 > Did anyone actually try a lob serve? Show any serve that arced way up,
 > and the return it got.
@@ -79,7 +79,7 @@ a serve whose apex was 12+ feet up.
 
 ## Returns
 
-### "I taught my 4.5 friend how to return like a pro" (2026)
+### "[I taught my 4.5 friend how to return like a pro](https://www.youtube.com/watch?v=UPSacn3AXLQ)" (2026)
 
 > Show my returns that landed deep, plus the third shot each one forced.
 
@@ -89,7 +89,7 @@ WHERE shot.hitter = me AND shot.sequence = "return" AND shot.to.zone = "deep"
 CONTEXT AFTER 1 shot
 ```
 
-### "They say don't slice returns. This pro does anyway." (2026)
+### "[They say don't slice returns. This pro does anyway.](https://www.youtube.com/watch?v=V6fIzk2Sv1c)" (2026)
 
 > Pull up my slice returns as a spreadsheet — where did they land and how
 > low did they cross the net?
@@ -100,7 +100,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.sequence = "return" AND shot.verticalType = "slice"
 ```
 
-### "5 Advanced Pickleball Return Strategies to Outplay Your Opponents" (2024)
+### "[5 Advanced Pickleball Return Strategies to Outplay Your Opponents](https://www.youtube.com/watch?v=p27Gq140UjQ)" (2024)
 
 > Find my returns aimed down the middle.
 
@@ -109,7 +109,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.sequence = "return" AND shot.direction = "DownTheMiddle"
 ```
 
-### "The Serve RETURN: The Most Undervalued Shot in Pickleball" (2023)
+### "[The Serve RETURN: The Most Undervalued Shot in Pickleball](https://www.youtube.com/watch?v=722mGzXn4RA)" (2023)
 
 > Every return I flubbed, with the serve that caused it.
 
@@ -121,7 +121,7 @@ CONTEXT BEFORE 1 shot
 
 ## Third (and fourth) shots
 
-### "A Third Shot Drop Strategy Masterclass" (2024)
+### "[A Third Shot Drop Strategy Masterclass](https://www.youtube.com/watch?v=g2ByJMmUP4A)" (2024)
 
 > Find my third-shot drops that landed in the kitchen, with the whole rally
 > for context.
@@ -133,7 +133,7 @@ CONTEXT BEFORE rally
 CONTEXT AFTER rally
 ```
 
-### "The 3rd Shot Drop Is DEAD (Or Is It??) | ft. Senior Pro Dayne Gingrich" (2025)
+### "[The 3rd Shot Drop Is DEAD (Or Is It??) | ft. Senior Pro Dayne Gingrich](https://www.youtube.com/watch?v=um4GCt_ILUM)" (2025)
 
 > Show my third-shot drops that sat up and got attacked.
 
@@ -143,7 +143,7 @@ WHERE shot.hitter = me AND shot.sequence = "3" AND shot.type = "drop" AND shot.e
 CONTEXT AFTER 1 shot
 ```
 
-### "7 Steps to a Deadly 3rd Shot Drive" (2025) / "A 3rd Shot Drive Strategy MasterClass" (2024)
+### "[7 Steps to a Deadly 3rd Shot Drive](https://www.youtube.com/watch?v=UkyN4pHQZyQ)" (2025) / "[A 3rd Shot Drive Strategy MasterClass](https://www.youtube.com/watch?v=WAP-wN5Wjjw)" (2024)
 
 > My 15 hardest third-shot drives that stayed low over the net.
 
@@ -154,7 +154,7 @@ ORDER BY shot.speed DESC
 LIMIT 15
 ```
 
-### "3rd Shot Drop vs. Drive: Which to use and WHEN?" (2023)
+### "[3rd Shot Drop vs. Drive: Which to use and WHEN?](https://www.youtube.com/watch?v=LnTAm5pAr9c)" (2023)
 
 > Give me a spreadsheet of every third shot I hit — drop or drive — with
 > choice and execution scores so I can compare.
@@ -166,7 +166,7 @@ WHERE shot.hitter = me AND shot.sequence = "3"
 ORDER BY shot.hitTime
 ```
 
-### "The Fourth Shot: Pickleball's Most Ignored Weapon" (2023)
+### "[The Fourth Shot: Pickleball's Most Ignored Weapon](https://www.youtube.com/watch?v=vhcl0Lg47x8)" (2023)
 
 > Show my fourth shots taken out of the air, with the drop that set them up.
 
@@ -178,7 +178,7 @@ CONTEXT BEFORE 1 shot
 
 ## Dinking & kitchen play
 
-### "How to Become a Better Dinker" (2025)
+### "[How to Become a Better Dinker](https://www.youtube.com/watch?v=z1Rhjzfqyc8)" (2025)
 
 > Pull my 20 weakest dinks so I can see what to fix.
 
@@ -189,7 +189,7 @@ ORDER BY shot.quality.overall
 LIMIT 20
 ```
 
-### "This Lesson Fixed My Twoey Dink (10 minute masterclass)" (2025)
+### "[This Lesson Fixed My Twoey Dink (10 minute masterclass)](https://www.youtube.com/watch?v=-QCXqwrkVDw)" (2025)
 
 > Find every two-handed dink I hit.
 
@@ -198,7 +198,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.type = "dink" AND shot.strokeType = "two-handed"
 ```
 
-### "7 Reasons You Pop Up Dinks (and how to avoid them)" (2024)
+### "[7 Reasons You Pop Up Dinks (and how to avoid them)](https://www.youtube.com/watch?v=RhcsiwavxYg)" (2024)
 
 > Show my dinks that popped up — and what the other team did about it.
 
@@ -211,7 +211,7 @@ CONTEXT AFTER 1 shot
 *Note:* `exists()` catches both flavors — pop-ups the opponents punished
 (`"exploited"`) and the ones they let slide (`"potential"`).
 
-### "I Found My 4.5 Friend's Superpower at the Kitchen" (2026)
+### "[I Found My 4.5 Friend's Superpower at the Kitchen](https://www.youtube.com/watch?v=0hfPtvSnuyk)" (2026)
 
 > Show my dinks from extended kitchen battles where all four players made
 > it to the line.
@@ -221,7 +221,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.type = "dink" AND rally.allPlayersReachedKitchen AND rally.numShots >= 12
 ```
 
-### "On Court w/ #1 IN THE WORLD Anna-Leigh: Kitchen Strategy Masterclass" (2025)
+### "[On Court w/ #1 IN THE WORLD Anna-Leigh: Kitchen Strategy Masterclass](https://www.youtube.com/watch?v=gVjhEVqMqQY)" (2025)
 
 > Find the moments an opponent's dink sat up and I made them pay.
 
@@ -235,7 +235,7 @@ CONTEXT BEFORE 2 shots
 other side's ball; `"exploited"` means the dead dink was capitalized on —
 and since I hit the next shot, the exploiting was mine.
 
-### "These 5 Kitchen Mistakes Are Ruining Your Game" (2024)
+### "[These 5 Kitchen Mistakes Are Ruining Your Game](https://www.youtube.com/watch?v=g1i3GJ5Q8pk)" (2024)
 
 > Find my dinks that sat up asking to be attacked.
 
@@ -247,7 +247,7 @@ CONTEXT AFTER 1 shot
 
 ## Speedups, flicks & hands battles
 
-### "Everything to Know About \"Speed Ups\" In Pickleball" (2023)
+### "[Everything to Know About \"Speed Ups\" In Pickleball](https://www.youtube.com/watch?v=pCXvUVoBcVo)" (2023)
 
 > Show every speedup I threw and the two shots that followed — did the
 > first punch land?
@@ -258,7 +258,7 @@ WHERE shot.hitter = me AND shot.isSpeedup
 CONTEXT AFTER 2 shots
 ```
 
-### "How Pros Decide WHEN to Attack | (Ft. Augie Ge)" (2025)
+### "[How Pros Decide WHEN to Attack | (Ft. Augie Ge)](https://www.youtube.com/watch?v=Sp_TIdRFOAA)" (2025)
 
 > Show the speedups where I attacked the wrong ball.
 
@@ -268,7 +268,7 @@ WHERE shot.hitter = me AND shot.isSpeedup AND shot.quality.selection < 0.4
 CONTEXT AFTER 1 shot
 ```
 
-### "On-Court Masterclass with World #5 Tyra Black (Her hands are crazy!!)" (2025)
+### "[On-Court Masterclass with World #5 Tyra Black (Her hands are crazy!!)](https://www.youtube.com/watch?v=FW2uIWvKR5U)" (2025)
 
 > Find the moments an opponent sped up on me and I countered out of the air.
 
@@ -279,7 +279,7 @@ CONTEXT BEFORE 1 shot
 CONTEXT AFTER 1 shot
 ```
 
-### "How to Get Faster Hands in pickleball" (2024)
+### "[How to Get Faster Hands in pickleball](https://www.youtube.com/watch?v=5Yh6BX7fRRI)" (2024)
 
 > Cut a reel of every hands battle in my games.
 
@@ -288,7 +288,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.inHighlight("hands_battle")
 ```
 
-### "4.5 Learns Pro Level Forehand Flick in 6 Minutes" (2026)
+### "[4.5 Learns Pro Level Forehand Flick in 6 Minutes](https://www.youtube.com/watch?v=JV0rGW5_qIc)" (2026)
 
 > Show my forehand flicks — speedups I lifted from below the net.
 
@@ -300,7 +300,7 @@ WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeType = "forehand" AND s
 *Note:* there is no "flick" classification; contact below net height
 (~3 ft) on a speedup is the closest signature.
 
-### "How to Hit a Backhand Flick (The Ultimate Guide)" (2026)
+### "[How to Hit a Backhand Flick (The Ultimate Guide)](https://www.youtube.com/watch?v=6kRQFJomZwg)" (2026)
 
 > Show my backhand flicks.
 
@@ -311,7 +311,7 @@ WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeType = "backhand" AND s
 
 ## Resets & defense
 
-### "3 Pickleball Skills That ACTUALLY Make a Difference" (2026)
+### "[3 Pickleball Skills That ACTUALLY Make a Difference](https://www.youtube.com/watch?v=Dw8RDein-XU)" (2026)
 
 The first skill: recognize disadvantage and neutralize before you attack.
 
@@ -323,7 +323,7 @@ WHERE shot.hitter = me AND shot.isReset AND shot.from.zone = "mid"
 CONTEXT BEFORE 1 shot
 ```
 
-### "How to Beat Bangers in 2026" (2023)
+### "[How to Beat Bangers in 2026](https://www.youtube.com/watch?v=V1LHO0JA9RQ)" (2023)
 
 > Find every time a banger drove one at me over 40 mph and I took the pace
 > off.
@@ -333,7 +333,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.isReset AND shot[-1].type = "drive" AND shot[-1].speed > 40
 ```
 
-### "I Taught My 4.0 Friend How the Pros Defend" (2023)
+### "[I Taught My 4.0 Friend How the Pros Defend](https://www.youtube.com/watch?v=nbY6HvPJecU)" (2023)
 
 > Show my successful digs against smashes, and what happened next.
 
@@ -348,7 +348,7 @@ here — it genuinely means "no detected error", not "error status unknown".
 
 ## Overheads & strokes
 
-### "It Looks Wrong, But This Will Fix Your Overheads" (2026)
+### "[It Looks Wrong, But This Will Fix Your Overheads](https://www.youtube.com/watch?v=PIMxQnnav4w)" (2026)
 
 > Pull up every overhead I hit, along with the lob that forced it.
 
@@ -358,7 +358,7 @@ WHERE shot.hitter = me AND shot.type = "smash"
 CONTEXT BEFORE 1 shot
 ```
 
-### "The Ultimate Two-Handed Backhand Lesson (w/ Roscoe Bellamy)" (2026) / "2024's Best New Shot: The Two-Handed Backhand" (2023)
+### "[The Ultimate Two-Handed Backhand Lesson (w/ Roscoe Bellamy)](https://www.youtube.com/watch?v=7dPD2ejpHdI)" (2026) / "[2024's Best New Shot: The Two-Handed Backhand](https://www.youtube.com/watch?v=KrxcKFjvuV8)" (2023)
 
 > Collect all my two-handed backhands, best first, to review my form.
 
@@ -370,7 +370,7 @@ ORDER BY shot.quality.overall DESC
 
 ## Poaching & ernes
 
-### "Why Men's and Women's Doubles Look So Different" (2026)
+### "[Why Men's and Women's Doubles Look So Different](https://www.youtube.com/watch?v=xxIpb_FWwQs)" (2026)
 
 One of the differences Kyle breaks down is how often players cross the
 middle.
@@ -385,7 +385,7 @@ CONTEXT BEFORE 1 shot
 
 *Note:* add `AND shot.hitter.team = me.team` to see only your side's poaches.
 
-### "The Erne; In-Game Breakdown of Pickleball's Coolest Shot" (2023)
+### "[The Erne; In-Game Breakdown of Pickleball's Coolest Shot](https://www.youtube.com/watch?v=JCiPxO2gwaQ)" (2023)
 
 > Cut a reel of the ernes in my games, with the shots that set them up.
 
@@ -397,7 +397,7 @@ CONTEXT BEFORE 2 shots
 
 ## Positioning & doubles strategy
 
-### "Mixed Doubles Strategy Session with Rachel Rohrabacher" (2026)
+### "[Mixed Doubles Strategy Session with Rachel Rohrabacher](https://www.youtube.com/watch?v=LeLzxLzCouE)" (2026)
 
 > How often do opponents attack the middle between me and my partner? Show
 > those shots.
@@ -407,7 +407,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter.team != me.team AND shot.direction = "DownTheMiddle" AND shot.to.zone != "out"
 ```
 
-### "7 Strategies To Use When Playing Pickleball With A LEFTY (ft. Tanner Tomassi)" (2024)
+### "[7 Strategies To Use When Playing Pickleball With A LEFTY (ft. Tanner Tomassi)](https://www.youtube.com/watch?v=Pj3oSDspTH4)" (2024)
 
 > Spot the lefty: show opponent forehands struck on the left side of the
 > body.
@@ -420,7 +420,7 @@ WHERE shot.hitter.team != me.team AND shot.strokeType = "forehand" AND shot.stro
 *Note:* handedness isn't recorded directly; a forehand released on the left
 side of the body means a left-hander (or a very committed run-around).
 
-### "The #1 Doubles Strategy New Players Must Know" (2024)
+### "[The #1 Doubles Strategy New Players Must Know](https://www.youtube.com/watch?v=29MxOqfOVhU)" (2024)
 
 Get to the kitchen line — here is what it costs you when you don't.
 
@@ -435,7 +435,7 @@ CONTEXT BEFORE rally
 *Note:* filtering on the rally's final shot keeps one clip per rally;
 `NOT me.reachedKitchen` keeps only rallies where that is known to be false.
 
-### "A 46-Minute Strategy Session w/ Anna Leigh Waters [ON COURT]" (2025)
+### "[A 46-Minute Strategy Session w/ Anna Leigh Waters [ON COURT]](https://www.youtube.com/watch?v=K9tX7F1U2wk)" (2025)
 
 Anna Leigh's green light: a short return means drive it.
 
@@ -450,7 +450,7 @@ WHERE shot.hitter = me AND shot.sequence = "3" AND shot.type = "drive" AND shot[
 is measured in the court it landed in, so `"short"`/`"kitchen"` means the
 return came up short on my side.
 
-### "Tyra Blacks Pickleball strategy will break your brain." (2025)
+### "[Tyra Blacks Pickleball strategy will break your brain.](https://www.youtube.com/watch?v=LAcgHiwcMPw)" (2025)
 
 Tyra lobs on purpose, from the kitchen line, to move pressing opponents.
 
@@ -464,7 +464,7 @@ CONTEXT AFTER 1 shot
 
 ## Errors, discipline & match review
 
-### "How to Win a Pickleball Tournament" (2026)
+### "[How to Win a Pickleball Tournament](https://www.youtube.com/watch?v=q5XEKWW4tSU)" (2026)
 
 Tournament play is won by whoever donates fewer points.
 
@@ -476,7 +476,7 @@ WHERE shot.hitter = me AND shot.errors.unforced
 CONTEXT BEFORE 1 shot
 ```
 
-### "3 Strategies to WIN more 3.5 Tournaments" (2025)
+### "[3 Strategies to WIN more 3.5 Tournaments](https://www.youtube.com/watch?v=_ZBbNk25BP4)" (2025)
 
 > How many points did I give away on unforced errors?
 
@@ -486,7 +486,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.errors.unforced
 ```
 
-### "6 Overlooked Mistakes Destroying Your Game" (2025)
+### "[6 Overlooked Mistakes Destroying Your Game](https://www.youtube.com/watch?v=K_4ytzcJlxk)" (2025)
 
 > Find every ball I popped up that got hammered.
 
@@ -496,7 +496,7 @@ WHERE shot.hitter = me AND shot.errors.popup = "exploited"
 CONTEXT AFTER 1 shot
 ```
 
-### "4 Mistakes That Make You Want to Break Your Paddle | Part 2" (2025)
+### "[4 Mistakes That Make You Want to Break Your Paddle | Part 2](https://www.youtube.com/watch?v=FBPlMxStOv4)" (2025)
 
 > Show every ball I put into the net.
 
@@ -505,7 +505,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.errors.faults.net
 ```
 
-### "3 Pickleball Kitchen Rules New Players Get Wrong" (2025)
+### "[3 Pickleball Kitchen Rules New Players Get Wrong](https://www.youtube.com/watch?v=C84yW8a5uUE)" (2025)
 
 > Did I ever volley while in the kitchen? Show the violations.
 
@@ -517,7 +517,7 @@ WHERE shot.hitter = me AND shot.errors.faults.kitchen
 *Note:* of the kitchen rules the video covers, the volley-in-the-kitchen
 fault is the one shot data detects.
 
-### "STOP Hitting Out Balls (3 On-Court Drills)" (2024) / "How to Let Out Balls Go in Pickleball" (2024)
+### "[STOP Hitting Out Balls (3 On-Court Drills)](https://www.youtube.com/watch?v=XD0U6uirhA8)" (2024) / "[How to Let Out Balls Go in Pickleball](https://www.youtube.com/watch?v=Kf1gUaLvOkM)" (2024)
 
 > Catch me playing balls that were sailing out.
 
@@ -531,7 +531,7 @@ CONTEXT BEFORE 1 shot
 `"intercepted"` — and since I hit the next ball, I'm the one who bailed
 them out.
 
-### "I Analyzed a 4.5 Match — These Strategies Decide Who Wins" (2025)
+### "[I Analyzed a 4.5 Match — These Strategies Decide Who Wins](https://www.youtube.com/watch?v=251iMaoG3HU)" (2025)
 
 > Show me how every rally ended, with the three shots leading in.
 
@@ -541,7 +541,7 @@ WHERE shot.isFinal
 CONTEXT BEFORE 3 shots
 ```
 
-### "The Only 6 Pickleball Drills You'll Ever Need" (2024)
+### "[The Only 6 Pickleball Drills You'll Ever Need](https://www.youtube.com/watch?v=1Y2zpXxK6ag)" (2024)
 
 > Is my drilling paying off? Average execution score across all my drops
 > this game.
