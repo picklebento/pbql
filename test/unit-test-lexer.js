@@ -45,7 +45,7 @@ describe('pbql lexer', () => {
       .toEqual(['identifier', 'identifier', 'identifier', 'identifier'])
   })
 
-  test('unit aliases lex as the same token type (D15)', () => {
+  test('unit aliases lex as the same token type', () => {
     expect(types('secs seconds SEC shots'))
       .toEqual(['unit_secs', 'unit_secs', 'unit_secs', 'unit_shots'])
   })

@@ -119,7 +119,7 @@ export function print (query) {
       label === null ? printExpr(expr) : `${printExpr(expr)} AS ${quote(label)}`
     ).join(', '))
   }
-  // sources are opaque strings (D17); hosts interpret them
+  // sources are opaque strings; hosts interpret them
   lines.push('FROM ' + query.sources.map(quote).join(', '))
   lines.push('WHERE ' + printExpr(query.where))
   const { before, after } = query.context

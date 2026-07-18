@@ -19,7 +19,7 @@
     return { kind, args }
   }
 
-  // accepted alias spellings canonicalize in the AST (D15)
+  // accepted alias spellings canonicalize in the AST
   const CANON_OPS = { '<>': '!=', '==': '=' }
 
   function unescapeString (tok) {
@@ -42,7 +42,7 @@ query -> select:? from where ctxBefore:? ctxAfter:? orderBy:? limit:?
        limit: d[6]
      }) %}
 
-# ---- SELECT (parsed since M2; evaluated starting M6) --------------------
+# ---- SELECT ---------------------------------------------------------------
 select -> %kw_select selectList {% d => d[1] %}
 selectList ->
     selectItem                    {% d => [d[0]] %}
@@ -52,8 +52,8 @@ selectItem ->
   | expr %kw_as string   {% d => ({ expr: d[0], label: d[2] }) %}
 
 # ---- FROM ----------------------------------------------------------------
-# sources are opaque quoted strings; each host decides what they name (D17 —
-# the CLI resolves video ids, files, directories, and globs; see docs §6.1)
+# sources are opaque quoted strings; each host decides what they name (the
+# CLI resolves video ids, files, directories, and globs; see docs §6.1)
 from -> %kw_from sourceList {% d => d[1] %}
 sourceList ->
     string                    {% d => [d[0]] %}
@@ -62,7 +62,7 @@ sourceList ->
 # ---- WHERE ---------------------------------------------------------------
 where -> %kw_where expr {% d => d[1] %}
 
-# ---- expressions, loosest to tightest binding (D1) ------------------------
+# ---- expressions, loosest to tightest binding -----------------------------
 expr -> orExpr {% id %}
 orExpr ->
     orExpr %kw_or andExpr {% d => junction('or', d[0], d[2]) %}
@@ -111,7 +111,7 @@ postfix ->
   | callExpr                     {% id %}
   | %leftParen expr %rightParen  {% d => d[1] %}
 
-# ---- properties, methods, functions (D16) ---------------------------------
+# ---- properties, methods, functions ---------------------------------------
 # object[.seg[.seg…]][(args)] — args make the last segment a method call
 propExpr -> objectRef segs callArgs:?
   {% (d, _, reject) => {
@@ -139,7 +139,8 @@ index -> %leftBracket %minus:? int %rightBracket
 segs ->
     null                {% () => [] %}
   | segs %dot segName   {% d => [...d[0], d[2]] %}
-# keywords are legal property names after a dot (research-notes issue 5)
+# keywords are legal property names after a dot: moo carves keywords out of
+# identifiers, so the grammar re-admits them as path segments
 segName ->
     %identifier {% d => d[0].text %}
   | %kw_select  {% d => d[0].text %}
@@ -169,7 +170,7 @@ argList ->
     expr                 {% d => [d[0]] %}
   | argList %comma expr  {% d => [...d[0], d[2]] %}
 
-# ---- CONTEXT (D3/D4: positive magnitudes; min = cap, max = floor) ----
+# ---- CONTEXT (positive magnitudes; min = cap, max = floor) ----------------
 ctxBefore -> %contextBefore duration {% d => d[1] %}
 ctxAfter -> %contextAfter duration   {% d => d[1] %}
 duration ->
@@ -184,7 +185,7 @@ duration ->
          }
          return { kind: 'durfn', fn, args: [d[2], d[4]] }
        } %}
-# the singular "shot" is an accepted alias for the shots unit (D15)
+# the singular "shot" is an accepted alias for the shots unit
 shotsUnit -> %unit_shots {% id %} | %kw_shot {% id %}
 
 # ---- ORDER BY / LIMIT ------------------------------------------------------

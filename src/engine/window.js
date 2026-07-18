@@ -1,4 +1,4 @@
-// Context-window computation (D3/D4): each selected shot's video window is
+// Context-window computation: each selected shot's video window is
 // its own flight, widened by the CONTEXT clauses. Durations are
 // positive magnitudes; `shots` units never cross rally boundaries (and add
 // the covered shots to the result as context); `secs` units may spill past

@@ -14,7 +14,7 @@ export const PLAYER_NAMES = [...makePlayers('hitter'), ...makePlayers('me')]
 export const CANONICAL_PLAYERS = new Map(PLAYER_NAMES.map(p => [p.toLowerCase(), p]))
 
 // ---- keywords ----------------------------------------------------------
-// All keywords are case-insensitive (D9). moo.keywords matches verbatim, so
+// All keywords are case-insensitive. moo.keywords matches verbatim, so
 // we lowercase the identifier before the keyword lookup; token.text keeps
 // the original spelling.
 function caseInsensitiveKeywords (map) {
@@ -39,7 +39,7 @@ const KEYWORDS = {
   kw_shot: 'shot', // the shot object; also the singular duration unit alias
   kw_rally: 'rally', // the rally object; also the to-rally-boundary duration
   kw_game: 'game',
-  unit_secs: ['secs', 'seconds', 'sec'], // aliases canonicalize to "secs" (D15)
+  unit_secs: ['secs', 'seconds', 'sec'], // aliases canonicalize to "secs"
   unit_shots: 'shots',
   player: PLAYER_NAMES.map(p => p.toLowerCase())
 }
@@ -73,7 +73,7 @@ const lexer = moo.compile({
   rightBracket: ']',
   dot: '.',
   comma: ',',
-  // aliases <> and == are accepted and canonicalized by the grammar (D15)
+  // aliases <> and == are accepted and canonicalized by the grammar
   comparisonOperator: ['<=', '>=', '!=', '<>', '==', '=', '<', '>'],
   plus: '+',
   minus: '-',

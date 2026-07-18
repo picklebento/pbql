@@ -116,7 +116,7 @@ const durArb = fc.letrec(tie => ({
     }))
 })).dur
 
-// sources are opaque strings (D17): vid-shaped, path/glob-shaped, or any
+// sources are opaque strings: vid-shaped, path/glob-shaped, or any
 // printable text (escapes included) — the language treats them all alike
 const sourceArb = fc.oneof(
   stringArb,

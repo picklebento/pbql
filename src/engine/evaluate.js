@@ -1,4 +1,4 @@
-// Expression evaluation with SQL/Kleene three-valued logic (D2): missing
+// Expression evaluation with SQL/Kleene three-valued logic: missing
 // data evaluates to UNKNOWN, which propagates through comparisons and
 // arithmetic; WHERE keeps a shot only when the condition is exactly true.
 import { isOnFarSide, toPlayerFrame } from '../model/geometry.js'

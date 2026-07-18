@@ -26,7 +26,7 @@ describe('validate()', () => {
   })
 })
 
-describe('M6 built-ins', () => {
+describe('built-ins', () => {
   test('unit conversions evaluate', () => {
     expect(shotsWhere('kph(shot.speed) > 80')).toEqual([[2, 2]]) // 50mph = 80.47
     expect(shotsWhere('toMs(shot.hitTime) = 58000')).toEqual([[2, 2]])

@@ -152,7 +152,7 @@ describe('print()', () => {
       .toContain('LIMIT 1000000000000000000000000')
   })
 
-  test('prints sources as quoted strings, escapes included (D17)', () => {
+  test('prints sources as quoted strings, escapes included', () => {
     expect(roundtrips('from "abc123def456:2" , "games/*.json" WHERE true'))
       .toBe('FROM "abc123def456:2", "games/*.json"\nWHERE true')
     expect(roundtrips('FROM "a \\"b\\" \\\\" WHERE true'))

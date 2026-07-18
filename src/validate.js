@@ -1,4 +1,4 @@
-// One-call validation for hosts and LLM self-repair loops (plan M9):
+// One-call validation for hosts and LLM self-repair loops:
 // lex + parse + normalize + analyze, returning every error found.
 import { analyze, normalize } from './analyze/analyze.js'
 import { parse } from './lang/parse.js'

@@ -1,7 +1,7 @@
 // Semantic validation of a parsed query against the property registry:
 // unknown properties/methods/functions (with nearest-match suggestions),
 // arity problems, and obvious type mismatches. Also provides normalize(),
-// which rewrites accepted alias forms into canonical ones (D15/D16).
+// which rewrites accepted alias forms into canonical ones.
 import { REGISTRY } from '../model/registry.js'
 
 // scalar functions usable anywhere; SELECT additionally allows aggregates

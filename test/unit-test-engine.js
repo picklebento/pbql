@@ -159,7 +159,7 @@ describe('runQuery: context windows', () => {
     expect(whole.contextShots).toHaveLength(3)
   })
 
-  test('min caps, max floors, ties prefer context shots (D4)', () => {
+  test('min caps, max floors, ties prefer context shots', () => {
     expect(windowFor('CONTEXT BEFORE min(1 shots, 2secs)')).toMatchObject({
       window: { sMs: 56000 }, contextShots: []
     })

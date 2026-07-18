@@ -1,6 +1,6 @@
 // The pbql CLI: run a query over insights JSON and emit selected shots as
 // JSON/CSV/EDL, an ffmpeg command, or pb.vision explore links. FROM sources
-// are strings the CLI resolves per src/sources/resolve.js (D17).
+// are strings the CLI resolves per src/sources/resolve.js.
 import fs from 'node:fs'
 import { parseArgs } from 'node:util'
 

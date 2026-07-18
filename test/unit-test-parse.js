@@ -40,7 +40,7 @@ describe('parse()', () => {
     expect(ast.limit).toBeNull()
   })
 
-  test('FROM takes a comma list of opaque quoted strings (D17)', () => {
+  test('FROM takes a comma list of opaque quoted strings', () => {
     const { ast } = parse(
       'FROM "abc123def456", "abc123def456:2", "games/*.json" WHERE true')
     expect(ast.sources).toEqual(
@@ -63,7 +63,7 @@ describe('parse()', () => {
       })
   })
 
-  test('comparison binds tighter than NOT (D1)', () => {
+  test('comparison binds tighter than NOT', () => {
     expect(parseWhere('NOT shot.isVolley = false')).toEqual({
       kind: 'not',
       arg: {
@@ -92,7 +92,7 @@ describe('parse()', () => {
     })
   })
 
-  test('alias operators canonicalize in the AST (D15)', () => {
+  test('alias operators canonicalize in the AST', () => {
     expect(parseWhere('shot.speed <> 3').op).toBe('!=')
     expect(parseWhere('shot.speed == 3').op).toBe('=')
   })

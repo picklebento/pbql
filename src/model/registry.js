@@ -610,7 +610,7 @@ function framedPlayerPos (ctx, playerIdx) {
   return pos === undefined ? undefined : toPlayerFrame(pos, isOnFarSide(pos))
 }
 
-// Methods (subject predicates with arguments — D16). apply() receives the
+// Methods (subject predicates with arguments). apply() receives the
 // evaluation ctx, the resolved subject (a player index for player subjects,
 // undefined for shot subjects), and the literal arguments.
 const SHOT_METHODS = [

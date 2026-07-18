@@ -113,7 +113,7 @@ describe('analyze()', () => {
 })
 
 describe('normalize()', () => {
-  test('rewrites function-form methods to method form (D15/D16)', () => {
+  test('rewrites function-form methods to method form', () => {
     const { ast } = parse('FROM "f" WHERE taggedWith(shot, "BJ*")')
     const { ast: canonical } = parse('FROM "f" WHERE shot.taggedWith("BJ*")')
     expect(stripLoc(normalize(ast))).toEqual(stripLoc(canonical))
