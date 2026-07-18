@@ -42,7 +42,8 @@ describe('built-ins', () => {
       .toEqual([[0, 0], [0, 1], [1, 0], [2, 0], [2, 1], [2, 3]])
     expect(shotsWhere('rally.num = 1 AND shot.isHitOnSide("left")'))
       .toEqual([[0, 2]])
-    expect(shotsWhere('shot.isHitOnSide("up")')).toEqual([]) // bad side: unknown
+    // a bad side ("up") is now an analyzer error; the runtime guard for
+    // unanalyzed ASTs is covered in unit-test-engine.js
     expect(shotsWhere('rally.num = 2 AND shot.num = 2 AND shot.isHitOnSide("left")'))
       .toEqual([]) // no trajectory on the sparse shot
   })

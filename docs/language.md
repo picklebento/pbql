@@ -103,6 +103,16 @@ validation error, not `false`). Strings compare case-sensitively with `=`
 and `!=` only. Players compare with `=`/`!=` by identity
 (`shot.hitter = me`).
 
+String properties with an enumerated value set (the quoted alternatives in
+the [data dictionary](data-dictionary.md)'s unit column, e.g.
+`shot.winnerType`'s `"clean"|"forced_fault"`) accept **only** those values:
+comparing one (`=`, `!=`, `IN`) with a string literal outside its set — or
+passing such a literal to an enum-typed method argument like
+`inHighlight(kind)` — is a validation error (`PBQL_UNKNOWN_ENUM_VALUE`,
+with the valid values and a did-you-mean hint), since production data can
+never hold it. Non-literal comparisons (`shot.from.zone = shot.to.zone`)
+are unaffected.
+
 ## 5. Objects
 
 ### 5.1 `shot`, and relative shots `shot[k]`
@@ -373,7 +383,8 @@ the grouped rows downstream.
 Every phase (lex, parse, validate, evaluate) reports
 `{ code, message, line, col, length, hint? }` with 1-indexed positions.
 Codes are stable strings (`PBQL_LEX_ERROR`, `PBQL_PARSE_ERROR`,
-`PBQL_UNEXPECTED_END`, `PBQL_UNKNOWN_PROPERTY`, `PBQL_TYPE_MISMATCH`, …).
+`PBQL_UNEXPECTED_END`, `PBQL_UNKNOWN_PROPERTY`, `PBQL_TYPE_MISMATCH`,
+`PBQL_UNKNOWN_ENUM_VALUE`, …).
 Unknown property names come with a nearest-match hint
 (`did you mean "isVolley"?`).
 

@@ -596,7 +596,7 @@ function framedPlayerPos (ctx, playerIdx) {
 const SHOT_METHODS = [
   {
     name: 'isHitOnSide',
-    args: [{ name: 'side', type: 'string' }],
+    args: [{ name: 'side', type: 'string', unit: '"left"|"right"' }],
     doc: 'whether the ball was struck on the given half ("left"|"right") of the court in the hitter\'s frame (right = x >= 10)',
     apply: (ctx, subject, [side]) => {
       const struck = trajectory(ctx)?.start?.location
@@ -616,7 +616,11 @@ const SHOT_METHODS = [
   },
   {
     name: 'inHighlight',
-    args: [{ name: 'kind', type: 'string' }],
+    args: [{
+      name: 'kind',
+      type: 'string',
+      unit: '"atp"|"erne"|"hands_battle"|"long_rally"|"poach"|"sequence"'
+    }],
     doc: 'whether the shot falls inside a highlight of the given kind ("atp", "erne", "hands_battle", "long_rally", "poach", "sequence")',
     apply: (ctx, subject, [kind]) => {
       const highlights = ctx.game.insights.highlights

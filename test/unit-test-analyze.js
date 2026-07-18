@@ -1,5 +1,6 @@
-import { analyze, normalize } from '../src/analyze/analyze.js'
+import { analyze, enumValuesOf, normalize } from '../src/analyze/analyze.js'
 import { parse } from '../src/index.js'
+import { REGISTRY } from '../src/model/registry.js'
 
 import { stripLoc } from './helpers.js'
 
@@ -148,6 +149,76 @@ describe('analyze()', () => {
     expect(analyzeWhere('timecode(1, shot.isVolley) = "0:01"')).toEqual([])
     // ...while unknown-typed flags pass and resolve per Kleene at runtime
     expect(analyzeWhere('timecode(1, exists(shot.speed)) = "0:01"')).toEqual([])
+  })
+
+  test('enum properties reject values production never emits', () => {
+    expect(analyzeWhere('shot.type = "smsh"')[0]).toMatchObject({
+      code: 'PBQL_UNKNOWN_ENUM_VALUE',
+      message: 'shot.type is never "smsh" (valid: "drive", "drop", "dink", ' +
+        '"lob", "smash", "atp", "erne")',
+      hint: 'did you mean "smash"?'
+    })
+    // both operand orders, both equality operators
+    expect(analyzeWhere('"drivee" = shot[1].type')[0]).toMatchObject({
+      code: 'PBQL_UNKNOWN_ENUM_VALUE',
+      message: expect.stringContaining('shot[1].type is never "drivee"'),
+      hint: 'did you mean "drive"?'
+    })
+    expect(analyzeWhere('shot.winnerType != "winner"')[0]).toMatchObject({
+      code: 'PBQL_UNKNOWN_ENUM_VALUE',
+      message: 'shot.winnerType is never "winner" (valid: "clean", "forced_fault")'
+    })
+    // IN lists: one report for the first invalid element
+    const inErrors = analyzeWhere('shot.type IN ("smash", "speedup", "volley")')
+    expect(inErrors).toHaveLength(1)
+    expect(inErrors[0]).toMatchObject({
+      code: 'PBQL_UNKNOWN_ENUM_VALUE',
+      message: expect.stringContaining('shot.type is never "speedup"')
+    })
+    expect(analyzeWhere('shot.type IN ("smash", "drive")')).toEqual([])
+  })
+
+  test('every declared enum value passes for every enum property', () => {
+    const roots = { shot: 'shot', rally: 'rally', game: 'game', player: 'me' }
+    let checked = 0
+    for (const [objName, { propList }] of Object.entries(REGISTRY)) {
+      for (const { path, unit } of propList) {
+        for (const value of enumValuesOf(unit) ?? []) {
+          expect(analyzeWhere(`${roots[objName]}.${path} = ${JSON.stringify(value)}`))
+            .toEqual([])
+          checked++
+        }
+      }
+    }
+    expect(checked).toBeGreaterThanOrEqual(30) // the surface stays enum-rich
+  })
+
+  test('enum-typed method arguments are validated the same way', () => {
+    for (const kind of ['atp', 'erne', 'hands_battle', 'long_rally', 'poach', 'sequence']) {
+      expect(analyzeWhere(`shot.inHighlight("${kind}")`)).toEqual([])
+    }
+    expect(analyzeWhere('shot.isHitOnSide("left")')).toEqual([])
+    expect(analyzeWhere('shot.isHitOnSide("right")')).toEqual([])
+    expect(analyzeWhere('shot.inHighlight("ernie")')[0]).toMatchObject({
+      code: 'PBQL_UNKNOWN_ENUM_VALUE',
+      message: 'inHighlight() kind is never "ernie" (valid: "atp", "erne", ' +
+        '"hands_battle", "long_rally", "poach", "sequence")',
+      hint: 'did you mean "erne"?'
+    })
+    expect(analyzeWhere('shot.isHitOnSide("up")')[0]).toMatchObject({
+      code: 'PBQL_UNKNOWN_ENUM_VALUE',
+      message: 'isHitOnSide() side is never "up" (valid: "left", "right")'
+    })
+  })
+
+  test('enum enforcement leaves non-literal comparisons and arguments alone', () => {
+    expect(analyzeWhere('shot.type = shot[1].type')).toEqual([])
+    expect(analyzeWhere('shot.from.zone = shot.to.zone')).toEqual([])
+    expect(analyzeWhere('shot.inHighlight(shot.winnerType)')).toEqual([])
+    // non-string literals stay the type checker's business
+    expect(analyzeWhere('shot.type = 5')).toEqual([
+      expect.objectContaining({ code: 'PBQL_TYPE_MISMATCH' })])
+    expect(analyzeWhere('shot.taggedWith(5)')).toEqual([]) // no enum declared
   })
 
   test('GROUP BY: keys and aggregates in SELECT and ORDER BY are valid', () => {

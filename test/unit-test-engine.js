@@ -297,6 +297,9 @@ describe('coverage edges', () => {
     const where = text => parse(`FROM "f" WHERE ${text}`).ast.where
     expect(evalExpr(where('shot.nope'), ctx)).toBe(UNKNOWN)
     expect(evalExpr(where('shot.nope(1)'), ctx)).toBe(UNKNOWN)
+    // an enum-invalid method argument only reaches the engine unanalyzed;
+    // the runtime guard still answers unknown
+    expect(evalExpr(where('shot.isHitOnSide("up")'), ctx)).toBe(UNKNOWN)
     // a method whose remaining path isn't a single terminal segment
     expect(evalExpr(where('shot.quality.taggedWith("x")'), ctx)).toBe(UNKNOWN)
     expect(evalExpr(where('foo(1)'), ctx)).toBe(UNKNOWN)

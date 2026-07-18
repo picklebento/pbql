@@ -110,6 +110,25 @@ export function normalize (node) {
   return out
 }
 
+// A unit string made solely of quoted alternatives ('"dig"|"neutral"|…')
+// declares the property's complete enum — production never emits anything
+// else, so the analyzer rejects other literals outright. Any other unit
+// (a measure like 'feet', a range like '0-1') returns undefined.
+export function enumValuesOf (unit) {
+  return unit !== undefined && /^"[^"]+"(\|"[^"]+")*$/.test(unit)
+    ? unit.slice(1, -1).split('"|"')
+    : undefined
+}
+
+// the enum of a scalar-property reference, or undefined for anything else
+function enumOf (node) {
+  if (node.kind !== 'prop' || node.args) {
+    return undefined
+  }
+  const { typeName, rest } = walkRelations(node.base, node.path)
+  return enumValuesOf(REGISTRY[typeName].props.get(rest.join('.'))?.unit)
+}
+
 function inferType (node) {
   switch (node.kind) {
     case 'lit': return typeof node.value
@@ -172,6 +191,14 @@ export function analyze (query) {
                 break
               }
             }
+          } else {
+            // enum-typed property = / != a string literal, either order
+            for (const [subject, lit] of [[node.lhs, node.rhs], [node.rhs, node.lhs]]) {
+              const values = enumOf(subject)
+              if (values !== undefined && lit.kind === 'lit') {
+                checkEnumValue(node, values, printExpr(subject), lit.value)
+              }
+            }
           }
         }
         return
@@ -184,6 +211,12 @@ export function analyze (query) {
           if (lhsType !== undefined && typeof value !== lhsType) {
             err(node, 'PBQL_TYPE_MISMATCH',
               `IN list mixes ${typeof value} with ${lhsType}`)
+            break
+          }
+        }
+        const values = enumOf(node.lhs)
+        for (const value of values === undefined ? [] : node.list) {
+          if (checkEnumValue(node, values, printExpr(node.lhs), value)) {
             break
           }
         }
@@ -203,6 +236,15 @@ export function analyze (query) {
           } else if (node.args.length !== method.args.length) {
             err(node, 'PBQL_BAD_ARITY',
               `${name}() takes ${method.args.length} argument(s), got ${node.args.length}`)
+          } else {
+            // enum-typed arguments only accept their declared values
+            method.args.forEach((spec, i) => {
+              const values = enumValuesOf(spec.unit)
+              if (values !== undefined && node.args[i].kind === 'lit') {
+                checkEnumValue(node.args[i], values, `${name}() ${spec.name}`,
+                  node.args[i].value)
+              }
+            })
           }
           return
         }
@@ -271,6 +313,21 @@ export function analyze (query) {
   function hintFor (name, candidates) {
     const match = suggest(name, candidates)
     return match === undefined ? undefined : `did you mean "${match}"?`
+  }
+
+  // Flags a string literal an enum-typed subject can never hold (production
+  // never writes it, so the comparison could only ever be false/unknown).
+  // Non-string literals are left to the type checks. Returns whether an
+  // error was reported.
+  function checkEnumValue (node, values, subject, value) {
+    if (typeof value !== 'string' || values.includes(value)) {
+      return false
+    }
+    err(node, 'PBQL_UNKNOWN_ENUM_VALUE',
+      `${subject} is never ${JSON.stringify(value)} ` +
+      `(valid: ${values.map(v => JSON.stringify(v)).join(', ')})`,
+      hintFor(value, values))
+    return true
   }
 
   // GROUP BY output is one row per group, so it needs a SELECT, cannot

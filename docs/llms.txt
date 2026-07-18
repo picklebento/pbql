@@ -41,6 +41,11 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   timecode(x, true) appends a 0-based :ff frame counter at the game's
   own fps). Strings compare with = / != only.
 - Times are seconds; distances feet; speeds mph; quality 0-1 (1 best).
+- String properties whose dictionary entry lists quoted alternatives
+  (shot.type, shot.winnerType, zones, …) accept ONLY those values in
+  =/!=/IN — any other string literal is a validation error. A "speedup"
+  or "volley" is never a shot.type: those are the shot.isSpeedup /
+  shot.isVolley booleans.
 - GROUP BY computes per-group breakdowns (win rate by shot type, avg
   speed by player) in one query; with it, every SELECT/ORDER BY item
   must be an aggregate or one of the group keys, and CONTEXT is not
