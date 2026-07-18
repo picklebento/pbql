@@ -1,4 +1,4 @@
-import { Game, UnsupportedInsightsError } from '../src/model/game.js'
+import { Game, InvalidInsightsError, UnsupportedInsightsError } from '../src/model/game.js'
 import * as geometry from '../src/model/geometry.js'
 import { REGISTRY, playerMatchesTag } from '../src/model/registry.js'
 
@@ -46,6 +46,23 @@ describe('Game', () => {
         insights: { version, rallies: [] }
       })).toThrow(UnsupportedInsightsError)
     }
+  })
+
+  test('rejects malformed insights with InvalidInsightsError', () => {
+    const make = insights => () => new Game({ vid: 'x', sessionIdx: 0, insights })
+    for (const insights of [null, 'not an object', 42, []]) {
+      expect(make(insights)).toThrow(InvalidInsightsError)
+    }
+    expect(make({ version: '4.2.0' }))
+      .toThrow('"rallies" is missing or not an array')
+    expect(make({ version: '4.2.0', rallies: 'nope' }))
+      .toThrow(InvalidInsightsError)
+    expect(make({ version: '4.2.0', rallies: [null] }))
+      .toThrow('rallies[0] is not an object')
+    expect(make({ version: '4.2.0', rallies: ['nope'] }))
+      .toThrow(InvalidInsightsError)
+    expect(make({ version: '4.2.0', rallies: [{}, { shots: 'nope' }] }))
+      .toThrow('rallies[1].shots is not an array')
   })
 
   test('indexes every shot in video order', () => {

@@ -12,8 +12,39 @@ export class UnsupportedInsightsError extends Error {
     super(`unsupported insights version "${version}" (supported: ${SUPPORTED_MAJOR}.x); ` +
       'reprocess the video to query it')
     this.name = 'UnsupportedInsightsError'
+    this.code = 'PBQL_UNSUPPORTED_VERSION'
     this.version = version
   }
+}
+
+export class InvalidInsightsError extends Error {
+  constructor (detail) {
+    super(`malformed insights JSON (${detail}); ` +
+      'is this really a PB Vision insights file?')
+    this.name = 'InvalidInsightsError'
+    this.code = 'PBQL_INVALID_INSIGHTS'
+  }
+}
+
+function validateInsights (insights) {
+  if (insights === null || typeof insights !== 'object' ||
+      Array.isArray(insights)) {
+    throw new InvalidInsightsError('expected an object')
+  }
+}
+
+function validateRallies (insights) {
+  if (!Array.isArray(insights.rallies)) {
+    throw new InvalidInsightsError('"rallies" is missing or not an array')
+  }
+  insights.rallies.forEach((rally, rallyIdx) => {
+    if (rally === null || typeof rally !== 'object') {
+      throw new InvalidInsightsError(`rallies[${rallyIdx}] is not an object`)
+    }
+    if (rally.shots !== undefined && !Array.isArray(rally.shots)) {
+      throw new InvalidInsightsError(`rallies[${rallyIdx}].shots is not an array`)
+    }
+  })
 }
 
 export class Game {
@@ -26,11 +57,13 @@ export class Game {
    *   ([{uid, name}] by player index), myPlayerIdx, videoName
    */
   constructor ({ vid, sessionIdx, insights, meta }) {
+    validateInsights(insights)
     const version = insights.version ?? insights.serverMetadata?.version
     const major = parseInt(version)
     if (isNaN(major) || major !== SUPPORTED_MAJOR) {
       throw new UnsupportedInsightsError(version)
     }
+    validateRallies(insights)
     this.vid = vid
     this.sessionIdx = sessionIdx
     this.insights = insights

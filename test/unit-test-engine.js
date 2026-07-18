@@ -323,6 +323,25 @@ describe('runQuery: inputs and errors', () => {
     }])
   })
 
+  test('skips-and-reports games with malformed insights', () => {
+    const bad = {
+      vid: 'badvideo0001',
+      sessionIdx: 0,
+      insights: { version: '4.2.0', rallies: 'nope' }
+    }
+    const result = runQuery({
+      text: 'FROM "x" WHERE true',
+      games: [makeDoublesGame(), bad]
+    })
+    expect(result.shots).toHaveLength(9)
+    expect(result.warnings).toEqual([{
+      vid: 'badvideo0001',
+      sessionIdx: 0,
+      code: 'PBQL_INVALID_INSIGHTS',
+      message: expect.stringContaining('malformed insights JSON')
+    }])
+  })
+
   test('warns when "me" is referenced but not tagged in a game', () => {
     const game = makeDoublesGame()
     game.meta = {}

@@ -302,4 +302,12 @@ describe('CLI main()', () => {
     expect(err.at(-1)).toContain('unsupported insights version')
     expect(JSON.parse(out.at(-1)).selectedShots).toHaveLength(1)
   })
+
+  test('malformed insights files warn on stderr instead of crashing', async () => {
+    fs.writeFileSync(path.join(dir, 'bad.json'),
+      JSON.stringify({ version: '4.2.0', rallies: 'nope' }))
+    expect(await main([`FROM "${dir}" WHERE shot.speed = 50`], io)).toBe(0)
+    expect(err.at(-1)).toContain('malformed insights JSON')
+    expect(JSON.parse(out.at(-1)).selectedShots).toHaveLength(1)
+  })
 })

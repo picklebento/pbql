@@ -5,7 +5,7 @@
 import { AGGREGATE_FNS, analyze, normalize } from '../analyze/analyze.js'
 import { parse } from '../lang/parse.js'
 import { printExpr } from '../lang/print.js'
-import { Game, UnsupportedInsightsError } from '../model/game.js'
+import { Game, InvalidInsightsError, UnsupportedInsightsError } from '../model/game.js'
 import { playerMatchesTag } from '../model/registry.js'
 
 import { UNKNOWN, evalExpr } from './evaluate.js'
@@ -183,14 +183,15 @@ export function runQuery ({ text, games, options = {} }) {
     try {
       wrapped.push(new Game(game))
     } catch (err) {
-      /* istanbul ignore next -- only version problems are expected here */
-      if (!(err instanceof UnsupportedInsightsError)) {
+      /* istanbul ignore next -- only insights problems are expected here */
+      if (!(err instanceof UnsupportedInsightsError) &&
+          !(err instanceof InvalidInsightsError)) {
         throw err
       }
       warnings.push({
         vid: game.vid,
         sessionIdx: game.sessionIdx,
-        code: 'PBQL_UNSUPPORTED_VERSION',
+        code: err.code,
         message: err.message
       })
     }

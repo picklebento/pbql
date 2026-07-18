@@ -10,7 +10,7 @@ export { toShotExplorerURLs } from './se/to-shot-explorer.js'
 export { resolveSources } from './sources/resolve.js'
 
 // data model
-export { Game, UnsupportedInsightsError, SUPPORTED_MAJOR } from './model/game.js'
+export { Game, InvalidInsightsError, UnsupportedInsightsError, SUPPORTED_MAJOR } from './model/game.js'
 
 // engine
 export { runQuery } from './engine/run.js'

@@ -280,7 +280,8 @@ Unknown property names come with a nearest-match hint
 ## 8. Data requirements
 
 The engine evaluates PB Vision **insights** JSON, latest major version
-(4.x), augmented field names. Older files are skipped and reported. Player
+(4.x), augmented field names. Older or malformed files are skipped and
+reported. Player
 names, the identity of `me`, and tag data come from the host application —
 they are not part of the insights file. Queries never reference raw insights
 field names; the [data dictionary](data-dictionary.md) is the complete
