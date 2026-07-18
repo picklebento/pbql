@@ -121,8 +121,8 @@ function evalProp (node, ctx) {
 // timecode(secs[, withFrames]): a video position formatted as "m:ss"
 // (minutes unpadded, seconds floored and 2-padded), or "m:ss:ff" when
 // withFrames is true — ff is a 0-based 2-padded frame counter within the
-// second, counted at the game's own frame rate (game.fps, from the
-// insights camera data). Negative times, a non-boolean flag, and — when
+// second, counted at the game's own frame rate (from the insights camera
+// data). Negative times, a non-boolean flag, and — when
 // frames are requested — a missing or non-positive fps are all UNKNOWN.
 function timecode (node, ctx) {
   const secs = asNumber(evalExpr(node.args[0], ctx))

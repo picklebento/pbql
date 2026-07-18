@@ -166,20 +166,9 @@ describe('registry', () => {
     expect(props.get('vid').extract(farShotCtx)).toBe('testvid00001')
     expect(props.get('sessionNum').extract(farShotCtx)).toBe(1)
     expect(props.get('name').extract(farShotCtx)).toBe('Test Game')
-    const named = makeDoublesGame()
-    named.meta = {}
-    named.insights.session.name = 'Game X'
-    expect(props.get('name').extract({ ...farShotCtx, game: new Game(named) }))
-      .toBe('Game X')
-    const sessionless = makeDoublesGame()
-    sessionless.meta = {}
-    delete sessionless.insights.session
-    expect(props.get('name').extract({ ...farShotCtx, game: new Game(sessionless) }))
-      .toBeUndefined()
-    expect(props.get('fps').extract(farShotCtx)).toBe(30)
-    const cameraless = makeDoublesGame()
-    delete cameraless.insights.camera
-    expect(props.get('fps').extract({ ...farShotCtx, game: new Game(cameraless) }))
+    const unnamed = makeDoublesGame()
+    unnamed.meta = {}
+    expect(props.get('name').extract({ ...farShotCtx, game: new Game(unnamed) }))
       .toBeUndefined()
     expect(props.get('numRallies').extract(farShotCtx)).toBe(3)
     expect(props.get('duration').extract(farShotCtx)).toBe(54)

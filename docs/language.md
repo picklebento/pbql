@@ -195,8 +195,8 @@ Migration from the old flat player tokens:
   `timecode(secs)` — a time in seconds as an `"m:ss"` string (minutes
   unpadded, seconds floored and 2-padded: `timecode(222.9)` is `"3:42"`).
   `timecode(secs, true)` appends a 0-based 2-padded frame counter
-  (`"m:ss:ff"`), counted at the game's own frame rate (`game.fps`);
-  frames are unknown when the game has no usable fps. Negative times are
+  (`"m:ss:ff"`), counted at the game's own frame rate (from the insights
+  camera data); frames are unknown when the game has no usable fps. Negative times are
   unknown, and the result is a string: it supports `=`/`!=` but not
   ordering comparisons.
 

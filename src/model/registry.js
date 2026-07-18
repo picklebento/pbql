@@ -164,13 +164,6 @@ const SHOT_PROPS = [
     extract: ctx => ctx.shot.vertical_type
   },
   {
-    path: 'strokeType',
-    type: 'string',
-    unit: '"forehand"|"backhand"|"two-handed"',
-    doc: 'the stroke used',
-    extract: ctx => ctx.shot.stroke_type
-  },
-  {
     path: 'strokeSide',
     type: 'string',
     unit: '"left"|"right"',
@@ -199,32 +192,11 @@ const SHOT_PROPS = [
     extract: ctx => ctx.shot.quality?.execution
   },
   {
-    path: 'quality.selection',
-    type: 'number',
-    unit: '0-1',
-    doc: 'how good a choice this shot was',
-    extract: ctx => ctx.shot.quality?.selection
-  },
-  {
     path: 'speed',
     type: 'number',
     unit: 'mph',
     doc: 'ball speed after the hit',
     extract: ctx => ballMovement(ctx)?.speed
-  },
-  {
-    path: 'spin.class',
-    type: 'string',
-    unit: '"topspin"|"backspin"|"sidespin"|"minimal_spin"',
-    doc: 'dominant spin after the hit',
-    extract: ctx => ballMovement(ctx)?.spin?.dominant_class
-  },
-  {
-    path: 'spin.rpm',
-    type: 'number',
-    unit: 'rpm',
-    doc: 'spin magnitude after the hit',
-    extract: ctx => ballMovement(ctx)?.spin?.magnitude
   },
   {
     path: 'direction',
@@ -315,13 +287,6 @@ const SHOT_PROPS = [
     extract: ctx => ctx.shot.errors?.popup
   },
   {
-    path: 'errors.deadDink',
-    type: 'string',
-    unit: '"exploited"|"potential"',
-    doc: 'whether the dink sat up attackably',
-    extract: ctx => ctx.shot.errors?.dead_dink
-  },
-  {
     path: 'hasFault',
     type: 'boolean',
     doc: 'whether this shot committed a rule fault (never unknown)',
@@ -332,24 +297,6 @@ const SHOT_PROPS = [
     type: 'boolean',
     doc: 'whether the net stopped the ball',
     extract: ctx => ctx.shot.errors?.faults?.net
-  },
-  {
-    path: 'errors.faults.kitchen',
-    type: 'boolean',
-    doc: 'whether the hitter volleyed while in the kitchen',
-    extract: ctx => ctx.shot.errors?.faults?.kitchen
-  },
-  {
-    path: 'errors.faults.paddleHitNet',
-    type: 'boolean',
-    doc: 'whether the paddle touched the net',
-    extract: ctx => ctx.shot.errors?.faults?.paddle_hit_net
-  },
-  {
-    path: 'errors.faults.doubleBounce',
-    type: 'boolean',
-    doc: 'whether the ball bounced twice before the hit',
-    extract: ctx => ctx.shot.errors?.faults?.excess_bounce
   },
   {
     path: 'errors.faults.short',
@@ -474,15 +421,7 @@ const GAME_PROPS = [
     path: 'name',
     type: 'string',
     doc: 'the video/session name, if any',
-    extract: ctx => ctx.game.meta.videoName ?? ctx.game.insights.session?.name
-  },
-  {
-    path: 'fps',
-    type: 'number',
-    unit: 'frames/sec',
-    doc: 'the video frame rate (insights camera.fps); timecode(x, true) ' +
-      'counts frames at this rate',
-    extract: ctx => ctx.game.insights.camera?.fps
+    extract: ctx => ctx.game.meta.videoName ?? undefined
   },
   {
     path: 'numRallies',
