@@ -1,8 +1,7 @@
 // Resolves a query's FROM source strings for Node hosts (the CLI). Each
-// source is interpreted by exactly one rule (D17):
+// source is interpreted by exactly one rule:
 //   1. vid-shaped ("83gyqyc10y8f" or "83gyqyc10y8f:2", session 1-based) —
-//      a pb.vision video; its aiEngineVersion comes from the production
-//      service and its insights from the public production bucket (a local
+//      a pb.vision video, fetched per src/sources/fetch-vid.js (a local
 //      file named like a vid must be written "./…"). Fetched insights are
 //      cached locally and the cache is preferred — a hit skips the network
 //      entirely (see cacheFile below).
@@ -14,30 +13,8 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { fetchVidInsights } from './fetch-vid.js'
 import { parseVidSource } from './vid.js'
-
-// discovers the aiEngineVersion segment of a video's insights URL (the
-// public bucket denies anonymous object listing, so it can't be found
-// client-side without this endpoint)
-const VERSION_ENDPOINT =
-  'https://api-2o2klzx4pa-uc.a.run.app/video/ai_engine_version'
-const BUCKET = 'https://storage.googleapis.com/pbv-pro'
-// engines ≤ 132 predate multi-session processing: their insights path has
-// no session segment and only session 1 exists
-const FIRST_SESSIONED_VERSION = 133
-
-// endpoint errors carry JSON {code, message} (e.g. 404 for an unknown vid;
-// 400 for never-processed / still-processing / failed videos)
-async function endpointMessage (res) {
-  const body = await res.text()
-  try {
-    const { message } = JSON.parse(body)
-    if (typeof message === 'string') {
-      return message
-    }
-  } catch {}
-  return body === '' ? `HTTP ${res.status}` : body
-}
 
 // Fetched insights are cached with no expiration (a game's insights for a
 // given engine version never change), one file per game under
@@ -72,30 +49,13 @@ async function fetchVidGame ({ vid, sessionIdx }, source) {
   if (cached !== null) {
     return { vid, sessionIdx, insights: cached }
   }
-  const res = await fetch(VERSION_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ vid })
-  })
-  if (!res.ok) {
-    throw new Error(`"${source}": cannot fetch this video's insights — ` +
-      `the pb.vision service says (HTTP ${res.status}): ` +
-      `${await endpointMessage(res)}`)
+  let insights
+  try {
+    insights = await fetchVidInsights({ vid, sessionIdx })
+  } catch (err) {
+    // fetch-vid errors don't know which FROM string they came from
+    throw new Error(`"${source}": ${err.message}`)
   }
-  const { aiEngineVersion } = await res.json()
-  const sessioned = aiEngineVersion >= FIRST_SESSIONED_VERSION
-  const sessionNotFound = () => new Error(`"${source}": session ` +
-    `${sessionIdx + 1} not found for this video`)
-  if (!sessioned && sessionIdx > 0) {
-    throw sessionNotFound() // pre-133 videos only ever have one session
-  }
-  const url = BUCKET + `/${vid}/${aiEngineVersion}` +
-    (sessioned ? `/${sessionIdx}` : '') + '/insights.json'
-  const insightsRes = await fetch(url)
-  if (!insightsRes.ok) { // the bucket answers 404/403 for missing objects
-    throw sessionNotFound()
-  }
-  const insights = await insightsRes.json()
   writeCache(cache, insights)
   return { vid, sessionIdx, insights }
 }

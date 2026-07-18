@@ -8,7 +8,10 @@
     "node": ">=24"
   },
   "exports": {
-    ".": "./src/index.js"
+    ".": {
+      "browser": "./src/browser.js",
+      "default": "./src/index.js"
+    }
   },
   "bin": {
     "pbql": "./bin/pbql.js"

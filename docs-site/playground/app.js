@@ -1,13 +1,9 @@
 // The playground page logic. Everything runs client-side: ./pbql.js is the
-// real library bundled by docs-site/build.js, and vid loading mirrors
-// src/sources/resolve.js (the version endpoint, then the public bucket).
-import { parse, parseVidSource, print, runQuery, toShotExplorerURLs, validate } from './pbql.js'
+// real library bundled by docs-site/build.js, including the shared vid
+// fetcher (src/sources/fetch-vid.js — the version endpoint, then the
+// public bucket).
+import { fetchVidInsights, parse, parseVidSource, print, runQuery, toShotExplorerURLs, validate } from './pbql.js'
 
-const VERSION_ENDPOINT =
-  'https://api-2o2klzx4pa-uc.a.run.app/video/ai_engine_version'
-const BUCKET = 'https://storage.googleapis.com/pbv-pro'
-// engines ≤ 132 predate multi-session processing: no session URL segment
-const FIRST_SESSIONED_VERSION = 133
 const DEMO_VID = '83gyqyc10y8f'
 
 const $ = id => document.getElementById(id)
@@ -40,48 +36,13 @@ function setGame (loaded) {
     `insights v${insights.version}, ${insights.rallies?.length ?? 0} rallies`)
 }
 
-// mirrors endpointMessage in src/sources/resolve.js: endpoint errors carry
-// JSON {code, message} (404 unknown vid; 400 unprocessed/processing/failed)
-async function endpointMessage (res) {
-  const body = await res.text()
-  try {
-    const { message } = JSON.parse(body)
-    if (typeof message === 'string') {
-      return message
-    }
-  } catch {}
-  return body === '' ? `HTTP ${res.status}` : body
-}
-
 async function fetchVidGame (source) {
   const ref = parseVidSource(source) // throws when the session number is 0
   if (ref === null) {
     throw new Error(`"${source}" is not a video id — expected 12 characters` +
       ' with an optional 1-based session ("83gyqyc10y8f" or "83gyqyc10y8f:2")')
   }
-  const res = await fetch(VERSION_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ vid: ref.vid })
-  })
-  if (!res.ok) {
-    throw new Error('cannot fetch this video\'s insights — the pb.vision ' +
-      `service says (HTTP ${res.status}): ${await endpointMessage(res)}`)
-  }
-  const { aiEngineVersion } = await res.json()
-  const sessioned = aiEngineVersion >= FIRST_SESSIONED_VERSION
-  const sessionNotFound = () =>
-    new Error(`session ${ref.sessionIdx + 1} not found for this video`)
-  if (!sessioned && ref.sessionIdx > 0) {
-    throw sessionNotFound() // pre-133 videos only ever have one session
-  }
-  const url = `${BUCKET}/${ref.vid}/${aiEngineVersion}` +
-    (sessioned ? `/${ref.sessionIdx}` : '') + '/insights.json'
-  const insightsRes = await fetch(url)
-  if (!insightsRes.ok) { // the bucket answers 404/403 for missing objects
-    throw sessionNotFound()
-  }
-  return { ...ref, insights: await insightsRes.json(), source }
+  return { ...ref, insights: await fetchVidInsights(ref), source }
 }
 
 async function loadVid (source) {
