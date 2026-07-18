@@ -57,9 +57,9 @@ WHERE shot.hitter = me AND NOT shot.hasError
 FROM "83gyqyc10y8f"
 WHERE shot.hitter.team != me.team AND shot.isVolley AND me.feetToKitchen = 0
 
-# Q: Backhand speedups by either player on my team
+# Q: Left-side (typically backhand) speedups by either player on my team
 FROM "83gyqyc10y8f"
-WHERE shot.hitter.team = me.team AND shot.isSpeedup AND shot.strokeType = "backhand"
+WHERE shot.hitter.team = me.team AND shot.isSpeedup AND shot.strokeSide = "left"
 
 # Q: Around-the-post highlights
 FROM "83gyqyc10y8f"
@@ -152,11 +152,11 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me
 GROUP BY shot.type
 
-# Q: Average ball speed for each stroke type, fastest first
-SELECT shot.strokeType, avg(shot.speed) AS "mph"
+# Q: Average ball speed for each stroke side, fastest first
+SELECT shot.strokeSide, avg(shot.speed) AS "mph"
 FROM "83gyqyc10y8f"
 WHERE exists(shot.speed)
-GROUP BY shot.strokeType
+GROUP BY shot.strokeSide
 ORDER BY avg(shot.speed) DESC
 
 # Q: Shots from every rally that came right after a rally my team lost
