@@ -106,6 +106,44 @@ describe('runQuery: filtering', () => {
     expect(shotsWhere('abs(shot.type) = 1')).toEqual([]) // abs of a string
     expect(shotsWhere('min(1, shot.type) = 1')).toEqual([]) // min of a string
   })
+
+  test('timecode formats video positions: floored m:ss, optional frames', () => {
+    // fixture hit times: (0,2) at 18s, (1,1) at 35s, (2,3) at 61s
+    expect(shotsWhere('timecode(shot.hitTime) = "0:18"')).toEqual([[0, 2]])
+    expect(shotsWhere('timecode(shot.hitTime) = "1:01"')).toEqual([[2, 3]]) // 2-pads
+    expect(shotsWhere('timecode(shot.hitTime + 0.9) = "1:01"')).toEqual([[2, 3]]) // floors
+    expect(shotsWhere('timecode(222.9) = "3:42"')).toHaveLength(9)
+    expect(shotsWhere('timecode(1025) = "17:05"')).toHaveLength(9)
+    // frames are 0-based, 2-padded, and floored at the game's own fps
+    // (the fixture's camera.fps is 30); false means no frames at all
+    expect(shotsWhere('timecode(0, true) = "0:00:00"')).toHaveLength(9)
+    expect(shotsWhere('timecode(1025, true) = "17:05:00"')).toHaveLength(9)
+    expect(shotsWhere('timecode(1025, false) = "17:05"')).toHaveLength(9)
+    expect(shotsWhere('timecode(shot.hitTime + 0.5, true) = "0:18:15"'))
+      .toEqual([[0, 2]])
+  })
+
+  test('timecode unknowns: bad seconds, flags, and fps per Kleene', () => {
+    // unknown or negative seconds are unknown
+    expect(shotsWhere('NOT exists(timecode(shot.speed))')).toEqual([[1, 1]])
+    expect(shotsWhere('exists(timecode(0 - 1))')).toEqual([])
+    // a non-boolean withFrames is unknown (me evaluates to a player index)
+    expect(shotsWhere('exists(timecode(1, me))')).toEqual([])
+    // an unknown flag is unknown; known flags pick the format per shot
+    // (is_volley is only present on rally 0 and (2,2))
+    expect(shotsWhere('timecode(61.5, shot.isVolley) IN ("1:01", "1:01:15")'))
+      .toEqual([[0, 0], [0, 1], [0, 2], [2, 2]])
+    // frames need a usable fps from the game; m:ss never does
+    const game = makeDoublesGame()
+    delete game.insights.camera
+    const matches = expr => runQuery({
+      text: `FROM "x" WHERE ${expr}`, games: [game]
+    }).shots.length
+    expect(matches('timecode(shot.hitTime) = "0:18"')).toBe(1)
+    expect(matches('exists(timecode(61, true))')).toBe(0) // no camera data
+    game.insights.camera = { fps: 0 }
+    expect(matches('exists(timecode(61, true))')).toBe(0) // non-positive fps
+  })
 })
 
 describe('runQuery: ordering and limits', () => {

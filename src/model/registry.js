@@ -477,6 +477,14 @@ const GAME_PROPS = [
     extract: ctx => ctx.game.meta.videoName ?? ctx.game.insights.session?.name
   },
   {
+    path: 'fps',
+    type: 'number',
+    unit: 'frames/sec',
+    doc: 'the video frame rate (insights camera.fps); timecode(x, true) ' +
+      'counts frames at this rate',
+    extract: ctx => ctx.game.insights.camera?.fps
+  },
+  {
     path: 'numRallies',
     type: 'number',
     doc: 'how many rallies the game contains',

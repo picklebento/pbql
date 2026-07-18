@@ -190,8 +190,15 @@ Migration from the old flat player tokens:
   `taggedWith(shot.hitter, "Alex*")`) is accepted and canonicalized (the
   method name is appended to the subject's navigation path).
 - **Subject-less utilities are functions**: `min(a, b)`, `max(a, b)`,
-  `exists(x)`, `abs(x)`, and the unit conversions `kph(x)` (mph → km/h),
-  `toMs(x)` (seconds → ms), `toSecs(x)` (ms → seconds).
+  `exists(x)`, `abs(x)`, the unit conversions `kph(x)` (mph → km/h),
+  `toMs(x)` (seconds → ms), `toSecs(x)` (ms → seconds), and the formatter
+  `timecode(secs)` — a time in seconds as an `"m:ss"` string (minutes
+  unpadded, seconds floored and 2-padded: `timecode(222.9)` is `"3:42"`).
+  `timecode(secs, true)` appends a 0-based 2-padded frame counter
+  (`"m:ss:ff"`), counted at the game's own frame rate (`game.fps`);
+  frames are unknown when the game has no usable fps. Negative times are
+  unknown, and the result is a string: it supports `=`/`!=` but not
+  ordering comparisons.
 
 Every built-in receives the evaluation context implicitly; user-visible
 signatures never mention it.

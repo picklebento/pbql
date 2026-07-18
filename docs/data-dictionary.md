@@ -113,6 +113,7 @@ The session (one game of a possibly multi-game video) containing the shot.
 | `game.vid` | string |  | the video ID this game is from |
 | `game.sessionNum` | number | 1-based | which game of the video this is |
 | `game.name` | string |  | the video/session name, if any |
+| `game.fps` | number | frames/sec | the video frame rate (insights camera.fps); timecode(x, true) counts frames at this rate |
 | `game.numRallies` | number |  | how many rallies the game contains |
 | `game.duration` | number | seconds | first rally start to last rally end |
 | `game.avgShots` | number |  | average shots per rally |

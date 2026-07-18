@@ -32,7 +32,10 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - Subject predicates are methods: shot.taggedWith("Alex*"),
   shot.inHighlight("atp"). Utilities are functions: min, max, exists,
   abs, kph (mph→km/h — apply it to the property when testing a km/h
-  threshold: kph(shot.speed) > 70), toMs, toSecs.
+  threshold: kph(shot.speed) > 70), toMs, toSecs, and
+  timecode(secs) — a time as an "m:ss" string (seconds floored;
+  timecode(x, true) appends a 0-based :ff frame counter at the game's
+  own fps). Strings compare with = / != only.
 - Times are seconds; distances feet; speeds mph; quality 0-1 (1 best).
 - GROUP BY computes per-group breakdowns (win rate by shot type, avg
   speed by player) in one query; with it, every SELECT/ORDER BY item
@@ -187,6 +190,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - game.vid (string): the video ID this game is from
 - game.sessionNum (number [1-based]): which game of the video this is
 - game.name (string): the video/session name, if any
+- game.fps (number [frames/sec]): the video frame rate (insights camera.fps); timecode(x, true) counts frames at this rate
 - game.numRallies (number): how many rallies the game contains
 - game.duration (number [seconds]): first rally start to last rally end
 - game.avgShots (number): average shots per rally
@@ -328,6 +332,12 @@ Q: What speed and quality did each of my drives have? (spreadsheet)
     FROM "83gyqyc10y8f"
     WHERE shot.hitter = me AND shot.type = "drive"
     ORDER BY shot.speed DESC
+
+Q: When was each rally-ending shot hit, as a video timecode?
+
+    SELECT timecode(shot.hitTime) AS "when", shot.hitter.name
+    FROM "83gyqyc10y8f"
+    WHERE shot.isFinal
 
 Q: How many shots did I hit in this game?
 

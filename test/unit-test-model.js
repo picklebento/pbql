@@ -176,6 +176,11 @@ describe('registry', () => {
     delete sessionless.insights.session
     expect(props.get('name').extract({ ...farShotCtx, game: new Game(sessionless) }))
       .toBeUndefined()
+    expect(props.get('fps').extract(farShotCtx)).toBe(30)
+    const cameraless = makeDoublesGame()
+    delete cameraless.insights.camera
+    expect(props.get('fps').extract({ ...farShotCtx, game: new Game(cameraless) }))
+      .toBeUndefined()
     expect(props.get('numRallies').extract(farShotCtx)).toBe(3)
     expect(props.get('duration').extract(farShotCtx)).toBe(54)
     expect(props.get('winner').extract(farShotCtx)).toBe(0) // 11 > 9

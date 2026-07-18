@@ -86,6 +86,9 @@ describe('analyze()', () => {
     })
     expect(analyzeWhere('min(1) = 1')[0].code).toBe('PBQL_BAD_ARITY')
     expect(analyzeWhere('abs(1, 2) = 1')[0].code).toBe('PBQL_BAD_ARITY')
+    expect(analyzeWhere('timecode() = "0:00"')[0].code).toBe('PBQL_BAD_ARITY')
+    expect(analyzeWhere('timecode(1, true, 2) = "x"')[0].code)
+      .toBe('PBQL_BAD_ARITY')
     // aggregates don't exist in WHERE...
     expect(analyzeWhere('count() = 1')[0].code).toBe('PBQL_UNKNOWN_FUNCTION')
     // ...but do in SELECT, where min() is also a 1-arg aggregate
@@ -104,6 +107,28 @@ describe('analyze()', () => {
       .toBe('IN list mixes string with number')
     // unknown-typed sides are let through (runtime handles them)
     expect(analyzeWhere('shot.speed > min(1, 2)')).toEqual([])
+    // ...including parenthesized boolean operands, which have no type
+    expect(analyzeWhere('(shot.isVolley AND shot.isFinal) = true')).toEqual([])
+  })
+
+  test('timecode: both arities, string result, boolean withFrames', () => {
+    expect(analyzeWhere('timecode(shot.hitTime) = "0:18"')).toEqual([])
+    expect(analyzeWhere('timecode(shot.hitTime, true) != "0:18:00"')).toEqual([])
+    // the result is a string: equality is fine, ordering is not
+    expect(analyzeWhere('timecode(shot.hitTime) < "0:30"')[0]).toMatchObject({
+      code: 'PBQL_TYPE_MISMATCH',
+      message: '"<" needs numbers, not string'
+    })
+    expect(analyzeWhere('timecode(shot.hitTime) = 5')[0].message)
+      .toBe('cannot compare string with number')
+    // withFrames must be a boolean when its type is known statically...
+    expect(analyzeWhere('timecode(1, 30) = "x"')[0]).toMatchObject({
+      code: 'PBQL_TYPE_MISMATCH',
+      message: 'timecode() takes a boolean second argument, not number'
+    })
+    expect(analyzeWhere('timecode(1, shot.isVolley) = "0:01"')).toEqual([])
+    // ...while unknown-typed flags pass and resolve per Kleene at runtime
+    expect(analyzeWhere('timecode(1, exists(shot.speed)) = "0:01"')).toEqual([])
   })
 
   test('GROUP BY: keys and aggregates in SELECT and ORDER BY are valid', () => {

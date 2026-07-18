@@ -97,6 +97,11 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.type = "drive"
 ORDER BY shot.speed DESC
 
+# Q: When was each rally-ending shot hit, as a video timecode?
+SELECT timecode(shot.hitTime) AS "when", shot.hitter.name
+FROM "83gyqyc10y8f"
+WHERE shot.isFinal
+
 # Q: How many shots did I hit in this game?
 SELECT count()
 FROM "83gyqyc10y8f"

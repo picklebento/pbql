@@ -16,7 +16,10 @@ export const SCALAR_FNS = new Map([
   // themselves are duration-unit keywords, hence the to- prefix)
   ['kph', { minArgs: 1, maxArgs: 1 }],
   ['toMs', { minArgs: 1, maxArgs: 1 }],
-  ['toSecs', { minArgs: 1, maxArgs: 1 }]
+  ['toSecs', { minArgs: 1, maxArgs: 1 }],
+  // timecode(secs[, withFrames]) formats a video position as an "m:ss"
+  // string ("m:ss:ff" with withFrames — see the engine for the semantics)
+  ['timecode', { minArgs: 1, maxArgs: 2 }]
 ])
 export const AGGREGATE_FNS = new Map([
   ['count', { minArgs: 0, maxArgs: 0 }],
@@ -119,6 +122,9 @@ function inferType (node) {
       }
       return REGISTRY[typeName].props.get(rest.join('.'))?.type
     }
+    // timecode() is the one string-valued function; the rest stay untyped
+    // (min/max double as duration combinators, exists/methods are boolean)
+    case 'call': return node.name === 'timecode' ? 'string' : undefined
     default: return undefined
   }
 }
@@ -230,6 +236,15 @@ export function analyze (query) {
     const fits = fn => fn !== undefined &&
       node.args.length >= fn.minArgs && node.args.length <= fn.maxArgs
     if (fits(aggregate) || fits(scalar)) {
+      // timecode's second argument is the withFrames flag; expressions of
+      // unknown type pass (they evaluate per the Kleene rules)
+      if (node.name === 'timecode' && node.args.length === 2) {
+        const argType = inferType(node.args[1])
+        if (argType !== undefined && argType !== 'boolean') {
+          err(node.args[1], 'PBQL_TYPE_MISMATCH',
+            `timecode() takes a boolean second argument, not ${argType}`)
+        }
+      }
       return
     }
     if (scalar === undefined && aggregate === undefined) {

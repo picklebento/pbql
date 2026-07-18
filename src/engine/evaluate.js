@@ -118,9 +118,39 @@ function evalProp (node, ctx) {
   return u(prop.extract(subCtx, playerIdx))
 }
 
+// timecode(secs[, withFrames]): a video position formatted as "m:ss"
+// (minutes unpadded, seconds floored and 2-padded), or "m:ss:ff" when
+// withFrames is true — ff is a 0-based 2-padded frame counter within the
+// second, counted at the game's own frame rate (game.fps, from the
+// insights camera data). Negative times, a non-boolean flag, and — when
+// frames are requested — a missing or non-positive fps are all UNKNOWN.
+function timecode (node, ctx) {
+  const secs = asNumber(evalExpr(node.args[0], ctx))
+  if (secs === UNKNOWN || secs < 0) {
+    return UNKNOWN
+  }
+  const withFrames = node.args.length === 2 ? evalExpr(node.args[1], ctx) : false
+  if (typeof withFrames !== 'boolean') {
+    return UNKNOWN
+  }
+  const pad = n => String(n).padStart(2, '0')
+  const base = `${Math.floor(secs / 60)}:${pad(Math.floor(secs) % 60)}`
+  if (!withFrames) {
+    return base
+  }
+  const fps = ctx.game.insights.camera?.fps
+  if (!Number.isFinite(fps) || fps <= 0) {
+    return UNKNOWN
+  }
+  return `${base}:${pad(Math.floor((secs - Math.floor(secs)) * fps))}`
+}
+
 function evalCall (node, ctx) {
   if (node.name === 'exists') {
     return evalExpr(node.args[0], ctx) !== UNKNOWN
+  }
+  if (node.name === 'timecode') { // numbers in, a string out — its own path
+    return timecode(node, ctx)
   }
   const args = []
   for (const argNode of node.args) {
