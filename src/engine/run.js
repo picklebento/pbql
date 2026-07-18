@@ -17,6 +17,16 @@ function isAggregateItem (item) {
     expr.args.length === (expr.name === 'count' ? 0 : 1)
 }
 
+// Aggregate coercion: booleans fold to 1/0 so avg(<condition>) is a rate and
+// sum(<condition>) counts trues; numbers pass through; strings and other
+// non-numbers become UNKNOWN and are skipped (so sum(shot.type) is null).
+function aggregateNumber (value) {
+  if (typeof value === 'boolean') {
+    return value ? 1 : 0
+  }
+  return asNumber(value)
+}
+
 function compareValues (a, b) {
   // unknowns sort last regardless of direction (handled by the caller)
   if (typeof a === 'number' && typeof b === 'number') {
@@ -79,9 +89,9 @@ function project (query, selected) {
       if (expr.name === 'count') {
         return selected.length
       }
-      const values = selected // aggregates coerce like scalar functions:
-        .map(ctx => asNumber(evalExpr(expr.args[0], ctx)))
-        .filter(v => v !== UNKNOWN) // non-numbers are skipped as unknown
+      const values = selected // booleans count as 1/0; other non-numbers skip
+        .map(ctx => aggregateNumber(evalExpr(expr.args[0], ctx)))
+        .filter(v => v !== UNKNOWN) // so avg(<cond>) is a rate, sum(<cond>) a count
       if (values.length === 0) {
         return null
       }
@@ -114,11 +124,11 @@ function collectPlayerFacts (node, facts) {
   }
   if (node.kind === 'prop') {
     const { base } = node
-    if (base.object === 'player' &&
-        (base.name === 'me' || base.name.startsWith('my'))) {
+    if (base.object === 'player') { // the only player root is `me`
       facts.referencesMe = true
     }
-    if (node.args && node.path[0] === 'taggedWith' &&
+    // taggedWith is always the final path segment of a method call
+    if (node.args && node.path[node.path.length - 1] === 'taggedWith' &&
         node.args[0].kind === 'lit' && typeof node.args[0].value === 'string') {
       facts.tagPatterns.add(node.args[0].value)
     }
