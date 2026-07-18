@@ -91,7 +91,7 @@ export function makeDoublesInsights () {
             playerId: 2,
             startMs: 15000,
             endMs: 16000,
-            from: { x: 15, y: 40, z: 3 }, // hitter-frame x'=5, y'=4
+            from: { x: 15, y: 40, z: 3 }, // hitter-frame x'=15, y'=4
             to: { x: 6, y: 8, z: 0.5 },
             toZone: 'short',
             speed: 20,
@@ -110,7 +110,8 @@ export function makeDoublesInsights () {
             type: 'smash',
             isFinal: true,
             quality: { overall: 0.95, execution: 0.95, selection: 0.95 },
-            // p1's opponents: p2 at x=6 (his LHS), p3 at x=15 (his RHS)
+            // p1's opponents in his near-side (x-reflected) frame:
+            // p3 at abs x=15 → x'=5 (his LHS), p2 at abs x=6 → x'=14 (RHS)
             playerPositions: [{ x: 5, y: 14 }, { x: 14, y: 12 }, { x: 6, y: 26 }, { x: 15, y: 28 }],
             extra: {
               is_volley: true,

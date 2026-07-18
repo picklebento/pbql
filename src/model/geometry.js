@@ -15,18 +15,20 @@ export function isOnFarSide (pos) {
   return pos.y > COURT.NET_Y
 }
 
-// Mirrors a world position into the frame of a player on the far side, so
-// that "their own baseline" is y'=0 and x' grows to their right as they face
-// the net. For a near-side player the world frame already has this shape.
+// Maps a world position into a player's frame, so that "their own baseline"
+// is y'=0 and x' grows to their right as they face the net. A far-side
+// player (y>22) reads world x directly but sees y reflected (44−y); a
+// near-side player reads y directly but sees x reflected (20−x). Validated
+// empirically against production stroke_side data (strike minus hitter
+// position agrees with the recorded left/right stroke side).
 export function toPlayerFrame (pos, onFarSide) {
-  if (!onFarSide) {
-    return pos
-  }
-  const mirrored = { x: COURT.WIDTH - pos.x, y: COURT.LENGTH - pos.y }
+  const framed = onFarSide
+    ? { x: pos.x, y: COURT.LENGTH - pos.y }
+    : { x: COURT.WIDTH - pos.x, y: pos.y }
   if (pos.z !== undefined) {
-    mirrored.z = pos.z
+    framed.z = pos.z
   }
-  return mirrored
+  return framed
 }
 
 // distance to the nearest sideline (identical in either frame)

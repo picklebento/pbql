@@ -34,10 +34,14 @@ describe('M6 built-ins', () => {
   })
 
   test('isHitOnSide uses the hitter frame', () => {
-    // far-side strikes mirror: (2,1) abs x=10 → x'=10 (right edge of midline)
-    expect(shotsWhere('shot.isHitOnSide("right")')).toEqual([[0, 2], [2, 1], [2, 2]])
+    // by hand from the fixture strike points: near-side strikes reflect x
+    // ((0,0) abs x=5 → x'=15 right; (0,2) abs x=14 → x'=6 left; (2,0) x'=15;
+    // (2,2) x'=6 left), far-side strikes keep x ((0,1) x'=15; (1,0) x'=14;
+    // (2,1) abs x=10 → x'=10, the right edge of the midline; (2,3) x'=15)
+    expect(shotsWhere('shot.isHitOnSide("right")'))
+      .toEqual([[0, 0], [0, 1], [1, 0], [2, 0], [2, 1], [2, 3]])
     expect(shotsWhere('rally.num = 1 AND shot.isHitOnSide("left")'))
-      .toEqual([[0, 0], [0, 1]])
+      .toEqual([[0, 2]])
     expect(shotsWhere('shot.isHitOnSide("up")')).toEqual([]) // bad side: unknown
     expect(shotsWhere('rally.num = 2 AND shot.num = 2 AND shot.isHitOnSide("left")'))
       .toEqual([]) // no trajectory on the sparse shot

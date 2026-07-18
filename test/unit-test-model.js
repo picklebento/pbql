@@ -11,15 +11,17 @@ const farShotCtx = { game, rally: game.rallies[0], rallyIdx: 0, shot: game.ralli
 const sparseCtx = { game, rally: game.rallies[1], rallyIdx: 1, shot: game.rallies[1].shots[1], shotIdx: 1 }
 
 describe('geometry', () => {
-  test('near-side positions are already in the player frame', () => {
+  test('near-side frames reflect x only (own baseline already y=0)', () => {
+    // by hand: x' = 20 − 5 = 15; y and z pass through
     expect(geometry.toPlayerFrame({ x: 5, y: 2, z: 1 }, false))
-      .toEqual({ x: 5, y: 2, z: 1 })
+      .toEqual({ x: 15, y: 2, z: 1 })
   })
 
-  test('far-side positions mirror both axes', () => {
+  test('far-side frames reflect y only (x already grows to the right)', () => {
+    // by hand: y' = 44 − 40 = 4; x and z pass through
     expect(geometry.toPlayerFrame({ x: 15, y: 40, z: 3 }, true))
-      .toEqual({ x: 5, y: 4, z: 3 })
-    expect(geometry.toPlayerFrame({ x: 15, y: 40 }, true)).toEqual({ x: 5, y: 4 })
+      .toEqual({ x: 15, y: 4, z: 3 })
+    expect(geometry.toPlayerFrame({ x: 15, y: 40 }, true)).toEqual({ x: 15, y: 4 })
   })
 
   test('distances to lines', () => {
@@ -118,9 +120,10 @@ describe('registry', () => {
     }
   })
 
-  test('hitter-frame coordinates mirror for far-side hitters', () => {
+  test('hitter-frame coordinates mirror y for far-side hitters', () => {
     const props = REGISTRY.shot.props
-    expect(props.get('from.x').extract(farShotCtx)).toBe(5)
+    // struck at abs (15, 40), far side: x' = 15 (kept), y' = 44 − 40 = 4
+    expect(props.get('from.x').extract(farShotCtx)).toBe(15)
     expect(props.get('from.y').extract(farShotCtx)).toBe(4)
     expect(props.get('from.absX').extract(farShotCtx)).toBe(15)
     expect(props.get('from.absY').extract(farShotCtx)).toBe(40)
@@ -194,12 +197,12 @@ describe('registry', () => {
 
   test('player properties measure at the current shot', () => {
     const props = REGISTRY.player.props
-    // at rally 0 shot 1, p1 stands at (15, 8): near side
+    // at rally 0 shot 1, p1 stands at (15, 8): near side, x' = 20 − 15 = 5
     expect(props.get('pos.absX').extract(farShotCtx, 1)).toBe(15)
-    expect(props.get('pos.x').extract(farShotCtx, 1)).toBe(15)
+    expect(props.get('pos.x').extract(farShotCtx, 1)).toBe(5)
     expect(props.get('feetToKitchen').extract(farShotCtx, 1)).toBe(7)
-    // p2 stands at (15, 40): far side, own frame mirrors
-    expect(props.get('pos.x').extract(farShotCtx, 2)).toBe(5)
+    // p2 stands at (15, 40): far side, x' = 15 (kept), y' = 44 − 40 = 4
+    expect(props.get('pos.x').extract(farShotCtx, 2)).toBe(15)
     expect(props.get('pos.y').extract(farShotCtx, 2)).toBe(4)
     expect(props.get('feetToKitchen').extract(farShotCtx, 2)).toBe(11)
     expect(props.get('name').extract(farShotCtx, 3)).toBe('Dan')
