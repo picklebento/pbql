@@ -11,15 +11,17 @@ import { REGISTRY } from '../src/model/registry.js'
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const OBJECT_DOCS = {
-  shot: 'The shot being tested. `shot[k]` addresses the shot k earlier/later in the same rally.',
+  shot: 'The shot being tested. `shot[k]` addresses the shot k earlier/later in the same rally. `shot.hitter` navigates to the player who hit it.',
   rally: 'The rally containing the current shot. `rally[k]` addresses neighboring rallies in the same game.',
   game: 'The session (one game of a possibly multi-game video) containing the shot.',
-  player: 'Any player reference: `hitter`, `me`, `myTeammate`, `myOpponent1/2`, `myOpponentLHS/RHS`, and the `hitters…` forms.'
+  player: 'A player value, reached from the root `me` or a shot\'s `hitter` (e.g. `shot.hitter`, `shot[1].hitter`) and stepped through the relations below. A path ending AT a player is its identity, for `=`/`!=` (`shot.hitter = me`). Scalar props are measured at the moment of the shot the player was reached through.'
 }
 
-function propRows (objName, { propList, methodList }) {
-  const rows = propList.map(p =>
-    `| \`${objName}.${p.path}\` | ${p.type} | ${p.unit ?? ''} | ${p.doc} |`)
+function propRows (objName, { propList, methodList, relationList }) {
+  const rows = relationList.map(r =>
+    `| \`${objName}.${r.name}\` | player | | ${r.doc} |`)
+  rows.push(...propList.map(p =>
+    `| \`${objName}.${p.path}\` | ${p.type} | ${p.unit ?? ''} | ${p.doc} |`))
   rows.push(...methodList.map(m => {
     const args = m.args.map(a => a.name).join(', ')
     return `| \`${objName}.${m.name}(${args})\` | boolean | | ${m.doc} |`
@@ -99,8 +101,15 @@ function generateLlmsTxt () {
     '  shot.inHighlight("atp"). Utilities are functions: min, max, exists,',
     '  abs, kph (mph→km/h), toMs, toSecs.',
     '- Times are seconds; distances feet; speeds mph; quality 0-1 (1 best).',
-    '- Players: hitter, me, myTeammate, myOpponent1/2, myOpponentLHS/RHS,',
-    '  hittersTeammate, … Compare with = (hitter = me). team is 0|1.',
+    '- Players are values you navigate to. Two roots: `me` (the asker) and a',
+    '  shot\'s hitter, `shot.hitter` (also `shot[k].hitter`, e.g.',
+    '  `shot[1].hitter` targets the next shot\'s hitter). From any player step',
+    '  to a related player: .teammate, .opponent1, .opponent2, .opponentLHS,',
+    '  .opponentRHS (e.g. me.teammate, shot.hitter.opponentLHS). Then read a',
+    '  player scalar (.name, .team (0|1), .feetToKitchen, .pos.x, …) or stop',
+    '  at the player to compare identities with = / != (shot.hitter = me,',
+    '  shot[1].hitter.name = "Joe"). taggedWith is a player/shot method',
+    '  (shot.hitter.taggedWith("Anna*")).',
     '',
     '## Using the pbql CLI',
     '',
@@ -119,6 +128,9 @@ function generateLlmsTxt () {
     ''
   ]
   for (const [objName, entry] of Object.entries(REGISTRY)) {
+    for (const r of entry.relationList) {
+      parts.push(`- ${objName}.${r.name} (player): ${r.doc}`)
+    }
     for (const p of entry.propList) {
       const unit = p.unit ? ` [${p.unit}]` : ''
       parts.push(`- ${objName}.${p.path} (${p.type}${unit}): ${p.doc}`)

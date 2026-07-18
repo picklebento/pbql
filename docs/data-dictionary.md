@@ -10,10 +10,11 @@ reference; positions are measured at the moment the current shot was hit.
 
 ## shot
 
-The shot being tested. `shot[k]` addresses the shot k earlier/later in the same rally.
+The shot being tested. `shot[k]` addresses the shot k earlier/later in the same rally. `shot.hitter` navigates to the player who hit it.
 
 | Property | Type | Unit / values | Description |
 |---|---|---|---|
+| `shot.hitter` | player | | the player who hit this shot |
 | `shot.num` | number | 1-based | which shot of the rally this is (the serve is 1) |
 | `shot.sequence` | string | "serve"|"return"|"3"|"4"|"5" | the common name for this shot's position in the rally; unknown from the 6th shot on |
 | `shot.isFinal` | boolean |  | whether this is the rally's last shot |
@@ -119,10 +120,15 @@ The session (one game of a possibly multi-game video) containing the shot.
 
 ## player
 
-Any player reference: `hitter`, `me`, `myTeammate`, `myOpponent1/2`, `myOpponentLHS/RHS`, and the `hitters…` forms.
+A player value, reached from the root `me` or a shot's `hitter` (e.g. `shot.hitter`, `shot[1].hitter`) and stepped through the relations below. A path ending AT a player is its identity, for `=`/`!=` (`shot.hitter = me`). Scalar props are measured at the moment of the shot the player was reached through.
 
 | Property | Type | Unit / values | Description |
 |---|---|---|---|
+| `player.teammate` | player | | this player's partner (unknown in singles) |
+| `player.opponent1` | player | | the first opposing player, in player-id order (the lone opponent in singles) |
+| `player.opponent2` | player | | the second opposing player, in player-id order (unknown in singles) |
+| `player.opponentLHS` | player | | the opponent on this player's left at the shot's moment (unknown if positions are missing) |
+| `player.opponentRHS` | player | | the opponent on this player's right at the shot's moment (unknown if positions are missing) |
 | `player.id` | number | 0-3 | the player's index within this game |
 | `player.team` | number | 0|1 | the player's team |
 | `player.name` | string |  | the player's tagged name; untagged players keep their default name ("Player 1"…"Player 4") |

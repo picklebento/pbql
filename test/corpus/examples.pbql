@@ -4,11 +4,11 @@
 
 # Q: Show me all my drop shots
 FROM "83gyqyc10y8f"
-WHERE shot.type = "drop" AND hitter = me
+WHERE shot.type = "drop" AND shot.hitter = me
 
 # Q: My highest-quality shots, best first, top 20
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.quality.overall >= 0.8
+WHERE shot.hitter = me AND shot.quality.overall >= 0.8
 ORDER BY shot.quality.overall DESC
 LIMIT 20
 
@@ -43,23 +43,23 @@ CONTEXT AFTER rally
 
 # Q: My unforced errors
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.errors.unforced
+WHERE shot.hitter = me AND shot.errors.unforced
 
 # Q: Balls I hit out that the other team played anyway
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.errors.faults.out.outcome = "intercepted"
+WHERE shot.hitter = me AND shot.errors.faults.out.outcome = "intercepted"
 
 # Q: Clean shots — exclude anything with a detected error
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND NOT shot.hasError
+WHERE shot.hitter = me AND NOT shot.hasError
 
 # Q: Volleys my opponents hit while I was at the kitchen line
 FROM "83gyqyc10y8f"
-WHERE hitter.team != me.team AND shot.isVolley AND me.feetToKitchen = 0
+WHERE shot.hitter.team != me.team AND shot.isVolley AND me.feetToKitchen = 0
 
 # Q: Backhand speedups by either player on my team
 FROM "83gyqyc10y8f"
-WHERE hitter.team = me.team AND shot.isSpeedup AND shot.strokeType = "backhand"
+WHERE shot.hitter.team = me.team AND shot.isSpeedup AND shot.strokeType = "backhand"
 
 # Q: Around-the-post highlights
 FROM "83gyqyc10y8f"
@@ -85,7 +85,7 @@ WHERE shot.num = 1 AND shot.from.feetToNearestSideline <= 2 AND shot.from.x > 10
 
 # Q: The shot right before every one of my resets, in the first ten rallies
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.isReset AND shot[-1].speed > 30 AND rally.num <= 10
+WHERE shot.hitter = me AND shot.isReset AND shot[-1].speed > 30 AND rally.num <= 10
 
 # Q: Shots by the player with email pat@example.com in either of two videos
 FROM "83gyqyc10y8f", "jhc3t8h8b5cj"
@@ -94,17 +94,17 @@ WHERE shot.taggedWith("pat@example.com")
 # Q: What speed and quality did each of my drives have? (spreadsheet)
 SELECT shot.hitTime AS "when (s)", shot.speed AS "mph", shot.quality.overall
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.type = "drive"
+WHERE shot.hitter = me AND shot.type = "drive"
 ORDER BY shot.speed DESC
 
 # Q: How many shots did I hit in this game?
 SELECT count()
 FROM "83gyqyc10y8f"
-WHERE hitter = me
+WHERE shot.hitter = me
 
 # Q: Shots where my whole team was at the kitchen but we still lost the rally
 FROM "83gyqyc10y8f"
-WHERE me.feetToKitchen = 0 AND myTeammate.feetToKitchen = 0 AND rally.winner != me.team
+WHERE me.feetToKitchen = 0 AND me.teammate.feetToKitchen = 0 AND rally.winner != me.team
 
 # Q: Third-shot drops that landed short of the kitchen with low pace
 FROM "83gyqyc10y8f"
@@ -112,8 +112,21 @@ WHERE shot.num = 3 AND shot.type = "drop" AND shot.to.zone IN ("kitchen", "short
 
 # Q: Every ball hit at my left-side opponent's feet
 FROM "83gyqyc10y8f"
-WHERE hitter.team = me.team AND myOpponentLHS.feetToNet <= 14 AND shot.to.zone != "out"
+WHERE shot.hitter.team = me.team AND me.opponentLHS.feetToNet <= 14 AND shot.to.zone != "out"
 
 # Q: Balls launched exactly level or one degree downward
 FROM "83gyqyc10y8f"
 WHERE shot.pitch IN (0, -1)
+
+# Q: The setup shots where I fed my partner the ball they put away for a winner
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot[1].hitter = me.teammate AND exists(shot[1].winnerType)
+
+# Q: Balls hit right at the player Ben was guarding (his left-side opponent)
+FROM "83gyqyc10y8f"
+WHERE shot.hitter.taggedWith("Ben*") AND shot.to.zone != "out" AND shot.hitter.opponentLHS.feetToNet <= 14
+
+# Q: What fraction of rallies did my team win? (one number)
+SELECT avg(rally.winner = me.team) AS "win rate"
+FROM "83gyqyc10y8f"
+WHERE shot.num = 1

@@ -1,11 +1,11 @@
 # kitchen-sink query exercising every grammar feature (not a useful query)
-SELECT hitter.name AS "who", shot.speed AS "mph", shot.to.x - shot.from.x
+SELECT shot.hitter.name AS "who", shot.speed AS "mph", shot.to.x - shot.from.x
 FROM "jko65sx8kalj",
      "games/*.json",
      "xysdfnkdsafd:2"
 WHERE
-    (hitter = me OR myTeammate.name = "Anna \"AL\" Waters") AND
-    hitter.feetToKitchen <= 2.5 AND
+    (shot.hitter = me OR me.teammate.name = "Anna \"AL\" Waters") AND
+    shot.hitter.feetToKitchen <= 2.5 AND
     shot.num IN (3, 5) AND
     shot.isVolley AND
     NOT shot[-1].isVolley = false AND  # NOT binds looser than the comparison
@@ -15,7 +15,7 @@ WHERE
     -shot.yaw + 3 * 2 > -90 AND
     shot.taggedWith("BJ*") AND
     game.duration / 60 < 20 AND
-    hittersOpponentRHS.name != "Ben Johns" AND
+    shot[1].hitter.opponentRHS.name != "Ben Johns" AND
     exists(shot.winnerType)
 CONTEXT BEFORE max(1 shots, 2secs)
 CONTEXT AFTER min(3secs, 1 shots)

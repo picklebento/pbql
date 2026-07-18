@@ -7,7 +7,7 @@ orders/limits the results:
 
 ```sql
 FROM "games/*.json"
-WHERE shot.type = "drop" AND hitter = me AND shot.quality.overall >= 0.8
+WHERE shot.type = "drop" AND shot.hitter = me AND shot.quality.overall >= 0.8
 CONTEXT BEFORE 1 shot
 CONTEXT AFTER 2secs
 ORDER BY shot.speed DESC
@@ -48,7 +48,7 @@ existing directory (every `*.json` beneath it), or a glob:
 
 ```bash
 node bin/pbql.js 'FROM "game.json" WHERE shot.isVolley' --out csv
-node bin/pbql.js 'FROM "games/*.json" WHERE hitter = me' --me 0 --out edl
+node bin/pbql.js 'FROM "games/*.json" WHERE shot.hitter = me' --me 0 --out edl
 ```
 
 ## Usage

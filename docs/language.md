@@ -97,7 +97,8 @@ shot.isVolley` if you want them too.
 
 Comparisons require matching types (comparing a number to a string is a
 validation error, not `false`). Strings compare case-sensitively with `=`
-and `!=` only. Players compare with `=`/`!=` by identity (`hitter = me`).
+and `!=` only. Players compare with `=`/`!=` by identity
+(`shot.hitter = me`).
 
 ## 5. Objects
 
@@ -131,31 +132,60 @@ There is no relative game access.
 
 ### 5.4 Players
 
-`hitter` is the player who hit the current shot; `me` is the querying user
-(resolved by the host application; unknown if the user isn't tagged in the
-game). Relative references derive from either root: `myTeammate`,
-`myOpponent1`, `myOpponent2`, `myOpponentLHS`, `myOpponentRHS`, and
-`hittersTeammate`, `hittersOpponent1`, …
+Players are **values you navigate to**, then either read a scalar from or
+compare by identity. Navigation is ordinary path syntax — the same `.`
+segments as any property.
 
-- `Opponent1`/`Opponent2` are the opposing players in player-id order.
-- `OpponentLHS`/`OpponentRHS` are the opponents by side at the moment the
-  current shot was hit: LHS is the opponent on the reference player's left
-  as they face the net. If positions are unknown at that moment, these
-  references are unknown.
-- In singles, all `Teammate` references are unknown, and `Opponent2` is
-  unknown.
+**Roots** (a path segment yields a player):
 
-Player properties include `id`, `team`, `name`, position (`pos.x`/`pos.y`
-in the player's own frame, `pos.absX`/`pos.absY` raw) at the current shot's
-hit time, and derived distances (`feetToKitchen`, `feetToNet`, …).
+- `me` — the querying user (resolved by the host application; unknown if the
+  user isn't tagged in the game). A player root all by itself.
+- `shot.hitter` — the player who hit that shot. Because `hitter` is a
+  property of a shot, it composes with relative shots: `shot[1].hitter`
+  targets the *next* shot's hitter, `shot[-1].hitter` the previous one.
+
+**Relations** (player → player) step from any player to another:
+
+- `teammate` — the partner (`me.teammate`, `shot.hitter.teammate`).
+- `opponent1` / `opponent2` — the opposing players in player-id order.
+- `opponentLHS` / `opponentRHS` — the opponents by side at the moment of the
+  shot the player was reached through: LHS is the opponent on that player's
+  left as they face the net. If positions are unknown at that moment, these
+  are unknown.
+
+Relations chain: `shot.hitter.opponentLHS.teammate` is legal (each hop lands
+on a player). In **singles**, `teammate` and `opponent2` are unknown, and
+the lone opponent answers `opponent1`/`opponentLHS`/`opponentRHS`.
+
+**Ending a path.** A path that ends *at* a player (no scalar segment after
+it) is that player's **identity**, for `=`/`!=` only:
+`shot.hitter = me`, `shot.hitter != shot[-1].hitter`,
+`me.opponentLHS = shot[1].hitter`. Add a scalar segment to read a value
+instead: `id`, `team`, `name`, position (`pos.x`/`pos.y` in the player's own
+frame, `pos.absX`/`pos.absY` raw), and derived distances (`feetToKitchen`,
+`feetToNet`, …), all measured at the moment of the shot the player was
+reached through. `taggedWith(pattern)` is a method (§5.6).
+
+Migration from the old flat player tokens:
+
+| old | new |
+|---|---|
+| `hitter = me` | `shot.hitter = me` |
+| `hitter.feetToKitchen <= 2.5` | `shot.hitter.feetToKitchen <= 2.5` |
+| `myTeammate.name = "Anna"` | `me.teammate.name = "Anna"` |
+| `myOpponentLHS` | `me.opponentLHS` |
+| `hittersOpponentRHS.name` | `shot.hitter.opponentRHS.name` |
+| — (was impossible) | `shot[1].hitter.name = "Joe"` (targeting) |
 
 ### 5.5 Calling conventions
 
-- **Zero-argument derived values are plain properties**: `hitter.feetToKitchen`.
+- **Zero-argument derived values are plain properties**:
+  `shot.hitter.feetToKitchen`.
 - **Predicates about one subject take arguments as methods**:
   `shot.taggedWith("Alex*")`, `shot.inHighlight("atp")`. Writing the same
-  call function-style (`taggedWith(shot, "Alex*")`) is accepted and
-  canonicalized.
+  call function-style (`taggedWith(shot, "Alex*")`,
+  `taggedWith(shot.hitter, "Alex*")`) is accepted and canonicalized (the
+  method name is appended to the subject's navigation path).
 - **Subject-less utilities are functions**: `min(a, b)`, `max(a, b)`,
   `exists(x)`, `abs(x)`, and the unit conversions `kph(x)` (mph → km/h),
   `toMs(x)` (seconds → ms), `toSecs(x)` (ms → seconds).
@@ -166,7 +196,8 @@ signatures never mention it.
 ### 5.6 `taggedWith(pattern)`
 
 Matches against the player-tagging data (PB Vision `/user/tag`). On a shot,
-it tests the hitter; on a player reference, that player. If `pattern`
+it tests the hitter (`shot.taggedWith(…)`); on a player, that player
+(`shot.hitter.taggedWith(…)`, `me.teammate.taggedWith(…)`). If `pattern`
 contains `@` it is an email and must match exactly (case-insensitive);
 otherwise it is a name pattern, case-insensitive, where `*` matches any run
 of characters (`"Alex*"`). Unknown when the game has no tag data.
@@ -266,15 +297,17 @@ last regardless of direction. Without `ORDER BY`, results keep video order
 ### 6.6 SELECT
 
 ```sql
-SELECT hitter.name, shot.speed AS "mph", shot.type
+SELECT shot.hitter.name, shot.speed AS "mph", shot.type
 ```
 
 One row per selected shot; `AS "label"` names the output column (labels are
 purely cosmetic — units never change). Aggregates `count()`, `sum(x)`,
 `avg(x)`, `min(x)`, `max(x)` collapse the result to a single row; mixing
 aggregate and non-aggregate expressions is a validation error (there is no
-GROUP BY). Aggregates coerce their inputs by the same rule as scalar
-functions — anything but a finite number is unknown — and skip unknowns;
+GROUP BY). Aggregates coerce their inputs to numbers and skip unknowns:
+**booleans fold to 1/0** (so `sum(<condition>)` counts matches and
+`avg(<condition>)` is a rate, e.g. `avg(rally.winner = me.team)`), finite
+numbers pass through, and anything else (strings, …) is unknown and skipped;
 `count()` counts selected shots.
 
 In CSV output, a string cell that starts with `=`, `+`, `-`, `@`, tab, or

@@ -5,14 +5,15 @@
       "expr": {
         "kind": "prop",
         "base": {
-          "object": "player",
-          "name": "hitter",
+          "object": "shot",
+          "offset": 0,
           "loc": {
             "line": 2,
             "col": 8
           }
         },
         "path": [
+          "hitter",
           "name"
         ],
         "loc": {
@@ -30,7 +31,7 @@
           "offset": 0,
           "loc": {
             "line": 2,
-            "col": 30
+            "col": 35
           }
         },
         "path": [
@@ -38,7 +39,7 @@
         ],
         "loc": {
           "line": 2,
-          "col": 30
+          "col": 35
         }
       },
       "label": "mph"
@@ -54,7 +55,7 @@
             "offset": 0,
             "loc": {
               "line": 2,
-              "col": 51
+              "col": 56
             }
           },
           "path": [
@@ -63,7 +64,7 @@
           ],
           "loc": {
             "line": 2,
-            "col": 51
+            "col": 56
           }
         },
         "rhs": {
@@ -73,7 +74,7 @@
             "offset": 0,
             "loc": {
               "line": 2,
-              "col": 63
+              "col": 68
             }
           },
           "path": [
@@ -82,7 +83,7 @@
           ],
           "loc": {
             "line": 2,
-            "col": 63
+            "col": 68
           }
         }
       },
@@ -106,14 +107,16 @@
             "lhs": {
               "kind": "prop",
               "base": {
-                "object": "player",
-                "name": "hitter",
+                "object": "shot",
+                "offset": 0,
                 "loc": {
                   "line": 7,
                   "col": 6
                 }
               },
-              "path": [],
+              "path": [
+                "hitter"
+              ],
               "loc": {
                 "line": 7,
                 "col": 6
@@ -123,21 +126,21 @@
               "kind": "prop",
               "base": {
                 "object": "player",
-                "name": "me",
+                "root": "me",
                 "loc": {
                   "line": 7,
-                  "col": 15
+                  "col": 20
                 }
               },
               "path": [],
               "loc": {
                 "line": 7,
-                "col": 15
+                "col": 20
               }
             },
             "loc": {
               "line": 7,
-              "col": 13
+              "col": 18
             }
           },
           {
@@ -147,18 +150,19 @@
               "kind": "prop",
               "base": {
                 "object": "player",
-                "name": "myTeammate",
+                "root": "me",
                 "loc": {
                   "line": 7,
-                  "col": 21
+                  "col": 26
                 }
               },
               "path": [
+                "teammate",
                 "name"
               ],
               "loc": {
                 "line": 7,
-                "col": 21
+                "col": 26
               }
             },
             "rhs": {
@@ -167,7 +171,7 @@
             },
             "loc": {
               "line": 7,
-              "col": 37
+              "col": 43
             }
           }
         ]
@@ -178,14 +182,15 @@
         "lhs": {
           "kind": "prop",
           "base": {
-            "object": "player",
-            "name": "hitter",
+            "object": "shot",
+            "offset": 0,
             "loc": {
               "line": 8,
               "col": 5
             }
           },
           "path": [
+            "hitter",
             "feetToKitchen"
           ],
           "loc": {
@@ -199,7 +204,7 @@
         },
         "loc": {
           "line": 8,
-          "col": 26
+          "col": 31
         }
       },
       {
@@ -325,7 +330,7 @@
           "kind": "prop",
           "base": {
             "object": "player",
-            "name": "me",
+            "root": "me",
             "loc": {
               "line": 13,
               "col": 24
@@ -523,14 +528,16 @@
         "lhs": {
           "kind": "prop",
           "base": {
-            "object": "player",
-            "name": "hittersOpponentRHS",
+            "object": "shot",
+            "offset": 1,
             "loc": {
               "line": 18,
               "col": 5
             }
           },
           "path": [
+            "hitter",
+            "opponentRHS",
             "name"
           ],
           "loc": {
@@ -544,7 +551,7 @@
         },
         "loc": {
           "line": 18,
-          "col": 29
+          "col": 37
         }
       },
       {
