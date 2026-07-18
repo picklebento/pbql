@@ -6,7 +6,12 @@ import { REGISTRY } from '../model/registry.js'
 
 export const UNKNOWN = Symbol('pbql.unknown')
 
-const u = value => value === undefined ? UNKNOWN : value
+// missing data — and non-finite numbers (JSON like 1e400 parses to
+// Infinity) — surface as UNKNOWN, never as a value
+const u = value =>
+  value === undefined || (typeof value === 'number' && !Number.isFinite(value))
+    ? UNKNOWN
+    : value
 
 // which side is this team's partner: 0↔1, 2↔3
 const partnerOf = idx => idx ^ 1
@@ -84,7 +89,7 @@ function compare (op, a, b) {
 }
 
 function asNumber (value) {
-  return typeof value === 'number' ? value : UNKNOWN
+  return typeof value === 'number' && Number.isFinite(value) ? value : UNKNOWN
 }
 
 function evalProp (node, ctx) {

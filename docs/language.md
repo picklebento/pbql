@@ -78,6 +78,8 @@ is a first-class concept with SQL-style three-valued logic:
 
 - A property whose underlying data is absent evaluates to **unknown**; so
   does any out-of-range reference (`shot[-1]` on a rally's first shot).
+- Non-finite numbers never surface as values: data that smuggles in
+  `Infinity` or `NaN` (e.g. a JSON `1e400`) evaluates to unknown.
 - Any comparison or arithmetic with an unknown operand is unknown.
 - Kleene logic: `NOT unknown = unknown`; `unknown AND false = false`;
   `unknown AND true = unknown`; `unknown OR true = true`;

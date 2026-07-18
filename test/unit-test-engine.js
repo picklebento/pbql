@@ -1,6 +1,6 @@
 import { UNKNOWN, evalExpr } from '../src/engine/evaluate.js'
 import { computeWindow } from '../src/engine/window.js'
-import { Game, parse, runQuery } from '../src/index.js'
+import { Game, parse, runQuery, shotsToCSV } from '../src/index.js'
 
 import { makeDoublesGame, makeSinglesGame } from './fixtures/make-insights.js'
 
@@ -340,6 +340,29 @@ describe('runQuery: inputs and errors', () => {
       code: 'PBQL_INVALID_INSIGHTS',
       message: expect.stringContaining('malformed insights JSON')
     }])
+  })
+
+  test('non-finite numbers in the data are unknown, never Infinity', () => {
+    const game = makeDoublesGame()
+    // JSON has no Infinity, but 1e400 parses to it and could otherwise
+    // leak through properties into comparisons and outputs
+    game.insights.rallies[0].shots[0].resulting_ball_movement.speed =
+      JSON.parse('1e400')
+    const result = runQuery({
+      text: 'SELECT shot.speed FROM "x" WHERE rally.num = 1 AND shot.num = 1',
+      games: [game]
+    })
+    expect(result.rows).toEqual([[null]])
+    expect(shotsToCSV(result)).toBe('shot.speed\r\n\r\n') // empty, not Infinity
+    // comparisons with the smuggled value are unknown, so WHERE drops it
+    const filtered = runQuery({
+      text: 'FROM "x" WHERE rally.num = 1 AND shot.speed > 0',
+      games: [game]
+    })
+    expect(filtered.shots.map(s => s.shotIdx)).toEqual([1, 2])
+    // asNumber guards call/arith/neg inputs against non-finite values too
+    expect(evalExpr({ kind: 'neg', arg: { kind: 'lit', value: Infinity } }, {}))
+      .toBe(UNKNOWN)
   })
 
   test('warns when "me" is referenced but not tagged in a game', () => {
