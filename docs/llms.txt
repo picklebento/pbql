@@ -79,6 +79,14 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   CONTEXT never changes which shots match: to select the shot
   before/after some event, put a shot[1]/shot[-1] condition in WHERE
   (the shot right before a winner: WHERE exists(shot[1].winnerType)).
+- "First/second half of the game" has two readings. By the clock,
+  compare shot.hitTime against the game's midpoint:
+  shot.hitTime >= game.startTime + game.duration / 2 (game.startTime/
+  game.endTime bound the rallies). By rally count, compare rally.num
+  against game.numRallies / 2 (rally.num > game.numRallies / 2). Use
+  the clock for time questions ("the last ten minutes", "late in the
+  video"), rally counts for rally-position questions ("the last five
+  rallies", "the game's second half of points").
 - Relative references work on both axes: shot[-1]/shot[1] address the
   previous/next shot within the rally, and rally[-1]/rally[1] address
   the previous/next rally within the game (e.g. rally[-1].winner is who
@@ -409,6 +417,16 @@ Q: Average ball speed for each stroke side, fastest first
     WHERE exists(shot.speed)
     GROUP BY shot.strokeSide
     ORDER BY avg(shot.speed) DESC
+
+Q: My serves in the second half of the game (by the clock)
+
+    FROM "83gyqyc10y8f"
+    WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.hitTime >= game.startTime + game.duration / 2
+
+Q: Shots from the second half of the game's rallies
+
+    FROM "83gyqyc10y8f"
+    WHERE rally.num > game.numRallies / 2
 
 Q: Shots from every rally that came right after a rally my team lost
 

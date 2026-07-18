@@ -159,6 +159,14 @@ WHERE exists(shot.speed)
 GROUP BY shot.strokeSide
 ORDER BY avg(shot.speed) DESC
 
+# Q: My serves in the second half of the game (by the clock)
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.hitTime >= game.startTime + game.duration / 2
+
+# Q: Shots from the second half of the game's rallies
+FROM "83gyqyc10y8f"
+WHERE rally.num > game.numRallies / 2
+
 # Q: Shots from every rally that came right after a rally my team lost
 FROM "83gyqyc10y8f"
 WHERE exists(rally[-1].winner) AND rally[-1].winner != me.team
