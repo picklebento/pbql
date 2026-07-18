@@ -36,7 +36,7 @@ How to use these:
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "serve" AND shot.hasFault
+WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.hasFault
 ```
 
 ### "3 Tricks to immediately Add SERIOUS POWER to Your Serve" (2025) / "7 Reasons Your Serve Has No Power (& How to Serve Harder)" (2024)
@@ -47,7 +47,7 @@ WHERE hitter = me AND shot.sequence = "serve" AND shot.hasFault
 ```sql
 SELECT shot.hitTime AS "when (s)", shot.speed AS "mph", shot.to.zone AS "depth"
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "serve"
+WHERE shot.hitter = me AND shot.sequence = "serve"
 ORDER BY shot.speed DESC
 ```
 
@@ -59,7 +59,7 @@ Zane Navratil's post-ban weapon: heavy topspin, landed deep.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "serve" AND shot.spin.class = "topspin" AND shot.to.zone = "deep"
+WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.spin.class = "topspin" AND shot.to.zone = "deep"
 ORDER BY shot.spin.rpm DESC
 ```
 
@@ -85,7 +85,7 @@ a serve whose apex was 12+ feet up.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "return" AND shot.to.zone = "deep"
+WHERE shot.hitter = me AND shot.sequence = "return" AND shot.to.zone = "deep"
 CONTEXT AFTER 1 shot
 ```
 
@@ -97,7 +97,7 @@ CONTEXT AFTER 1 shot
 ```sql
 SELECT shot.hitTime AS "when (s)", shot.to.zone AS "depth", shot.heightOverNet AS "ft over net"
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "return" AND shot.verticalType = "slice"
+WHERE shot.hitter = me AND shot.sequence = "return" AND shot.verticalType = "slice"
 ```
 
 ### "5 Advanced Pickleball Return Strategies to Outplay Your Opponents" (2024)
@@ -106,7 +106,7 @@ WHERE hitter = me AND shot.sequence = "return" AND shot.verticalType = "slice"
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "return" AND shot.direction = "DownTheMiddle"
+WHERE shot.hitter = me AND shot.sequence = "return" AND shot.direction = "DownTheMiddle"
 ```
 
 ### "The Serve RETURN: The Most Undervalued Shot in Pickleball" (2023)
@@ -115,7 +115,7 @@ WHERE hitter = me AND shot.sequence = "return" AND shot.direction = "DownTheMidd
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "return" AND shot.hasError
+WHERE shot.hitter = me AND shot.sequence = "return" AND shot.hasError
 CONTEXT BEFORE 1 shot
 ```
 
@@ -128,7 +128,7 @@ CONTEXT BEFORE 1 shot
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "3" AND shot.type = "drop" AND shot.to.zone = "kitchen"
+WHERE shot.hitter = me AND shot.sequence = "3" AND shot.type = "drop" AND shot.to.zone = "kitchen"
 CONTEXT BEFORE rally
 CONTEXT AFTER rally
 ```
@@ -139,7 +139,7 @@ CONTEXT AFTER rally
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "3" AND shot.type = "drop" AND shot.errors.popup = "exploited"
+WHERE shot.hitter = me AND shot.sequence = "3" AND shot.type = "drop" AND shot.errors.popup = "exploited"
 CONTEXT AFTER 1 shot
 ```
 
@@ -149,7 +149,7 @@ CONTEXT AFTER 1 shot
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "3" AND shot.type = "drive" AND shot.heightOverNet < 5
+WHERE shot.hitter = me AND shot.sequence = "3" AND shot.type = "drive" AND shot.heightOverNet < 5
 ORDER BY shot.speed DESC
 LIMIT 15
 ```
@@ -162,7 +162,7 @@ LIMIT 15
 ```sql
 SELECT shot.type, shot.speed AS "mph", shot.quality.selection AS "choice", shot.quality.execution AS "execution", shot.winnerType
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "3"
+WHERE shot.hitter = me AND shot.sequence = "3"
 ORDER BY shot.hitTime
 ```
 
@@ -172,7 +172,7 @@ ORDER BY shot.hitTime
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "4" AND shot.isVolley
+WHERE shot.hitter = me AND shot.sequence = "4" AND shot.isVolley
 CONTEXT BEFORE 1 shot
 ```
 
@@ -184,7 +184,7 @@ CONTEXT BEFORE 1 shot
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.type = "dink" AND shot.quality.overall < 0.5
+WHERE shot.hitter = me AND shot.type = "dink" AND shot.quality.overall < 0.5
 ORDER BY shot.quality.overall
 LIMIT 20
 ```
@@ -195,7 +195,7 @@ LIMIT 20
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.type = "dink" AND shot.strokeType = "two-handed"
+WHERE shot.hitter = me AND shot.type = "dink" AND shot.strokeType = "two-handed"
 ```
 
 ### "7 Reasons You Pop Up Dinks (and how to avoid them)" (2024)
@@ -204,7 +204,7 @@ WHERE hitter = me AND shot.type = "dink" AND shot.strokeType = "two-handed"
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.type = "dink" AND exists(shot.errors.popup)
+WHERE shot.hitter = me AND shot.type = "dink" AND exists(shot.errors.popup)
 CONTEXT AFTER 1 shot
 ```
 
@@ -218,7 +218,7 @@ CONTEXT AFTER 1 shot
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.type = "dink" AND rally.allPlayersReachedKitchen AND rally.numShots >= 12
+WHERE shot.hitter = me AND shot.type = "dink" AND rally.allPlayersReachedKitchen AND rally.numShots >= 12
 ```
 
 ### "On Court w/ #1 IN THE WORLD Anna-Leigh: Kitchen Strategy Masterclass" (2025)
@@ -227,7 +227,7 @@ WHERE hitter = me AND shot.type = "dink" AND rally.allPlayersReachedKitchen AND 
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot[-1].errors.deadDink = "exploited"
+WHERE shot.hitter = me AND shot[-1].errors.deadDink = "exploited"
 CONTEXT BEFORE 2 shots
 ```
 
@@ -241,7 +241,7 @@ and since I hit the next shot, the exploiting was mine.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND exists(shot.errors.deadDink)
+WHERE shot.hitter = me AND exists(shot.errors.deadDink)
 CONTEXT AFTER 1 shot
 ```
 
@@ -254,7 +254,7 @@ CONTEXT AFTER 1 shot
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.isSpeedup
+WHERE shot.hitter = me AND shot.isSpeedup
 CONTEXT AFTER 2 shots
 ```
 
@@ -264,7 +264,7 @@ CONTEXT AFTER 2 shots
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.isSpeedup AND shot.quality.selection < 0.4
+WHERE shot.hitter = me AND shot.isSpeedup AND shot.quality.selection < 0.4
 CONTEXT AFTER 1 shot
 ```
 
@@ -274,7 +274,7 @@ CONTEXT AFTER 1 shot
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot[-1].isSpeedup AND shot.isVolley
+WHERE shot.hitter = me AND shot[-1].isSpeedup AND shot.isVolley
 CONTEXT BEFORE 1 shot
 CONTEXT AFTER 1 shot
 ```
@@ -294,7 +294,7 @@ WHERE shot.inHighlight("hands_battle")
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.isSpeedup AND shot.strokeType = "forehand" AND shot.from.z < 3
+WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeType = "forehand" AND shot.from.z < 3
 ```
 
 *Note:* there is no "flick" classification; contact below net height
@@ -306,7 +306,7 @@ WHERE hitter = me AND shot.isSpeedup AND shot.strokeType = "forehand" AND shot.f
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.isSpeedup AND shot.strokeType = "backhand" AND shot.from.z < 3
+WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeType = "backhand" AND shot.from.z < 3
 ```
 
 ## Resets & defense
@@ -319,7 +319,7 @@ The first skill: recognize disadvantage and neutralize before you attack.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.isReset AND shot.from.zone = "mid"
+WHERE shot.hitter = me AND shot.isReset AND shot.from.zone = "mid"
 CONTEXT BEFORE 1 shot
 ```
 
@@ -330,7 +330,7 @@ CONTEXT BEFORE 1 shot
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.isReset AND shot[-1].type = "drive" AND shot[-1].speed > 40
+WHERE shot.hitter = me AND shot.isReset AND shot[-1].type = "drive" AND shot[-1].speed > 40
 ```
 
 ### "I Taught My 4.0 Friend How the Pros Defend" (2023)
@@ -339,7 +339,7 @@ WHERE hitter = me AND shot.isReset AND shot[-1].type = "drive" AND shot[-1].spee
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot[-1].type = "smash" AND NOT shot.hasError
+WHERE shot.hitter = me AND shot[-1].type = "smash" AND NOT shot.hasError
 CONTEXT AFTER 1 shot
 ```
 
@@ -354,7 +354,7 @@ here — it genuinely means "no detected error", not "error status unknown".
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.type = "smash"
+WHERE shot.hitter = me AND shot.type = "smash"
 CONTEXT BEFORE 1 shot
 ```
 
@@ -364,7 +364,7 @@ CONTEXT BEFORE 1 shot
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.strokeType = "two-handed"
+WHERE shot.hitter = me AND shot.strokeType = "two-handed"
 ORDER BY shot.quality.overall DESC
 ```
 
@@ -383,7 +383,7 @@ WHERE shot.isPoach
 CONTEXT BEFORE 1 shot
 ```
 
-*Note:* add `AND hitter.team = me.team` to see only your side's poaches.
+*Note:* add `AND shot.hitter.team = me.team` to see only your side's poaches.
 
 ### "The Erne; In-Game Breakdown of Pickleball's Coolest Shot" (2023)
 
@@ -404,7 +404,7 @@ CONTEXT BEFORE 2 shots
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter.team != me.team AND shot.direction = "DownTheMiddle" AND shot.to.zone != "out"
+WHERE shot.hitter.team != me.team AND shot.direction = "DownTheMiddle" AND shot.to.zone != "out"
 ```
 
 ### "7 Strategies To Use When Playing Pickleball With A LEFTY (ft. Tanner Tomassi)" (2024)
@@ -414,7 +414,7 @@ WHERE hitter.team != me.team AND shot.direction = "DownTheMiddle" AND shot.to.zo
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter.team != me.team AND shot.strokeType = "forehand" AND shot.strokeSide = "left"
+WHERE shot.hitter.team != me.team AND shot.strokeType = "forehand" AND shot.strokeSide = "left"
 ```
 
 *Note:* handedness isn't recorded directly; a forehand released on the left
@@ -443,7 +443,7 @@ Anna Leigh's green light: a short return means drive it.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.sequence = "3" AND shot.type = "drive" AND shot[-1].to.zone IN ("short", "kitchen")
+WHERE shot.hitter = me AND shot.sequence = "3" AND shot.type = "drive" AND shot[-1].to.zone IN ("short", "kitchen")
 ```
 
 *Note:* `shot[-1]` of my third shot is the opponent's return; its `to.zone`
@@ -458,7 +458,7 @@ Tyra lobs on purpose, from the kitchen line, to move pressing opponents.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.type = "lob" AND shot.from.zone = "kitchen"
+WHERE shot.hitter = me AND shot.type = "lob" AND shot.from.zone = "kitchen"
 CONTEXT AFTER 1 shot
 ```
 
@@ -472,7 +472,7 @@ Tournament play is won by whoever donates fewer points.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.errors.unforced
+WHERE shot.hitter = me AND shot.errors.unforced
 CONTEXT BEFORE 1 shot
 ```
 
@@ -483,7 +483,7 @@ CONTEXT BEFORE 1 shot
 ```sql
 SELECT count()
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.errors.unforced
+WHERE shot.hitter = me AND shot.errors.unforced
 ```
 
 ### "6 Overlooked Mistakes Destroying Your Game" (2025)
@@ -492,7 +492,7 @@ WHERE hitter = me AND shot.errors.unforced
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.errors.popup = "exploited"
+WHERE shot.hitter = me AND shot.errors.popup = "exploited"
 CONTEXT AFTER 1 shot
 ```
 
@@ -502,7 +502,7 @@ CONTEXT AFTER 1 shot
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.errors.faults.net
+WHERE shot.hitter = me AND shot.errors.faults.net
 ```
 
 ### "3 Pickleball Kitchen Rules New Players Get Wrong" (2025)
@@ -511,7 +511,7 @@ WHERE hitter = me AND shot.errors.faults.net
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.errors.faults.kitchen
+WHERE shot.hitter = me AND shot.errors.faults.kitchen
 ```
 
 *Note:* of the kitchen rules the video covers, the volley-in-the-kitchen
@@ -523,7 +523,7 @@ fault is the one shot data detects.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot[-1].errors.faults.out.outcome = "intercepted"
+WHERE shot.hitter = me AND shot[-1].errors.faults.out.outcome = "intercepted"
 CONTEXT BEFORE 1 shot
 ```
 
@@ -549,7 +549,7 @@ CONTEXT BEFORE 3 shots
 ```sql
 SELECT count() AS "drops", avg(shot.quality.execution) AS "avg execution"
 FROM "83gyqyc10y8f"
-WHERE hitter = me AND shot.type = "drop"
+WHERE shot.hitter = me AND shot.type = "drop"
 ```
 
 ---
