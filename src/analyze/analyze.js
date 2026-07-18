@@ -144,7 +144,7 @@ export function analyze (query) {
     })
   }
 
-  function checkExpr (node, allowAggregates) {
+  function checkExpr (node, allowAggregates, existsArg = false) {
     switch (node.kind) {
       case 'lit':
         return
@@ -210,8 +210,16 @@ export function analyze (query) {
           // a path ending AT a player is an identity value; a bare shot/
           // rally/game is not a value
           if (typeName !== 'player') {
+            const ref = printExpr(node)
             err(node, 'PBQL_MISSING_PROPERTY',
-              `select a property of ${typeName} (e.g. ${typeName}.num)`)
+              `select a property of ${typeName} (e.g. ${typeName}.num)`,
+              // exists() probes a property; shot/rally references are
+              // probed via .num, which is always present when the
+              // reference is in range
+              existsArg && typeName !== 'game'
+                ? `to test whether ${ref} exists, use exists(${ref}.num) ` +
+                  '(num is always present when the reference is in range)'
+                : undefined)
           }
           return
         }
@@ -230,7 +238,7 @@ export function analyze (query) {
   }
 
   function checkCall (node, allowAggregates) {
-    node.args.forEach(a => checkExpr(a, false))
+    node.args.forEach(a => checkExpr(a, false, node.name === 'exists'))
     const scalar = SCALAR_FNS.get(node.name)
     const aggregate = allowAggregates ? AGGREGATE_FNS.get(node.name) : undefined
     const fits = fn => fn !== undefined &&

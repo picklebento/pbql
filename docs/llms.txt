@@ -26,6 +26,10 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - Strings are double-quoted. Comments start with #.
 - Missing data is "unknown" (SQL NULL-like): comparisons with unknown
   are unknown and WHERE keeps only true. exists(x) tests presence.
+- exists() takes a property, not a bare object: to probe whether a
+  shot/rally reference exists, use its num — exists(shot[1].num), not
+  exists(shot[1]) — since num is always present when the reference is
+  in range.
 - Durations: `2secs`, `1 shot`, `rally` (= to the rally boundary), or
   min(a, b)/max(a, b) of two durations (min = cap, max = floor).
   `N shots` also adds those shots to the results as context.

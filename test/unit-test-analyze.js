@@ -72,11 +72,30 @@ describe('analyze()', () => {
   })
 
   test('bare non-player objects are not values; players are (identity)', () => {
-    expect(analyzeWhere('shot = 1')[0].code).toBe('PBQL_MISSING_PROPERTY')
+    const [bare] = analyzeWhere('shot = 1')
+    expect(bare.code).toBe('PBQL_MISSING_PROPERTY')
+    expect(bare.hint).toBeUndefined() // the .num hint is exists()-specific
     expect(analyzeWhere('rally = 1')[0].message)
       .toBe('select a property of rally (e.g. rally.num)')
     expect(analyzeWhere('shot.hitter = me')).toEqual([])
     expect(analyzeWhere('me = shot.hitter')).toEqual([])
+  })
+
+  test('exists() on a bare shot/rally reference hints at .num', () => {
+    const [error] = analyzeWhere('exists(shot[1])')
+    expect(error).toMatchObject({
+      code: 'PBQL_MISSING_PROPERTY',
+      message: 'select a property of shot (e.g. shot.num)',
+      hint: 'to test whether shot[1] exists, use exists(shot[1].num) ' +
+        '(num is always present when the reference is in range)'
+    })
+    expect(analyzeWhere('exists(rally[-1])')[0].hint)
+      .toBe('to test whether rally[-1] exists, use exists(rally[-1].num) ' +
+        '(num is always present when the reference is in range)')
+    // game has no num property, so the hint is withheld there
+    expect(analyzeWhere('exists(game)')[0].hint).toBeUndefined()
+    // a player is a value, so exists(me) needs no hint (and no error)
+    expect(analyzeWhere('exists(me)')).toEqual([])
   })
 
   test('unknown and misused functions', () => {
