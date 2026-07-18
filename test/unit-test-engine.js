@@ -311,6 +311,10 @@ describe('coverage edges', () => {
   test('game-object properties evaluate in queries', () => {
     expect(shotsWhere('game.numRallies = 3')).toHaveLength(9)
     expect(shotsWhere('game.winner = me.team')).toHaveLength(9)
+    // the game clock: start 10s, end 64s, and the invariant tying them
+    expect(shotsWhere('game.startTime = 10 AND game.endTime = 64')).toHaveLength(9)
+    expect(shotsWhere('game.startTime + game.duration = game.endTime'))
+      .toHaveLength(9)
   })
 })
 
@@ -559,11 +563,11 @@ describe('runQuery: inputs and errors', () => {
     delete game.insights.rallies[2].end_ms // game.duration uses the last rally
     // the selected shot is in rally 0, whose own timing stays intact
     const rows = runQuery({
-      text: 'SELECT rally[1].duration, game.duration FROM "x" ' +
+      text: 'SELECT rally[1].duration, game.duration, game.endTime FROM "x" ' +
         'WHERE rally.num = 1 AND shot.num = 1',
       games: [game]
     })
-    expect(rows.rows).toEqual([[null, null]])
+    expect(rows.rows).toEqual([[null, null, null]])
     // exists() sees the same unknowns (NaN never leaks out as a value)
     const missing = runQuery({
       text: 'FROM "x" WHERE rally.num = 1 AND shot.num = 1 AND ' +

@@ -171,6 +171,9 @@ describe('registry', () => {
     expect(props.get('name').extract({ ...farShotCtx, game: new Game(unnamed) }))
       .toBeUndefined()
     expect(props.get('numRallies').extract(farShotCtx)).toBe(3)
+    // rally 0 starts at 10000ms, rally 2 ends at 64000ms
+    expect(props.get('startTime').extract(farShotCtx)).toBe(10)
+    expect(props.get('endTime').extract(farShotCtx)).toBe(64)
     expect(props.get('duration').extract(farShotCtx)).toBe(54)
     expect(props.get('winner').extract(farShotCtx)).toBe(0) // 11 > 9
     const singles = new Game(makeSinglesGame())

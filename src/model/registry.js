@@ -433,10 +433,24 @@ const GAME_PROPS = [
     extract: ctx => ctx.game.rallies.length
   },
   {
+    path: 'startTime',
+    type: 'number',
+    unit: 'seconds',
+    doc: 'when in the video the game starts (its first rally\'s start)',
+    extract: ctx => msToSecs(ctx.game.rallies[0].start_ms)
+  },
+  {
+    path: 'endTime',
+    type: 'number',
+    unit: 'seconds',
+    doc: 'when in the video the game ends (its last rally\'s end)',
+    extract: ctx => msToSecs(ctx.game.rallies[ctx.game.rallies.length - 1].end_ms)
+  },
+  {
     path: 'duration',
     type: 'number',
     unit: 'seconds',
-    doc: 'first rally start to last rally end',
+    doc: 'first rally start to last rally end (game.startTime + game.duration = game.endTime)',
     extract: ctx => {
       const { rallies } = ctx.game
       return (rallies[rallies.length - 1].end_ms - rallies[0].start_ms) / 1000
