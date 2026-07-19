@@ -13,8 +13,8 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
       -- *.json beneath it), or a glob ("games/*.json")
     WHERE condition                      -- required
     [GROUP BY expr, ...]            -- one output row per group
-    [CONTEXT BEFORE duration]       -- widen each clip backward
-    [CONTEXT AFTER duration]        -- widen each clip forward
+    [CONTEXT BEFORE 1 shot]         -- lead-in; include by default for shot clips
+    [CONTEXT AFTER 1 shot]          -- lead-out; include by default for shot clips
     [ORDER BY expr [ASC|DESC], ...]
     [LIMIT n]
 
@@ -74,18 +74,20 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   (counts, averages, a spreadsheet of numbers). Questions that find or
   show shots — including superlatives like "the fastest shot" (use
   ORDER BY … LIMIT) — must NOT have a SELECT clause.
-- Queries that select individual shots are watched as clips, so
-  frame each result: add CONTEXT BEFORE 1 shot and CONTEXT AFTER 1
-  shot by default (a lead-in and lead-out). Drop the side that
-  cannot exist — no BEFORE for a serve (the rally's first shot), no
-  AFTER for a rally-ending shot (a winner or the final fault) — and
-  drop both for SELECT / aggregate / GROUP BY queries and plain
-  counts (CONTEXT is not allowed with GROUP BY). Widen when asked:
-  CONTEXT BEFORE rally for the whole point, or a secs/min/max
-  duration. CONTEXT never changes which shots match: to SELECT the
-  shot before/after an event, put a shot[1]/shot[-1] condition in
-  WHERE (the shot right before a winner: WHERE
-  exists(shot[1].winnerType)).
+- DEFAULT CONTEXT: a query that selects individual shots (no SELECT/
+  GROUP BY) is watched as clips, so ALWAYS frame each result with a
+  one-shot lead-in and lead-out — add BOTH `CONTEXT BEFORE 1 shot` and
+  `CONTEXT AFTER 1 shot`. Drop only the side that cannot exist: no
+  BEFORE for a serve (the rally's first shot), no AFTER for a
+  rally-ending shot (a winner or the final fault). Use exactly
+  `1 shot` on each side — not `rally`, not `2secs` — unless the
+  question explicitly asks for more footage (then `CONTEXT BEFORE
+  rally` for the whole point, or a secs/min/max duration). Omit CONTEXT
+  entirely ONLY for SELECT / aggregate / GROUP BY / count queries
+  (CONTEXT is not allowed with GROUP BY). CONTEXT never changes which
+  shots match: to SELECT the shot before/after an event, put a
+  shot[1]/shot[-1] condition in WHERE (the shot right before a winner:
+  WHERE exists(shot[1].winnerType)).
 - "First/second half of the game" has two readings. By the clock,
   compare shot.hitTime against the game's midpoint:
   shot.hitTime >= game.startTime + game.duration / 2 (game.startTime/
