@@ -20,12 +20,14 @@ WHERE condition
 
 A query conceptually builds one row per **shot** across all games named by
 `FROM`, keeps the rows where `WHERE` evaluates to `true`, widens each kept
-shot's video window per `CONTEXT`, sorts, limits, and outputs. Without
+shot's video window per `CONTEXT` (a one-shot lead-in and lead-out by default;
+§6.3), sorts, limits, and outputs. Without
 `SELECT`, the output is the selected shots themselves (for the Shot Explorer,
 EDL, or ffmpeg); with `SELECT`, it is one projected row per shot (CSV/JSON),
-or a single row if every selected expression is an aggregate. `GROUP BY`
-(§6.7) changes the output to one row per group; it requires `SELECT` and
-excludes `CONTEXT`.
+or a single row if every selected expression is an aggregate. A projection
+returns rows, not clips, so `CONTEXT` applies only to shot-list queries.
+`GROUP BY` (§6.7) changes the output to one row per group; it requires
+`SELECT` and, like any projection, excludes `CONTEXT`.
 
 ## 2. Lexical structure
 
@@ -273,9 +275,11 @@ CONTEXT AFTER 3secs
 CONTEXT BEFORE rally
 ```
 
-Each selected shot has a video window, by default the shot's own flight
-(`hitTime`…`endTime` plus the host's presentation padding). `CONTEXT`
-widens it; durations are **positive magnitudes** (direction comes from
+Each selected shot has a video window. A **shot-list query with no `CONTEXT`
+clause** frames each clip with a one-shot lead-in and lead-out (as if
+`CONTEXT BEFORE 1 shot` / `CONTEXT AFTER 1 shot` were written) — this is the
+default, so a normal clip query needs no `CONTEXT`. `CONTEXT`
+widens the window; durations are **positive magnitudes** (direction comes from
 BEFORE/AFTER):
 
 - `N shots` — include the N previous (or following) shots **in the same
@@ -300,8 +304,14 @@ and no context shot is added (the previous shot isn't fully included).
 `BEFORE max(1 shot, 2secs)` picks 3.5s: the window opens at 86.5s and the
 previous shot joins as context.
 
-Omitted clauses default to `BEFORE 0` / `AFTER 0`. Overlapping windows of
-adjacent selected shots are merged by the engine when producing clip lists.
+**Defaults.** Writing either `CONTEXT` clause opts a shot-list out of the ±1
+default: the side you write is used and the side you omit falls to `0` (the
+bare flight, `hitTime`…`endTime` plus the host's presentation padding). So
+`CONTEXT BEFORE 0secs` on its own means no lead-in *or* lead-out. A projection
+(`SELECT` or `GROUP BY`) returns rows, not clips, so its context defaults to
+`0` on both sides and an explicit clause is an error (`PBQL_SELECT_CONTEXT`,
+`PBQL_GROUP_BY_CONTEXT`). Overlapping windows of adjacent selected shots are
+merged by the engine when producing clip lists.
 
 ### 6.4 ORDER BY
 
