@@ -110,8 +110,15 @@ export function printDuration (dur) {
     : `${printNumber(dur.value)} ${dur.value === 1 ? 'shot' : 'shots'}`
 }
 
-function isZeroDur (dur) {
+// the projection/omitted-clause default; also the canonical explicit "no
+// window" duration
+function isImplicitZero (dur) {
   return dur.kind === 'dur' && dur.unit === 'secs' && dur.value === 0
+}
+
+// the ±1 shot-list default (a one-shot lead-in / lead-out)
+function isOneShot (dur) {
+  return dur.kind === 'dur' && dur.unit === 'shots' && dur.value === 1
 }
 
 export function print (query) {
@@ -127,12 +134,22 @@ export function print (query) {
   if (query.groupBy) {
     lines.push('GROUP BY ' + query.groupBy.map(printExpr).join(', '))
   }
+  // CONTEXT. A shot-list at the ±1 default (a one-shot lead-in and lead-out)
+  // prints no clause — that very absence is what reparses to the default. A
+  // projection's context is inert and defaults to zero, so it prints only its
+  // non-zero sides. An explicit zero window on a shot-list prints one canonical
+  // `BEFORE 0secs` so it stays distinct from the omitted-CONTEXT default.
   const { before, after } = query.context
-  if (!isZeroDur(before)) {
-    lines.push('CONTEXT BEFORE ' + printDuration(before))
-  }
-  if (!isZeroDur(after)) {
-    lines.push('CONTEXT AFTER ' + printDuration(after))
+  const isProjection = query.select != null || query.groupBy != null
+  if (!isProjection && isImplicitZero(before) && isImplicitZero(after)) {
+    lines.push('CONTEXT BEFORE 0secs')
+  } else if (isProjection || !(isOneShot(before) && isOneShot(after))) {
+    if (!isImplicitZero(before)) {
+      lines.push('CONTEXT BEFORE ' + printDuration(before))
+    }
+    if (!isImplicitZero(after)) {
+      lines.push('CONTEXT AFTER ' + printDuration(after))
+    }
   }
   if (query.orderBy) {
     lines.push('ORDER BY ' + query.orderBy.map(({ expr, dir }) =>

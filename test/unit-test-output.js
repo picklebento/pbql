@@ -23,9 +23,9 @@ describe('toClips', () => {
 })
 
 describe('toSelectedShotsJSON', () => {
-  test('emits the Shot-Explorer shape in seconds', () => {
+  test('emits the Shot-Explorer shape in seconds, with context shots', () => {
     const result = runQuery({
-      text: 'SELECT shot.num FROM "x" WHERE shot.speed = 50 CONTEXT BEFORE 1 shots',
+      text: 'FROM "x" WHERE shot.speed = 50 CONTEXT BEFORE 1 shots',
       games: [makeDoublesGame()]
     })
     expect(toSelectedShotsJSON(result)).toEqual({
@@ -37,6 +37,27 @@ describe('toSelectedShotsJSON', () => {
         hitTimeSecs: 58,
         window: { sSecs: 55, eSecs: 59 },
         contextShots: [{ rallyIdx: 2, shotIdx: 1 }]
+      }],
+      warnings: []
+    })
+  })
+
+  test('carries SELECT columns and rows alongside each shot window', () => {
+    // a projection returns rows, not clips, so its shots keep the bare flight
+    // window (context is inert on SELECT)
+    const result = runQuery({
+      text: 'SELECT shot.num FROM "x" WHERE shot.speed = 50',
+      games: [makeDoublesGame()]
+    })
+    expect(toSelectedShotsJSON(result)).toEqual({
+      selectedShots: [{
+        vid: 'testvid00001',
+        sessionIdx: 0,
+        rallyIdx: 2,
+        shotIdx: 2,
+        hitTimeSecs: 58,
+        window: { sSecs: 58, eSecs: 59 },
+        contextShots: []
       }],
       warnings: [],
       columns: ['shot.num'],
@@ -83,8 +104,9 @@ describe('CSV', () => {
   })
 
   test('shot lists get fixed columns; SELECT results use theirs', () => {
+    // 0secs keeps the flight-only window so the row shows the shot's own bounds
     const result = runQuery({
-      text: 'FROM "x" WHERE shot.speed = 50',
+      text: 'FROM "x" WHERE shot.speed = 50 CONTEXT BEFORE 0secs',
       games: [makeDoublesGame()]
     })
     expect(shotsToCSV(result)).toBe(

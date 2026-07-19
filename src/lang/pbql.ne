@@ -26,6 +26,20 @@
   }
 
   const ZERO_DUR = () => ({ kind: 'dur', unit: 'secs', value: 0 })
+  const ONE_SHOT = () => ({ kind: 'dur', unit: 'shots', value: 1 })
+
+  // Resolve the CONTEXT window from the (possibly absent) BEFORE/AFTER clauses.
+  // A shot-list query (no SELECT/GROUP BY) with NO context clause defaults to a
+  // one-shot lead-in AND lead-out (±1), so a plain clip query needs no CONTEXT.
+  // Writing either clause puts the author in control: the side they left out is
+  // zero. Projections (SELECT/GROUP BY) return rows, not clips, so their
+  // context stays at the zero default.
+  function resolveContext (select, groupBy, before, after) {
+    if (select === null && groupBy === null && before === null && after === null) {
+      return { before: ONE_SHOT(), after: ONE_SHOT() }
+    }
+    return { before: before ?? ZERO_DUR(), after: after ?? ZERO_DUR() }
+  }
 %}
 @lexer pbqlLexer
 @preprocessor module
@@ -37,7 +51,7 @@ query -> select:? from where groupBy:? ctxBefore:? ctxAfter:? orderBy:? limit:?
        sources: d[1],
        where: d[2],
        groupBy: d[3],
-       context: { before: d[4] ?? ZERO_DUR(), after: d[5] ?? ZERO_DUR() },
+       context: resolveContext(d[0], d[3], d[4], d[5]),
        orderBy: d[6],
        limit: d[7]
      }) %}

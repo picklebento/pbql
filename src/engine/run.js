@@ -318,8 +318,9 @@ export function runQuery ({ text, games, options = {} }) {
     }
   })
 
-  // the normalized context durations ride along so hosts can see the
-  // effective window settings (omitted clauses default to 0secs)
+  // the resolved context durations ride along so hosts can see the effective
+  // window settings (a bare shot-list defaults to a ±1-shot lead-in/lead-out;
+  // projections and a written-but-one-sided clause default the rest to 0secs)
   const result = { shots, warnings, context: query.context }
   if (query.groupBy) {
     const { columns, rows } = projectGrouped(query, selected)

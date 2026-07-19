@@ -181,7 +181,7 @@ describe('print()', () => {
       .toBe('FROM "a \\"b\\" \\\\"\nWHERE true')
   })
 
-  test('omits default (zero) context and prints escaped strings', () => {
+  test('omits the ±1 default context and prints escaped strings', () => {
     const printed = roundtrips('FROM "f" WHERE shot.hitter.name = "say \\"hi\\" \\\\"')
     expect(printed).toBe('FROM "f"\nWHERE shot.hitter.name = "say \\"hi\\" \\\\"')
   })
@@ -200,5 +200,43 @@ describe('duration number agreement', () => {
   test('singular units print as 1 shot / 1sec', () => {
     expect(roundtrips('FROM "f" WHERE true CONTEXT BEFORE 1secs CONTEXT AFTER 1 shots'))
       .toContain('CONTEXT BEFORE 1sec\nCONTEXT AFTER 1 shot')
+  })
+})
+
+describe('default vs explicit CONTEXT printing', () => {
+  // a bare shot-list carries the ±1 default, which prints with no clause
+  test('the ±1 shot-list default prints no CONTEXT clause', () => {
+    expect(roundtrips('FROM "f" WHERE shot.isVolley')).toBe(
+      'FROM "f"\nWHERE shot.isVolley')
+  })
+
+  // an explicit zero window is distinct from the default: it prints one
+  // canonical clause that reparses to (0secs, 0secs)
+  test('an explicit zero window prints exactly CONTEXT BEFORE 0secs', () => {
+    expect(roundtrips('FROM "f" WHERE shot.isVolley CONTEXT BEFORE 0secs')).toBe(
+      'FROM "f"\nWHERE shot.isVolley\nCONTEXT BEFORE 0secs')
+    // both-zero written either way canonicalizes to the same single clause
+    expect(roundtrips('FROM "f" WHERE shot.isVolley CONTEXT AFTER 0secs')).toBe(
+      'FROM "f"\nWHERE shot.isVolley\nCONTEXT BEFORE 0secs')
+  })
+
+  // a written clause opts out of the ±1 default; the unwritten side is zero
+  test('a single written side leaves the other omitted (zero)', () => {
+    expect(roundtrips('FROM "f" WHERE shot.isVolley CONTEXT BEFORE 5 shots')).toBe(
+      'FROM "f"\nWHERE shot.isVolley\nCONTEXT BEFORE 5 shots')
+    expect(roundtrips('FROM "f" WHERE shot.isVolley CONTEXT AFTER 2secs')).toBe(
+      'FROM "f"\nWHERE shot.isVolley\nCONTEXT AFTER 2secs')
+    // zero shots is not the secs zero: both sides print explicitly
+    expect(roundtrips('FROM "f" WHERE shot.isVolley CONTEXT BEFORE 0 shots CONTEXT AFTER 0 shots'))
+      .toBe('FROM "f"\nWHERE shot.isVolley\nCONTEXT BEFORE 0 shots\nCONTEXT AFTER 0 shots')
+  })
+
+  // projections have no ±1 default: (0, 0) prints nothing, non-zero prints
+  test('a projection prints only its non-zero context sides', () => {
+    expect(roundtrips('SELECT shot.speed FROM "f" WHERE true')).toBe(
+      'SELECT shot.speed\nFROM "f"\nWHERE true')
+    // GROUP BY + CONTEXT is an analyzer error but still prints/reparses
+    expect(roundtrips('SELECT count() FROM "f" WHERE true GROUP BY shot.type CONTEXT AFTER 3secs'))
+      .toBe('SELECT count()\nFROM "f"\nWHERE true\nGROUP BY shot.type\nCONTEXT AFTER 3secs')
   })
 })

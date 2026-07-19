@@ -150,6 +150,14 @@ function inferType (node) {
 
 const ORDERING_OPS = new Set(['<', '<=', '>', '>='])
 
+// A projection (SELECT / GROUP BY) returns rows, not clips, so it carries no
+// context window and its context stays at the (0secs, 0secs) default. Both
+// projection guards use this to reject an explicitly written CONTEXT.
+function isDefaultContext ({ before, after }) {
+  const isZero = d => d.kind === 'dur' && d.unit === 'secs' && d.value === 0
+  return isZero(before) && isZero(after)
+}
+
 export function analyze (query) {
   const errors = []
   const err = (node, code, message, hint) => {
@@ -340,8 +348,7 @@ export function analyze (query) {
         'GROUP BY produces rows, not shots: add a SELECT of aggregates ' +
         'and/or group keys')
     }
-    const isDefault = d => d.kind === 'dur' && d.unit === 'secs' && d.value === 0
-    if (!isDefault(query.context.before) || !isDefault(query.context.after)) {
+    if (!isDefaultContext(query.context)) {
       err(groupBy[0], 'PBQL_GROUP_BY_CONTEXT',
         'CONTEXT cannot be combined with GROUP BY: grouped results are ' +
         'rows, not shots')
@@ -368,6 +375,10 @@ export function analyze (query) {
   }
   if (grouped) {
     checkGrouping()
+  } else if (query.select && !isDefaultContext(query.context)) {
+    // a plain projection has no clips either, so CONTEXT is meaningless on it
+    err(query.select[0].expr, 'PBQL_SELECT_CONTEXT',
+      'CONTEXT applies to shot clips, not SELECT results')
   }
   return { errors }
 }

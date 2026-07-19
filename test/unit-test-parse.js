@@ -20,6 +20,7 @@ function parseWhere (expr) {
 }
 
 const ZERO = { kind: 'dur', unit: 'secs', value: 0 }
+const ONE_SHOT = { kind: 'dur', unit: 'shots', value: 1 }
 
 describe('parse()', () => {
   test('parses the kitchen-sink demo query to exactly the golden AST', () => {
@@ -36,9 +37,24 @@ describe('parse()', () => {
     expect(ast.sources).toEqual(['f'])
     expect(stripLoc(ast.where)).toEqual({ kind: 'lit', value: true })
     expect(ast.groupBy).toBeNull()
-    expect(ast.context).toEqual({ before: ZERO, after: ZERO })
+    // a bare shot-list frames each clip with a one-shot lead-in and lead-out
+    expect(ast.context).toEqual({ before: ONE_SHOT, after: ONE_SHOT })
     expect(ast.orderBy).toBeNull()
     expect(ast.limit).toBeNull()
+  })
+
+  test('context defaults per query shape and written side', () => {
+    // writing one CONTEXT clause opts out of the ±1 default: the side left
+    // unwritten becomes zero, not one shot
+    const before = parse('FROM "f" WHERE true CONTEXT BEFORE 2secs').ast.context
+    expect(before).toEqual({ before: { kind: 'dur', unit: 'secs', value: 2 }, after: ZERO })
+    const after = parse('FROM "f" WHERE true CONTEXT AFTER 1 shot').ast.context
+    expect(after).toEqual({ before: ZERO, after: ONE_SHOT })
+    // projections return rows, not clips, so their context is the zero default
+    expect(parse('SELECT count() FROM "f" WHERE true').ast.context)
+      .toEqual({ before: ZERO, after: ZERO })
+    expect(parse('SELECT count() FROM "f" WHERE true GROUP BY shot.type').ast.context)
+      .toEqual({ before: ZERO, after: ZERO })
   })
 
   test('GROUP BY takes a comma list of key expressions', () => {

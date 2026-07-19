@@ -261,6 +261,22 @@ describe('analyze()', () => {
       'CONTEXT AFTER 2secs')[0].code).toBe('PBQL_GROUP_BY_CONTEXT')
   })
 
+  test('a plain SELECT cannot carry CONTEXT either', () => {
+    // a projection returns rows, not clips, so CONTEXT is meaningless on it
+    expect(analyzeQuery('SELECT shot.speed FROM "f" WHERE true CONTEXT BEFORE 1 shot')[0])
+      .toMatchObject({
+        code: 'PBQL_SELECT_CONTEXT',
+        message: 'CONTEXT applies to shot clips, not SELECT results'
+      })
+    // the AFTER side is guarded the same way
+    expect(analyzeQuery('SELECT shot.speed FROM "f" WHERE true CONTEXT AFTER 2secs')[0].code)
+      .toBe('PBQL_SELECT_CONTEXT')
+    // a SELECT at the zero-context default is fine, and shot-lists still take
+    // CONTEXT freely
+    expect(analyzeQuery('SELECT shot.speed FROM "f" WHERE true')).toEqual([])
+    expect(analyzeQuery('FROM "f" WHERE true CONTEXT BEFORE 1 shot')).toEqual([])
+  })
+
   test('GROUP BY keys are checked and cannot hold aggregates', () => {
     expect(analyzeQuery('SELECT count() FROM "f" WHERE true GROUP BY shot.tpye')[0])
       .toMatchObject({ code: 'PBQL_UNKNOWN_PROPERTY', hint: 'did you mean "type"?' })

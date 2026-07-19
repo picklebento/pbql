@@ -184,9 +184,26 @@ describe('runQuery: ordering and limits', () => {
 })
 
 describe('runQuery: context windows', () => {
-  test('default window is the shot flight itself', () => {
+  test('the default window is a one-shot lead-in and lead-out', () => {
+    // a bare shot-list query (no CONTEXT clause) frames each clip with ±1 shot
     expect(windowFor('')).toMatchObject({
-      rallyIdx: 2, shotIdx: 2, hitMs: 58000, window: { sMs: 58000, eMs: 59000 }, contextShots: []
+      rallyIdx: 2,
+      shotIdx: 2,
+      hitMs: 58000,
+      window: { sMs: 55000, eMs: 62000 },
+      contextShots: [{ rallyIdx: 2, shotIdx: 1 }, { rallyIdx: 2, shotIdx: 3 }]
+    })
+  })
+
+  test('an explicit zero context is the bare shot flight', () => {
+    // writing any CONTEXT clause opts out of the ±1 default; 0secs keeps just
+    // the flight (the unwritten AFTER side is zero too)
+    expect(windowFor('CONTEXT BEFORE 0secs')).toMatchObject({
+      rallyIdx: 2,
+      shotIdx: 2,
+      hitMs: 58000,
+      window: { sMs: 58000, eMs: 59000 },
+      contextShots: []
     })
   })
 
