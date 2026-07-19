@@ -3,7 +3,7 @@
 Kyle Koszuta ([thatpickleballguy](https://www.youtube.com/@thatpickleballguy))
 teaches shots, patterns, and strategy to a few hundred thousand pickleball
 players. Every lesson ends the same way: *now go find this in your own game.*
-This file does exactly that — for each instructional video from roughly the
+This file does exactly that. For each instructional video from roughly the
 last two years of his catalog (July 2024 – July 2026, plus a handful of
 evergreen lessons from late 2023 / early 2024 grouped with their newer
 near-duplicates), it gives the question a viewer might ask about their own
@@ -15,7 +15,7 @@ How to use these:
   game 2), a local insights file, or a glob like `"games/*.json"`.
 - Queries assume you are tagged in the game so `me` resolves (with the CLI,
   pass `--me N`).
-- Missing data evaluates to *unknown* and `WHERE` keeps only *true* — so a
+- Missing data evaluates to *unknown* and `WHERE` keeps only *true*, so a
   filter like `shot.quality.overall < 0.4` quietly skips shots the AI
   couldn't score. That is usually what you want.
 - Where a video teaches something shot data can't see directly (grip, swing
@@ -31,7 +31,7 @@ How to use these:
 
 ### "[Give me 10 minutes and I'll fix your serve forever.](https://www.youtube.com/watch?v=qazUxtEX_-4)" (2025)
 
-> Show every serve I missed — into the net, short, or out — so I can see
+> Show every serve I missed (into the net, short, or out) so I can see
 > what's breaking down.
 
 ```sql
@@ -41,7 +41,7 @@ WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.hasFault
 
 ### "[3 Tricks to immediately Add SERIOUS POWER to Your Serve](https://www.youtube.com/watch?v=XZXix27vyvg)" (2025) / "[7 Reasons Your Serve Has No Power (& How to Serve Harder)](https://www.youtube.com/watch?v=V0HhlLojf0k)" (2024)
 
-> Rank my serves by speed and show where each one landed — are my hardest
+> Rank my serves by speed and show where each one landed. Are my hardest
 > serves still finding the deep zone?
 
 ```sql
@@ -133,7 +133,7 @@ LIMIT 15
 
 ### "[3rd Shot Drop vs. Drive: Which to use and WHEN?](https://www.youtube.com/watch?v=LnTAm5pAr9c)" (2023)
 
-> Give me a spreadsheet of every third shot I hit — drop or drive — with
+> Give me a spreadsheet of every third shot I hit (drop or drive), with
 > execution scores and outcomes so I can compare.
 
 ```sql
@@ -168,7 +168,7 @@ LIMIT 20
 
 ### "[7 Reasons You Pop Up Dinks (and how to avoid them)](https://www.youtube.com/watch?v=RhcsiwavxYg)" (2024)
 
-> Show my dinks that popped up — and what the other team did about it.
+> Show my dinks that popped up, and what the other team did about it.
 
 ```sql
 FROM "83gyqyc10y8f"
@@ -176,7 +176,7 @@ WHERE shot.hitter = me AND shot.type = "dink" AND exists(shot.errors.popup)
 CONTEXT AFTER 1 shot
 ```
 
-*Note:* `exists()` catches both flavors — pop-ups the opponents punished
+*Note:* `exists()` catches both flavors: pop-ups the opponents punished
 (`"exploited"`) and the ones they let slide (`"potential"`).
 
 ### "[I Found My 4.5 Friend's Superpower at the Kitchen](https://www.youtube.com/watch?v=0hfPtvSnuyk)" (2026)
@@ -193,7 +193,7 @@ WHERE shot.hitter = me AND shot.type = "dink" AND rally.allPlayersReachedKitchen
 
 ### "[Everything to Know About \"Speed Ups\" In Pickleball](https://www.youtube.com/watch?v=pCXvUVoBcVo)" (2023)
 
-> Show every speedup I threw and the two shots that followed — did the
+> Show every speedup I threw and the two shots that followed. Did the
 > first punch land?
 
 ```sql
@@ -224,7 +224,7 @@ WHERE shot.inHighlight("hands_battle")
 
 ### "[4.5 Learns Pro Level Forehand Flick in 6 Minutes](https://www.youtube.com/watch?v=JV0rGW5_qIc)" (2026)
 
-> Show my forehand flicks — speedups I lifted from below the net.
+> Show my forehand flicks, the speedups I lifted from below the net.
 
 ```sql
 FROM "83gyqyc10y8f"
@@ -252,7 +252,7 @@ WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeSide = "left" AND shot.
 
 The first skill: recognize disadvantage and neutralize before you attack.
 
-> Show my resets from the transition zone — the "neutralize first" skill.
+> Show my resets from the transition zone, the "neutralize first" skill.
 
 ```sql
 FROM "83gyqyc10y8f"
@@ -281,7 +281,7 @@ CONTEXT AFTER 1 shot
 ```
 
 *Note:* `shot.hasError` is never unknown, so `NOT shot.hasError` is safe
-here — it genuinely means "no detected error", not "error status unknown".
+here. It genuinely means "no detected error", not "error status unknown".
 
 ## Overheads & strokes
 
@@ -302,7 +302,7 @@ CONTEXT BEFORE 1 shot
 One of the differences Kyle breaks down is how often players cross the
 middle.
 
-> Show every poach in my games — who's crossing the middle and when.
+> Show every poach in my games. Who's crossing the middle, and when?
 
 ```sql
 FROM "83gyqyc10y8f"
@@ -336,7 +336,7 @@ WHERE shot.hitter.team != me.team AND shot.direction = "DownTheMiddle" AND shot.
 
 ### "[The #1 Doubles Strategy New Players Must Know](https://www.youtube.com/watch?v=29MxOqfOVhU)" (2024)
 
-Get to the kitchen line — here is what it costs you when you don't.
+Get to the kitchen line. Here is what it costs you when you don't.
 
 > Show the rallies I lost where I never made it to the kitchen line.
 
@@ -382,7 +382,7 @@ CONTEXT AFTER 1 shot
 
 Tournament play is won by whoever donates fewer points.
 
-> Round up every unforced error I made — the points I gave away.
+> Round up every unforced error I made, the points I gave away.
 
 ```sql
 FROM "83gyqyc10y8f"
@@ -430,10 +430,10 @@ CONTEXT BEFORE 1 shot
 ```
 
 *Note:* the previous (opponent) shot carried an out fault whose outcome was
-`"intercepted"` — and since I hit the next ball, I'm the one who bailed
+`"intercepted"`, and since I hit the next ball, I'm the one who bailed
 them out.
 
-### "[I Analyzed a 4.5 Match — These Strategies Decide Who Wins](https://www.youtube.com/watch?v=251iMaoG3HU)" (2025)
+### "[I Analyzed a 4.5 Match: These Strategies Decide Who Wins](https://www.youtube.com/watch?v=251iMaoG3HU)" (2025)
 
 > Show me how every rally ended, with the three shots leading in.
 
@@ -460,8 +460,8 @@ The entries below are written against fields the CV / data-extraction
 pipeline doesn't populate yet (some are being removed from PBQL until the
 data exists). The lessons are still worth targeting, so they stay here with
 their citations for the day the data arrives. Each keeps its original query
-in a plain (non-validated) block, notes what's missing, and — where an
-honest approximation exists — offers a runnable **Meanwhile:** query.
+in a plain (non-validated) block, notes what's missing, and (where an
+honest approximation exists) offers a runnable **Meanwhile:** query.
 
 ### "[They Banned His Genius Serve, Now He Does This](https://www.youtube.com/watch?v=YyN9lJMwkh8)" (2025)
 
@@ -475,16 +475,16 @@ WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.spin.class = "topspi
 ORDER BY shot.spin.rpm DESC
 ```
 
-**Missing:** ball spin (`shot.spin.*`) — spin estimation was removed from
+**Missing:** ball spin (`shot.spin.*`). Spin estimation was removed from
 the pipeline in 2024 and needs new CV output.
 
-**Meanwhile:** rank your deep serves by speed instead — see the deep-serve
+**Meanwhile:** rank your deep serves by speed instead. See the deep-serve
 query under "3 Tricks to immediately Add SERIOUS POWER to Your Serve" in
 the Serves section.
 
 ### "[They say don't slice returns. This pro does anyway.](https://www.youtube.com/watch?v=V6fIzk2Sv1c)" (2026)
 
-> Pull up my slice returns as a spreadsheet — where did they land and how
+> Pull up my slice returns as a spreadsheet. Where did they land, and how
 > low did they cross the net?
 
 ```
@@ -493,7 +493,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.sequence = "return" AND shot.verticalType = "slice"
 ```
 
-**Missing:** spin-based stroke classes — in practice `shot.verticalType`
+**Missing:** spin-based stroke classes. In practice `shot.verticalType`
 only ever reports strike height (`dig`/`neutral`/`overhead`); `"slice"` was
 never implemented.
 
@@ -506,10 +506,10 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.type = "dink" AND shot.strokeType = "two-handed"
 ```
 
-**Missing:** two-handed detection — today `shot.strokeType` is a pure
+**Missing:** two-handed detection. Today `shot.strokeType` is a pure
 mirror of `shot.strokeSide` that assumes a right-handed player.
 
-**Meanwhile:** review your backhand-side dinks — the twoey candidates —
+**Meanwhile:** review your backhand-side dinks, the twoey candidates,
 assuming you're right-handed (backhand side):
 
 ```sql
@@ -527,11 +527,11 @@ WHERE shot.hitter = me AND shot[-1].errors.deadDink = "exploited"
 CONTEXT BEFORE 2 shots
 ```
 
-**Missing:** dead-dink detection (`shot.errors.deadDink`) — the pipeline
+**Missing:** dead-dink detection (`shot.errors.deadDink`). The pipeline
 doesn't produce it yet.
 
 **Meanwhile:** pop-up detection is real (`"potential"`|`"exploited"`, where
-`"exploited"` means the next side volleyed it) — catch the opponent dinks
+`"exploited"` means the next side volleyed it). Catch the opponent dinks
 that sat up and were punished:
 
 ```sql
@@ -541,7 +541,7 @@ CONTEXT BEFORE 2 shots
 ```
 
 *Note:* teams alternate shots within a rally, so `shot[-1]` is always the
-other side's ball — and since I hit the next shot, the exploiting was mine.
+other side's ball, and since I hit the next shot, the exploiting was mine.
 
 ### "[These 5 Kitchen Mistakes Are Ruining Your Game](https://www.youtube.com/watch?v=g1i3GJ5Q8pk)" (2024)
 
@@ -553,10 +553,10 @@ WHERE shot.hitter = me AND exists(shot.errors.deadDink)
 CONTEXT AFTER 1 shot
 ```
 
-**Missing:** dead-dink detection (`shot.errors.deadDink`) — the pipeline
+**Missing:** dead-dink detection (`shot.errors.deadDink`). The pipeline
 doesn't produce it yet.
 
-**Meanwhile:** the popup-based equivalent — which coincides with the "7
+**Meanwhile:** the popup-based equivalent, which coincides with the "7
 Reasons You Pop Up Dinks" query in the Dinking & kitchen play section:
 
 ```sql
@@ -575,10 +575,10 @@ WHERE shot.hitter = me AND shot.isSpeedup AND shot.quality.selection < 0.4
 CONTEXT AFTER 1 shot
 ```
 
-**Missing:** shot-selection scoring — `shot.quality.selection` is a stub
+**Missing:** shot-selection scoring. `shot.quality.selection` is a stub
 that only ever emits a constant 0 on fault shots.
 
-**Meanwhile:** an honest reframing — the speedups I *executed* badly, not
+**Meanwhile:** an honest reframing, the speedups I *executed* badly, not
 necessarily the wrong balls to attack:
 
 ```sql
@@ -597,7 +597,7 @@ WHERE shot.hitter = me AND shot.strokeType = "two-handed"
 ORDER BY shot.quality.overall DESC
 ```
 
-**Missing:** two-handed detection — today `shot.strokeType` is a pure
+**Missing:** two-handed detection. Today `shot.strokeType` is a pure
 mirror of `shot.strokeSide` that assumes a right-handed player.
 
 **Meanwhile:** review your backhand-side strokes, assuming you're
@@ -619,7 +619,7 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter.team != me.team AND shot.strokeType = "forehand" AND shot.strokeSide = "left"
 ```
 
-**Missing:** real handedness — `shot.strokeType` currently mirrors
+**Missing:** real handedness. `shot.strokeType` currently mirrors
 `shot.strokeSide` assuming right-handedness, which makes a left-side
 forehand logically impossible to record. Handedness is planned for the
 augmented insights.
@@ -633,14 +633,14 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.errors.faults.kitchen
 ```
 
-**Missing:** kitchen-fault detection — `shot.errors.faults.kitchen` is a
+**Missing:** kitchen-fault detection. `shot.errors.faults.kitchen` is a
 hardcoded stub that is always false.
 
 ---
 
 *Surveyed: 116 long-form uploads on the channel (July 2023 – July 2026),
 77 with full dates/descriptions; 45 entries above cover 49 instructional
-videos — 36 runnable today, 9 waiting on data. Every runnable query
+videos: 36 runnable today, 9 waiting on data. Every runnable query
 validates against the PBQL analyzer and is printed in canonical
 `print(parse(q).ast)` form; the plain-block originals under "Waiting on the
 data" are exempt until their fields ship.*
