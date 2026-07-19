@@ -18,6 +18,9 @@ How to use these:
 - Missing data evaluates to *unknown* and `WHERE` keeps only *true*, so a
   filter like `shot.quality.overall < 0.4` quietly skips shots the AI
   couldn't score. That is usually what you want.
+- Most clip queries pull in a shot of lead-in (and a shot of lead-out
+  where the payoff is what matters), so you see the setup around each shot,
+  not just the shot in isolation.
 - Where a video teaches something shot data can't see directly (grip, swing
   mechanics, footwork), the query is an honest approximation and says so in
   a note. Vlogs, gear videos, interviews, and mental-game episodes (e.g.
@@ -194,6 +197,7 @@ CONTEXT AFTER 1 shot
 ```sql
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.type = "dink" AND rally.allPlayersReachedKitchen AND rally.numShots >= 12
+CONTEXT BEFORE 1 shot
 ```
 
 ## Speedups, flicks & hands battles
@@ -227,6 +231,7 @@ CONTEXT AFTER 1 shot
 ```sql
 FROM "83gyqyc10y8f"
 WHERE shot.inHighlight("hands_battle")
+CONTEXT BEFORE 1 shot
 ```
 
 ### "[4.5 Learns Pro Level Forehand Flick in 6 Minutes](https://www.youtube.com/watch?v=JV0rGW5_qIc)" (2026)
@@ -236,6 +241,7 @@ WHERE shot.inHighlight("hands_battle")
 ```sql
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeSide = "right" AND shot.from.z < 3
+CONTEXT BEFORE 1 shot
 ```
 
 *Note:* there is no "flick" classification; contact below net height
@@ -249,6 +255,7 @@ is the forehand side for right-handers.
 ```sql
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.isSpeedup AND shot.strokeSide = "left" AND shot.from.z < 3
+CONTEXT BEFORE 1 shot
 ```
 
 *Note:* `shot.strokeSide = "left"` is the backhand side for right-handers.
@@ -275,6 +282,7 @@ CONTEXT BEFORE 1 shot
 ```sql
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.isReset AND shot[-1].type = "drive" AND shot[-1].speed > 40
+CONTEXT BEFORE 1 shot
 ```
 
 ### "[I Taught My 4.0 Friend How the Pros Defend](https://www.youtube.com/watch?v=nbY6HvPJecU)" (2023)
@@ -339,6 +347,7 @@ CONTEXT BEFORE 2 shots
 ```sql
 FROM "83gyqyc10y8f"
 WHERE shot.hitter.team != me.team AND shot.direction = "DownTheMiddle" AND shot.to.zone != "out"
+CONTEXT BEFORE 1 shot
 ```
 
 ### "[The #1 Doubles Strategy New Players Must Know](https://www.youtube.com/watch?v=29MxOqfOVhU)" (2024)
@@ -365,6 +374,7 @@ Anna Leigh's green light: a short return means drive it.
 ```sql
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.sequence = "3" AND shot.type = "drive" AND shot[-1].to.zone IN ("short", "kitchen")
+CONTEXT BEFORE 1 shot
 ```
 
 *Note:* `shot[-1]` of my third shot is the opponent's return; its `to.zone`
@@ -424,6 +434,7 @@ CONTEXT AFTER 1 shot
 ```sql
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.errors.faults.net
+CONTEXT BEFORE 1 shot
 ```
 
 ### "[STOP Hitting Out Balls (3 On-Court Drills)](https://www.youtube.com/watch?v=XD0U6uirhA8)" (2024) / "[How to Let Out Balls Go in Pickleball](https://www.youtube.com/watch?v=Kf1gUaLvOkM)" (2024)
