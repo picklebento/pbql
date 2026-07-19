@@ -88,13 +88,20 @@ WHERE shot.hitter = me AND shot.sequence = "return" AND shot.direction = "DownTh
 
 ### "[The Serve RETURN: The Most Undervalued Shot in Pickleball](https://www.youtube.com/watch?v=722mGzXn4RA)" (2023)
 
-> Every return I flubbed, with the serve that caused it.
+> Show the returns that put me on the back foot, both the ones I flubbed
+> and the ones that landed short, with the serve that set each up.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "return" AND shot.hasError
+WHERE shot.hitter = me AND shot.sequence = "return" AND (shot.hasError OR shot.to.zone IN ("kitchen", "short"))
 CONTEXT BEFORE 1 shot
 ```
+
+*Note:* a return should land deep and push the serving team back; one that
+drops in the kitchen or short zone (even cleanly) gives them an easy
+third-shot attack. Folding those short returns in with outright errors
+catches every return that cost me the initiative, not just the ones I
+shanked.
 
 ## Third (and fourth) shots
 
