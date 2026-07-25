@@ -15,7 +15,7 @@ function traj ({ from, to, peak, startMs, endMs, fromZone = 'deep', toZone = 'de
 export function makeShot ({
   playerId, startMs, endMs, from, to, peak = { x: 10, y: 22, z: 8 },
   fromZone, toZone, speed = 30, type = 'drive', isFinal = false,
-  quality = { overall: 0.8, execution: 0.7, selection: 0.9 },
+  quality = { overall: 0.8, execution: 0.7 },
   playerPositions, extra = {}
 }) {
   return {
@@ -40,7 +40,7 @@ export function makeShot ({
 
 export function makeDoublesInsights () {
   return {
-    version: '4.5.0',
+    version: '4.11.0',
     session: { vid: 'testvid00001', session_index: 0, num_players: 4, session_type: 'game' },
     camera: { fps: 30 },
     game_data: {
@@ -53,11 +53,36 @@ export function makeDoublesInsights () {
     },
     player_data: [
       // handedness is host-augmented data (absent in bucket insights): p0
-      // right, p1 left, p2 untagged, p3 "both" (unusable for strokeType)
-      { team: 0, name: 'Player 1', avatar_id: 0, handedness: 'right' },
-      { team: 0, name: 'Player 2', avatar_id: 1, handedness: 'left' },
-      { team: 1, name: 'Player 3', avatar_id: 2 },
-      { team: 1, name: 'Player 4', avatar_id: 3, handedness: 'both' }
+      // right, p1 left, p2 untagged, p3 "both" (unusable for strokeType).
+      // positional_performance is team-level: teammates share the value and
+      // team 1's is the complement of team 0's.
+      {
+        team: 0,
+        name: 'Player 1',
+        avatar_id: 0,
+        handedness: 'right',
+        positional_performance: { forward_pressure: 0.6, finishing_ability: 0.4 }
+      },
+      {
+        team: 0,
+        name: 'Player 2',
+        avatar_id: 1,
+        handedness: 'left',
+        positional_performance: { forward_pressure: 0.6, finishing_ability: 0.4 }
+      },
+      {
+        team: 1,
+        name: 'Player 3',
+        avatar_id: 2,
+        positional_performance: { forward_pressure: 0.4, finishing_ability: 0.6 }
+      },
+      {
+        team: 1,
+        name: 'Player 4',
+        avatar_id: 3,
+        handedness: 'both',
+        positional_performance: { forward_pressure: 0.4, finishing_ability: 0.6 }
+      }
     ],
     highlights: [
       { kind: 'atp', s: 17500, e: 19500, score: 0.9, rally_idx: 0, shot_idx: 2 }
@@ -97,7 +122,7 @@ export function makeDoublesInsights () {
             toZone: 'short',
             speed: 20,
             type: 'drop',
-            quality: { overall: 0.9, execution: 0.9, selection: 0.9 },
+            quality: { overall: 0.9, execution: 0.9 },
             playerPositions: [{ x: 5, y: 10 }, { x: 15, y: 8 }, { x: 15, y: 40 }, { x: 16, y: 41 }],
             // p2's handedness is untagged, so this stroke has no strokeType
             extra: { is_volley: false, stroke_side: 'left', errors: { popup: 'potential' } }
@@ -111,7 +136,8 @@ export function makeDoublesInsights () {
             speed: 45,
             type: 'smash',
             isFinal: true,
-            quality: { overall: 0.95, execution: 0.95, selection: 0.95 },
+            // pressure is omitted for serves/returns, so it starts on shot 3
+            quality: { overall: 0.95, execution: 0.95, pressure: 0.85 },
             // p1's opponents in his near-side (x-reflected) frame:
             // p3 at abs x=15 → x'=5 (his LHS), p2 at abs x=6 → x'=14 (RHS)
             playerPositions: [{ x: 5, y: 14 }, { x: 14, y: 12 }, { x: 6, y: 26 }, { x: 15, y: 28 }],
@@ -119,7 +145,9 @@ export function makeDoublesInsights () {
               is_volley: true,
               stroke_side: 'right', // p1 is left-handed: a backhand
               winner_type: 'clean',
-              shooter_movement_from_last_shot: { x: 1, y: 2 }
+              shooter_movement_from_last_shot: { x: 1, y: 2 },
+              shooter_positioning_score: 0.9,
+              partner_positioning_score: 0.75
             }
           })
         ]
@@ -151,15 +179,8 @@ export function makeDoublesInsights () {
             end_ms: 35600,
             is_final: true,
             quality: { overall: 0.2 },
-            errors: {
-              unforced: true,
-              faults: {
-                net: true,
-                kitchen: false,
-                paddle_hit_net: false,
-                excess_bounce: false
-              }
-            }
+            // fault flags are present only when true (4.11)
+            errors: { unforced: true, faults: { net: true } }
           }
         ]
       },
@@ -198,10 +219,16 @@ export function makeDoublesInsights () {
             from: { x: 14, y: 15, z: 3.5 },
             to: { x: 4, y: 30, z: 0.4 },
             speed: 50,
-            quality: { overall: 0.85 },
+            quality: { overall: 0.85, pressure: 0.6 },
             playerPositions: [{ x: 5, y: 15 }, { x: 14, y: 15 }, { x: 7, y: 27 }, { x: 15, y: 29 }],
             // p1 is left-handed, so a left-side stroke is a forehand
-            extra: { is_volley: true, is_speedup: true, stroke_side: 'left' }
+            extra: {
+              is_volley: true,
+              is_speedup: true,
+              stroke_side: 'left',
+              shooter_positioning_score: 0.45,
+              partner_positioning_score: 0.5
+            }
           }),
           makeShot({ // p3 sails it long
             playerId: 3,
@@ -215,15 +242,10 @@ export function makeDoublesInsights () {
             playerPositions: [{ x: 6, y: 16 }, { x: 14, y: 16 }, { x: 8, y: 28 }, { x: 15, y: 30 }],
             extra: {
               stroke_side: 'right', // p3's handedness is "both": no strokeType
+              // no net/short flags: absent fault flags mean false (4.11)
               errors: {
                 unforced: true,
-                faults: {
-                  net: false,
-                  kitchen: false,
-                  paddle_hit_net: false,
-                  excess_bounce: false,
-                  out: { outcome: 'landed', direction: 'long' }
-                }
+                faults: { out: { outcome: 'landed', direction: 'long' } }
               }
             }
           })
@@ -235,7 +257,7 @@ export function makeDoublesInsights () {
 
 export function makeSinglesInsights () {
   return {
-    version: '4.5.0',
+    version: '4.11.0',
     session: { vid: 'testvid00002', session_index: 0, num_players: 2, session_type: 'game' },
     camera: { fps: 30 },
     game_data: {

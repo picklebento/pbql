@@ -12,6 +12,14 @@ WHERE shot.hitter = me AND shot.quality.overall >= 0.8
 ORDER BY shot.quality.overall DESC
 LIMIT 20
 
+# Q: My shots hit under heavy positional pressure
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.quality.pressure >= 0.7
+
+# Q: Shots where I was badly out of position
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.positioningScore < 0.5
+
 # Q: Every dink or drop across my whole folder
 FROM "./games"
 WHERE shot.type IN ("dink", "drop")
@@ -52,6 +60,10 @@ WHERE shot.hitter = me AND shot.errors.faults.out.outcome = "intercepted"
 # Q: Clean shots — exclude anything with a detected error
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND NOT shot.hasError
+
+# Q: Shots that did NOT go into the net (fault flags are never unknown, so NOT is safe)
+FROM "83gyqyc10y8f"
+WHERE NOT shot.errors.faults.net
 
 # Q: Volleys my opponents hit while I was at the kitchen line
 FROM "83gyqyc10y8f"

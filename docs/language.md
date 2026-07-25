@@ -100,6 +100,13 @@ Consequence worth memorizing: `NOT shot.isVolley` does *not* match shots
 where volley-ness is unknown; write `NOT exists(shot.isVolley) OR NOT
 shot.isVolley` if you want them too.
 
+One deliberate exception: the rule-fault flags (`shot.errors.faults.net`,
+`shot.errors.faults.short`) and the presence flags `shot.hasError` /
+`shot.hasFault` are **never unknown**. The insights data records a fault
+flag only when the fault happened, so an absent flag means `false` — `NOT
+shot.errors.faults.net` genuinely selects the shots that cleared the net,
+no `exists()` guard needed.
+
 Comparisons require matching types (comparing a number to a string is a
 validation error, not `false`). Strings compare case-sensitively with `=`
 and `!=` only. Players compare with `=`/`!=` by identity

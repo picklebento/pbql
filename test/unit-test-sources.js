@@ -30,7 +30,7 @@ describe('resolveSources', () => {
     const games = await resolveSources([path.join(dir, 'a.json')]) // abs, default cwd
     expect(games).toHaveLength(1)
     expect(games[0]).toMatchObject({ vid: 'a', sessionIdx: 0 })
-    expect(games[0].insights.version).toBe('4.5.0')
+    expect(games[0].insights.version).toBe('4.11.0')
   })
 
   test('relative paths resolve against the cwd option', async () => {
@@ -127,7 +127,7 @@ describe('resolveSources', () => {
       expect(calls[1].url).toBe(`${BUCKET}/ab12cd34ef56/190/1/insights.json`)
       expect(games).toHaveLength(1)
       expect(games[0]).toMatchObject({ vid: 'ab12cd34ef56', sessionIdx: 1 })
-      expect(games[0].insights.version).toBe('4.5.0')
+      expect(games[0].insights.version).toBe('4.11.0')
     })
 
     test('session defaults to 1; engines ≤ 132 have no session segment', async () => {
@@ -161,12 +161,12 @@ describe('resolveSources', () => {
       await resolveSources(['ab12cd34ef56:2'])
       expect(calls).toHaveLength(2) // miss: version endpoint + bucket
       const file = path.join(cacheDir, 'pbql', 'ab12cd34ef56-2.json')
-      expect(JSON.parse(fs.readFileSync(file, 'utf8')).version).toBe('4.5.0')
+      expect(JSON.parse(fs.readFileSync(file, 'utf8')).version).toBe('4.11.0')
       calls = []
       const games = await resolveSources(['ab12cd34ef56:2'])
       expect(calls).toHaveLength(0) // hit: no version call, no bucket fetch
       expect(games[0]).toMatchObject({ vid: 'ab12cd34ef56', sessionIdx: 1 })
-      expect(games[0].insights.version).toBe('4.5.0')
+      expect(games[0].insights.version).toBe('4.11.0')
     })
 
     test('a corrupt cache file is a miss: refetched and rewritten', async () => {
@@ -176,8 +176,8 @@ describe('resolveSources', () => {
       responses = [version(190), insights()]
       const games = await resolveSources(['ab12cd34ef56'])
       expect(calls).toHaveLength(2)
-      expect(games[0].insights.version).toBe('4.5.0')
-      expect(JSON.parse(fs.readFileSync(file, 'utf8')).version).toBe('4.5.0')
+      expect(games[0].insights.version).toBe('4.11.0')
+      expect(JSON.parse(fs.readFileSync(file, 'utf8')).version).toBe('4.11.0')
     })
 
     test('the cache defaults to ~/.cache/pbql without XDG_CACHE_HOME',

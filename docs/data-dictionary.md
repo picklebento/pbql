@@ -23,14 +23,17 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.isReset` | boolean |  | whether the shot took significant pace off the ball |
 | `shot.isPoach` | boolean |  | whether the hitter took a ball on their partner's side |
 | `shot.isPassing` | boolean |  | whether the shot passed the nearest opponent untouched |
-| `shot.isPutaway` | boolean |  | whether the shot was a putaway |
-| `shot.type` | string | "drive"|"drop"|"dink"|"lob"|"smash"|"atp"|"erne" | the shot classification; never set on serves and returns (use shot.sequence for those) |
+| `shot.isPutaway` | boolean |  | whether the shot functioned as a putaway or rally finisher — a clean winner or a decisive attack that directly created the rally's end (can be a well-placed dink or drop, not only a hard hit) |
+| `shot.type` | string | "smash"|"lob"|"dink"|"drop"|"drive"|"atp"|"erne" | the shot classification; never set on serves and returns (use shot.sequence for those) |
 | `shot.verticalType` | string | "dig"|"neutral"|"overhead" | the vertical character of the stroke, from strike height (dig ≤ 2.5ft, overhead ≥ 6ft) |
 | `shot.strokeSide` | string | "left"|"right" | which side of the body the stroke was made on |
 | `shot.strokeType` | string | "forehand"|"backhand" | forehand or backhand, from strokeSide and the hitter's handedness; needs host-augmented insights carrying handedness (strokeSide always works) |
 | `shot.winnerType` | string | "clean"|"forced_fault" | how this shot won the rally; unknown if it did not |
-| `shot.quality.overall` | number | 0-1 | combined execution + selection quality (1 is best) |
+| `shot.quality.overall` | number | 0-1 | the overall quality of the shot, derived from the execution quality (1 is best) |
 | `shot.quality.execution` | number | 0-1 | how well the shot was executed |
+| `shot.quality.pressure` | number | 0-1 | positional pressure faced and imposed by this shot (1 = most pressure); unknown for singles, serves, and returns |
+| `shot.positioningScore` | number | 0-1 | how well the hitter was positioned at this shot, against a strong-team baseline (1 is best); unknown for singles, serves, and returns |
+| `shot.partnerPositioningScore` | number | 0-1 | how well the hitter's partner was positioned at this shot, against a strong-team baseline (1 is best); unknown for singles, serves, and returns |
 | `shot.speed` | number | mph | ball speed after the hit |
 | `shot.direction` | string | "DownTheMiddle"|"DownTheLineLeft"|"DownTheLineRight"|"MidCrossLeft"|"MidCrossRight"|"LeftToMiddle"|"RightToMiddle"|"LeftCrossRight"|"RightCrossLeft" | named direction the ball traveled |
 | `shot.yaw` | number | degrees | horizontal launch angle (0 = toward the hitter's left sideline, 90 = straight at the net) |
@@ -46,8 +49,8 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.errors.unforced` | boolean |  | whether the error was unforced |
 | `shot.errors.popup` | string | "exploited"|"potential" | whether the shot popped the ball up (and whether opponents capitalized) |
 | `shot.hasFault` | boolean |  | whether this shot committed a rule fault (never unknown) |
-| `shot.errors.faults.net` | boolean |  | whether the net stopped the ball |
-| `shot.errors.faults.short` | boolean |  | whether the serve/shot came up short |
+| `shot.errors.faults.net` | boolean |  | whether the net stopped the ball (never unknown: absent fault data means the ball cleared the net) |
+| `shot.errors.faults.short` | boolean |  | whether the shot landed on the hitter's own side short of the net (never unknown: absent fault data means it did not) |
 | `shot.errors.faults.out.outcome` | string | "landed"|"intercepted" | whether the out ball landed or was played anyway |
 | `shot.errors.faults.out.direction` | string | "left"|"right"|"long" | which way the ball went out |
 | `shot.from.x` | number | feet | where the ball was struck — hitter-frame x (0-20, grows to the hitter's right) |
@@ -138,5 +141,7 @@ A player value, reached from the root `me` or a shot's `hitter` (e.g. `shot.hitt
 | `player.feetToNearestSideline` | number | feet | distance to the nearest sideline at the current shot |
 | `player.feetToNearestBaseline` | number | feet | distance to the nearest baseline at the current shot |
 | `player.feetToNet` | number | feet | distance to the net plane at the current shot |
+| `player.forwardPressure` | number | 0-1 | how actively the player's team pushed shots toward positional advantage over the whole game (team-level: teammates share it); unknown in singles |
+| `player.finishingAbility` | number | 0-1 | how efficiently the player's team converted positional advantage into ending rallies over the whole game (team-level: teammates share it); unknown in singles |
 | `player.taggedWith(pattern)` | boolean | | whether this player matches this name pattern (case-insensitive, * wildcard; untagged players match their default "Player N" name) or exact email |
 

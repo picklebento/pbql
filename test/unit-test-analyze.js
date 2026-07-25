@@ -154,8 +154,8 @@ describe('analyze()', () => {
   test('enum properties reject values production never emits', () => {
     expect(analyzeWhere('shot.type = "smsh"')[0]).toMatchObject({
       code: 'PBQL_UNKNOWN_ENUM_VALUE',
-      message: 'shot.type is never "smsh" (valid: "drive", "drop", "dink", ' +
-        '"lob", "smash", "atp", "erne")',
+      message: 'shot.type is never "smsh" (valid: "smash", "lob", "dink", ' +
+        '"drop", "drive", "atp", "erne")',
       hint: 'did you mean "smash"?'
     })
     // both operand orders, both equality operators

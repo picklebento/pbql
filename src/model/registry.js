@@ -146,13 +146,13 @@ const SHOT_PROPS = [
   {
     path: 'isPutaway',
     type: 'boolean',
-    doc: 'whether the shot was a putaway',
+    doc: 'whether the shot functioned as a putaway or rally finisher — a clean winner or a decisive attack that directly created the rally\'s end (can be a well-placed dink or drop, not only a hard hit)',
     extract: ctx => ctx.shot.is_putaway
   },
   {
     path: 'type',
     type: 'string',
-    unit: '"drive"|"drop"|"dink"|"lob"|"smash"|"atp"|"erne"',
+    unit: '"smash"|"lob"|"dink"|"drop"|"drive"|"atp"|"erne"',
     doc: 'the shot classification; never set on serves and returns (use shot.sequence for those)',
     extract: ctx => ctx.shot.shot_type
   },
@@ -198,7 +198,7 @@ const SHOT_PROPS = [
     path: 'quality.overall',
     type: 'number',
     unit: '0-1',
-    doc: 'combined execution + selection quality (1 is best)',
+    doc: 'the overall quality of the shot, derived from the execution quality (1 is best)',
     extract: ctx => ctx.shot.quality?.overall
   },
   {
@@ -207,6 +207,27 @@ const SHOT_PROPS = [
     unit: '0-1',
     doc: 'how well the shot was executed',
     extract: ctx => ctx.shot.quality?.execution
+  },
+  {
+    path: 'quality.pressure',
+    type: 'number',
+    unit: '0-1',
+    doc: 'positional pressure faced and imposed by this shot (1 = most pressure); unknown for singles, serves, and returns',
+    extract: ctx => ctx.shot.quality?.pressure
+  },
+  {
+    path: 'positioningScore',
+    type: 'number',
+    unit: '0-1',
+    doc: 'how well the hitter was positioned at this shot, against a strong-team baseline (1 is best); unknown for singles, serves, and returns',
+    extract: ctx => ctx.shot.shooter_positioning_score
+  },
+  {
+    path: 'partnerPositioningScore',
+    type: 'number',
+    unit: '0-1',
+    doc: 'how well the hitter\'s partner was positioned at this shot, against a strong-team baseline (1 is best); unknown for singles, serves, and returns',
+    extract: ctx => ctx.shot.partner_positioning_score
   },
   {
     path: 'speed',
@@ -309,17 +330,19 @@ const SHOT_PROPS = [
     doc: 'whether this shot committed a rule fault (never unknown)',
     extract: ctx => ctx.shot.errors?.faults !== undefined
   },
+  // fault flags are recorded only when the fault happened, so absence means
+  // false, never unknown (the `=== true` guard also shrugs off malformed data)
   {
     path: 'errors.faults.net',
     type: 'boolean',
-    doc: 'whether the net stopped the ball',
-    extract: ctx => ctx.shot.errors?.faults?.net
+    doc: 'whether the net stopped the ball (never unknown: absent fault data means the ball cleared the net)',
+    extract: ctx => ctx.shot.errors?.faults?.net === true
   },
   {
     path: 'errors.faults.short',
     type: 'boolean',
-    doc: 'whether the serve/shot came up short',
-    extract: ctx => ctx.shot.errors?.faults?.short
+    doc: 'whether the shot landed on the hitter\'s own side short of the net (never unknown: absent fault data means it did not)',
+    extract: ctx => ctx.shot.errors?.faults?.short === true
   },
   {
     path: 'errors.faults.out.outcome',
@@ -613,8 +636,28 @@ const PLAYER_PROPS = [
     unit: 'feet',
     doc: 'distance to the net plane at the current shot',
     extract: (ctx, playerIdx) => mapPos(rawPlayerPos(ctx, playerIdx), feetToNet)
+  },
+  // whole-game team-level positional performance (both teammates share the
+  // value, and team 1's is the complement of team 0's); unknown in singles
+  {
+    path: 'forwardPressure',
+    type: 'number',
+    unit: '0-1',
+    doc: 'how actively the player\'s team pushed shots toward positional advantage over the whole game (team-level: teammates share it); unknown in singles',
+    extract: (ctx, playerIdx) => positionalPerformance(ctx, playerIdx)?.forward_pressure
+  },
+  {
+    path: 'finishingAbility',
+    type: 'number',
+    unit: '0-1',
+    doc: 'how efficiently the player\'s team converted positional advantage into ending rallies over the whole game (team-level: teammates share it); unknown in singles',
+    extract: (ctx, playerIdx) => positionalPerformance(ctx, playerIdx)?.finishing_ability
   }
 ]
+
+function positionalPerformance (ctx, playerIdx) {
+  return ctx.game.insights.player_data?.[playerIdx]?.positional_performance
+}
 
 function playerInRally (ctx, playerIdx) {
   return ctx.rally.players?.[playerIdx] ?? undefined

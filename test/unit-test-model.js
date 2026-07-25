@@ -159,6 +159,49 @@ describe('registry', () => {
     expect(props.get('errors.popup').extract(farShotCtx)).toBe('potential')
   })
 
+  test('fault flags read false, never unknown, when the fault is absent', () => {
+    const props = REGISTRY.shot.props
+    // no faults group at all (farShotCtx), and a shot with no errors at all
+    const cleanCtx = { ...farShotCtx, shot: game.rallies[0].shots[0], shotIdx: 0 }
+    for (const ctx of [farShotCtx, cleanCtx]) {
+      expect(props.get('errors.faults.net').extract(ctx)).toBe(false)
+      expect(props.get('errors.faults.short').extract(ctx)).toBe(false)
+    }
+    // a faults group present for another fault still reads false for these
+    const outCtx = { game, rally: game.rallies[2], rallyIdx: 2, shot: game.rallies[2].shots[3], shotIdx: 3 }
+    expect(props.get('errors.faults.net').extract(outCtx)).toBe(false)
+    expect(props.get('errors.faults.short').extract(outCtx)).toBe(false)
+    expect(props.get('errors.faults.out.direction').extract(outCtx)).toBe('long')
+    expect(props.get('errors.faults.short').extract(sparseCtx)).toBe(false)
+  })
+
+  test('pressure and positioning scores surface where the model emits them', () => {
+    const props = REGISTRY.shot.props
+    const smashCtx = { ...farShotCtx, shot: game.rallies[0].shots[2], shotIdx: 2 }
+    expect(props.get('quality.pressure').extract(smashCtx)).toBe(0.85)
+    expect(props.get('positioningScore').extract(smashCtx)).toBe(0.9)
+    expect(props.get('partnerPositioningScore').extract(smashCtx)).toBe(0.75)
+    // omitted on serves/returns (and sparse shots): unknown
+    for (const ctx of [farShotCtx, sparseCtx]) {
+      expect(props.get('quality.pressure').extract(ctx)).toBeUndefined()
+      expect(props.get('positioningScore').extract(ctx)).toBeUndefined()
+      expect(props.get('partnerPositioningScore').extract(ctx)).toBeUndefined()
+    }
+  })
+
+  test('team positional performance is game-scoped and unknown in singles', () => {
+    const props = REGISTRY.player.props
+    // teammates share the team value; team 1 is team 0's complement
+    expect([0, 1, 2, 3].map(i => props.get('forwardPressure').extract(farShotCtx, i)))
+      .toEqual([0.6, 0.6, 0.4, 0.4])
+    expect([0, 1, 2, 3].map(i => props.get('finishingAbility').extract(farShotCtx, i)))
+      .toEqual([0.4, 0.4, 0.6, 0.6])
+    const singles = new Game(makeSinglesGame())
+    const sctx = { game: singles, rally: singles.rallies[0], rallyIdx: 0, shot: singles.rallies[0].shots[0], shotIdx: 0 }
+    expect(props.get('forwardPressure').extract(sctx, 0)).toBeUndefined()
+    expect(props.get('finishingAbility').extract(sctx, 2)).toBeUndefined()
+  })
+
   test('rally properties', () => {
     const props = REGISTRY.rally.props
     expect(props.get('num').extract(farShotCtx)).toBe(1)
