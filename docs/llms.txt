@@ -85,7 +85,11 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   for a normal clip; just omit it. Write CONTEXT only to CHANGE that
   default: `CONTEXT BEFORE rally` (or a secs/shots/min/max duration) for
   more footage on a side, or `CONTEXT BEFORE 0secs` for no lead-in or
-  lead-out at all. Writing ANY CONTEXT clause opts out of the ±1
+  lead-out at all. The rally form is ONLY for explicit whole-rally-clip
+  requests ("as whole-rally clips", "show the full rally around it") —
+  "every shot from rallies where …" already selects every shot of those
+  rallies, so it takes the default (no CONTEXT clause). Writing ANY
+  CONTEXT clause opts out of the ±1
   default — the side you don't write becomes 0. SELECT / aggregate /
   GROUP BY / count queries return rows, not clips, so they take NO
   CONTEXT. CONTEXT never changes which shots match: to SELECT the shot
