@@ -68,6 +68,23 @@ CONTEXT AFTER 1 shot
 *Note:* there is no "lob serve" classification, so this approximates one as
 a serve whose apex was 12+ feet up.
 
+### "[They Banned His Genius Serve, Now He Does This](https://www.youtube.com/watch?v=YyN9lJMwkh8)" (2025)
+
+Zane Navratil's post-ban weapon: heavy topspin, landed deep.
+
+> Find my hardest serves that landed deep, fastest first.
+
+```sql
+SELECT shot.hitTime AS "when (s)", shot.speed AS "mph"
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.to.zone = "deep"
+ORDER BY shot.speed DESC
+```
+
+*Note:* ball spin (`shot.spin.*`) was dropped from the insights schema
+(spin estimation left the pipeline in 2024), so this ranks deep serves by
+pace instead of RPM.
+
 ## Returns
 
 ### "[I taught my 4.5 friend how to return like a pro](https://www.youtube.com/watch?v=UPSacn3AXLQ)" (2026)
@@ -200,6 +217,36 @@ WHERE shot.hitter = me AND shot.type = "dink" AND rally.allPlayersReachedKitchen
 CONTEXT BEFORE 1 shot
 ```
 
+### "[On Court w/ #1 IN THE WORLD Anna-Leigh: Kitchen Strategy Masterclass](https://www.youtube.com/watch?v=gVjhEVqMqQY)" (2025)
+
+> Find the moments an opponent's dink sat up and I made them pay.
+
+```sql
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot[-1].type = "dink" AND shot[-1].errors.popup = "exploited"
+CONTEXT BEFORE 2 shots
+```
+
+*Note:* dead-dink detection (`shot.errors.deadDink`) was dropped from the
+insights schema, but pop-up detection is real: `"exploited"` means the
+next side volleyed it. Teams alternate shots within a rally, so `shot[-1]`
+is always the other side's ball, and since I hit the next shot, the
+exploiting was mine.
+
+### "[These 5 Kitchen Mistakes Are Ruining Your Game](https://www.youtube.com/watch?v=g1i3GJ5Q8pk)" (2024)
+
+> Find my dinks that sat up asking to be attacked.
+
+```sql
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.type = "dink" AND exists(shot.errors.popup)
+CONTEXT AFTER 1 shot
+```
+
+*Note:* dead-dink detection was dropped from the insights schema; pop-up
+detection is the real signal for a dink that sat up. This coincides with
+the "7 Reasons You Pop Up Dinks" query above.
+
 ## Speedups, flicks & hands battles
 
 ### "[Everything to Know About \"Speed Ups\" In Pickleball](https://www.youtube.com/watch?v=pCXvUVoBcVo)" (2023)
@@ -220,8 +267,6 @@ CONTEXT AFTER 2 shots
 ```sql
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot[-1].isSpeedup AND shot.isVolley
-CONTEXT BEFORE 1 shot
-CONTEXT AFTER 1 shot
 ```
 
 ### "[How to Get Faster Hands in pickleball](https://www.youtube.com/watch?v=5Yh6BX7fRRI)" (2024)
@@ -259,6 +304,21 @@ CONTEXT BEFORE 1 shot
 ```
 
 *Note:* `shot.strokeSide = "left"` is the backhand side for right-handers.
+
+### "[How Pros Decide WHEN to Attack | (Ft. Augie Ge)](https://www.youtube.com/watch?v=Sp_TIdRFOAA)" (2025)
+
+> Show the speedups where I attacked the wrong ball.
+
+```sql
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.isSpeedup AND shot.quality.pressure >= 0.7
+CONTEXT AFTER 1 shot
+```
+
+*Note:* shot-selection scoring (`shot.quality.selection`) was dropped from
+the insights schema. Positional pressure (`shot.quality.pressure`, 1 is
+most pressure) is the closest signal: a speedup thrown under heavy
+pressure is usually the wrong ball to attack.
 
 ## Resets & defense
 
@@ -472,33 +532,27 @@ FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.type = "drop"
 ```
 
+### "[3 Pickleball Kitchen Rules New Players Get Wrong](https://www.youtube.com/watch?v=C84yW8a5uUE)" (2025)
+
+> Did I ever volley while in the kitchen? Show the likely violations.
+
+```sql
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.isVolley AND me.feetToKitchen = 0
+```
+
+*Note:* kitchen-fault detection was dropped from the insights schema, so
+this flags volleys hit while standing at or inside the kitchen line
+(`feetToKitchen` reads 0 there): candidates to eyeball, not called faults.
+
 ## Waiting on the data
 
-The entries below are written against fields the CV / data-extraction
-pipeline doesn't populate yet (some are being removed from PBQL until the
-data exists). The lessons are still worth targeting, so they stay here with
-their citations for the day the data arrives. Each keeps its original query
-in a plain (non-validated) block, notes what's missing, and (where an
-honest approximation exists) offers a runnable **Meanwhile:** query.
-
-### "[They Banned His Genius Serve, Now He Does This](https://www.youtube.com/watch?v=YyN9lJMwkh8)" (2025)
-
-Zane Navratil's post-ban weapon: heavy topspin, landed deep.
-
-> Find my topspin serves that landed deep, biggest spin first.
-
-```
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.spin.class = "topspin" AND shot.to.zone = "deep"
-ORDER BY shot.spin.rpm DESC
-```
-
-**Missing:** ball spin (`shot.spin.*`). Spin estimation was removed from
-the pipeline in 2024 and needs new CV output.
-
-**Meanwhile:** rank your deep serves by speed instead. See the deep-serve
-query under "3 Tricks to immediately Add SERIOUS POWER to Your Serve" in
-the Serves section.
+The entries below are written against detections that never shipped
+(spin-based stroke classes, two-handed detection, real handedness). The
+lessons are still worth targeting, so they stay here with their citations
+for the day the data arrives. Each keeps its original query in a plain
+(non-validated) block, notes what's missing, and (where an honest
+approximation exists) offers a runnable **Meanwhile:** query.
 
 ### "[They say don't slice returns. This pro does anyway.](https://www.youtube.com/watch?v=V6fIzk2Sv1c)" (2026)
 
@@ -533,76 +587,6 @@ assuming you're right-handed (backhand side):
 ```sql
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.type = "dink" AND shot.strokeSide = "left"
-```
-
-### "[On Court w/ #1 IN THE WORLD Anna-Leigh: Kitchen Strategy Masterclass](https://www.youtube.com/watch?v=gVjhEVqMqQY)" (2025)
-
-> Find the moments an opponent's dink sat up and I made them pay.
-
-```
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot[-1].errors.deadDink = "exploited"
-CONTEXT BEFORE 2 shots
-```
-
-**Missing:** dead-dink detection (`shot.errors.deadDink`). The pipeline
-doesn't produce it yet.
-
-**Meanwhile:** pop-up detection is real (`"potential"`|`"exploited"`, where
-`"exploited"` means the next side volleyed it). Catch the opponent dinks
-that sat up and were punished:
-
-```sql
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot[-1].type = "dink" AND shot[-1].errors.popup = "exploited"
-CONTEXT BEFORE 2 shots
-```
-
-*Note:* teams alternate shots within a rally, so `shot[-1]` is always the
-other side's ball, and since I hit the next shot, the exploiting was mine.
-
-### "[These 5 Kitchen Mistakes Are Ruining Your Game](https://www.youtube.com/watch?v=g1i3GJ5Q8pk)" (2024)
-
-> Find my dinks that sat up asking to be attacked.
-
-```
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND exists(shot.errors.deadDink)
-CONTEXT AFTER 1 shot
-```
-
-**Missing:** dead-dink detection (`shot.errors.deadDink`). The pipeline
-doesn't produce it yet.
-
-**Meanwhile:** the popup-based equivalent, which coincides with the "7
-Reasons You Pop Up Dinks" query in the Dinking & kitchen play section:
-
-```sql
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.type = "dink" AND exists(shot.errors.popup)
-CONTEXT AFTER 1 shot
-```
-
-### "[How Pros Decide WHEN to Attack | (Ft. Augie Ge)](https://www.youtube.com/watch?v=Sp_TIdRFOAA)" (2025)
-
-> Show the speedups where I attacked the wrong ball.
-
-```
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.isSpeedup AND shot.quality.selection < 0.4
-CONTEXT AFTER 1 shot
-```
-
-**Missing:** shot-selection scoring. `shot.quality.selection` is a stub
-that only ever emits a constant 0 on fault shots.
-
-**Meanwhile:** an honest reframing, the speedups I *executed* badly, not
-necessarily the wrong balls to attack:
-
-```sql
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.isSpeedup AND shot.quality.overall < 0.4
-CONTEXT AFTER 1 shot
 ```
 
 ### "[The Ultimate Two-Handed Backhand Lesson (w/ Roscoe Bellamy)](https://www.youtube.com/watch?v=7dPD2ejpHdI)" (2026) / "[2024's Best New Shot: The Two-Handed Backhand](https://www.youtube.com/watch?v=KrxcKFjvuV8)" (2023)
@@ -642,23 +626,11 @@ WHERE shot.hitter.team != me.team AND shot.strokeType = "forehand" AND shot.stro
 forehand logically impossible to record. Handedness is planned for the
 augmented insights.
 
-### "[3 Pickleball Kitchen Rules New Players Get Wrong](https://www.youtube.com/watch?v=C84yW8a5uUE)" (2025)
-
-> Did I ever volley while in the kitchen? Show the violations.
-
-```
-FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.errors.faults.kitchen
-```
-
-**Missing:** kitchen-fault detection. `shot.errors.faults.kitchen` is a
-hardcoded stub that is always false.
-
 ---
 
 *Surveyed: 116 long-form uploads on the channel (July 2023 – July 2026),
 77 with full dates/descriptions; 45 entries above cover 49 instructional
-videos: 36 runnable today, 9 waiting on data. Every runnable query
+videos: 41 runnable today, 4 waiting on data. Every runnable query
 validates against the PBQL analyzer and is printed in canonical
 `print(parse(q).ast)` form; the plain-block originals under "Waiting on the
 data" are exempt until their fields ship.*
