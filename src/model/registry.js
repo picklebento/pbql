@@ -134,7 +134,8 @@ const SHOT_PROPS = [
   {
     path: 'isPoach',
     type: 'boolean',
-    doc: 'whether the hitter took a ball on their partner\'s side',
+    doc: 'whether the hitter cut across in front of their partner to ' +
+      'volley a ball that was headed to the partner',
     extract: ctx => ctx.shot.is_poach
   },
   {

@@ -150,7 +150,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - shot.isVolley (boolean): whether the ball was hit out of the air
 - shot.isSpeedup (boolean): whether the shot added significant pace near the kitchen
 - shot.isReset (boolean): whether the shot took significant pace off the ball
-- shot.isPoach (boolean): whether the hitter took a ball on their partner's side
+- shot.isPoach (boolean): whether the hitter cut across in front of their partner to volley a ball that was headed to the partner
 - shot.isPassing (boolean): whether the shot passed the nearest opponent untouched
 - shot.isPutaway (boolean): whether the shot functioned as a putaway or rally finisher — a clean winner or a decisive attack that directly created the rally's end (can be a well-placed dink or drop, not only a hard hit)
 - shot.type (string ["smash"|"lob"|"dink"|"drop"|"drive"|"atp"|"erne"]): the shot classification; never set on serves and returns (use shot.sequence for those)

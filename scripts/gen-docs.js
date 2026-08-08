@@ -19,12 +19,12 @@ const OBJECT_DOCS = {
 
 function propRows (objName, { propList, methodList, relationList }) {
   const rows = relationList.map(r =>
-    `| \`${objName}.${r.name}\` | player | | ${r.doc} |`)
+    `| \`${objName}.${r.name}\` | ${r.doc} | player | |`)
   rows.push(...propList.map(p =>
-    `| \`${objName}.${p.path}\` | ${p.type} | ${p.unit ?? ''} | ${p.doc} |`))
+    `| \`${objName}.${p.path}\` | ${p.doc} | ${p.type} | ${p.unit ?? ''} |`))
   rows.push(...methodList.map(m => {
     const args = m.args.map(a => a.name).join(', ')
-    return `| \`${objName}.${m.name}(${args})\` | boolean | | ${m.doc} |`
+    return `| \`${objName}.${m.name}(${args})\` | ${m.doc} | boolean | |`
   }))
   return rows
 }
@@ -44,7 +44,7 @@ function generateDictionary () {
   ]
   for (const [objName, entry] of Object.entries(REGISTRY)) {
     parts.push(`## ${objName}`, '', OBJECT_DOCS[objName], '',
-      '| Property | Type | Unit / values | Description |',
+      '| Property | Description | Type | Unit / values |',
       '|---|---|---|---|',
       ...propRows(objName, entry), '')
   }
