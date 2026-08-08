@@ -173,12 +173,12 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - shot.confidence (number [0-1]): confidence in the reconstructed trajectory
 - shot.hitTime (number [seconds]): when in the video the ball was struck
 - shot.endTime (number [seconds]): when in the video the shot's flight ended
-- shot.hasError (boolean): whether any error was detected on this shot (never unknown)
+- shot.hasError (boolean): whether any error was detected on this shot
 - shot.errors.unforced (boolean): whether the fault on this shot was an unforced error; only assessed on actual faults with a confidently-known rally winner
 - shot.errors.popup (string ["exploited"|"potential"]): whether a dink or drop popped the ball up ("exploited" = the opponents attacked it out of the air, "potential" = they did not)
-- shot.hasFault (boolean): whether this shot committed a rule fault, actual or potential — e.g. a ball headed out that an opponent played anyway (never unknown)
-- shot.errors.faults.net (boolean): whether the net stopped the ball (never unknown: absent fault data means the net did not stop it)
-- shot.errors.faults.short (boolean): whether the shot landed on the hitter's own side short of the net (never unknown: absent fault data means it did not)
+- shot.hasFault (boolean): whether this shot committed a rule fault, actual or potential — e.g. a ball headed out that an opponent played anyway
+- shot.errors.faults.net (boolean): whether the net stopped the ball
+- shot.errors.faults.short (boolean): whether the shot landed on the hitter's own side short of the net
 - shot.errors.faults.out.outcome (string ["landed"|"intercepted"]): whether the out ball landed or was played anyway
 - shot.errors.faults.out.direction (string ["left"|"right"|"long"]): which way the ball went (or was headed) out — "long" past the baseline, "left"/"right" wide of a sideline from the hitter's perspective
 - shot.from.x (number [feet]): where the ball was struck — hitter-frame x (0-20, grows to the hitter's right)

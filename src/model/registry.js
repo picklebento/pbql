@@ -306,7 +306,7 @@ const SHOT_PROPS = [
   {
     path: 'hasError',
     type: 'boolean',
-    doc: 'whether any error was detected on this shot (never unknown)',
+    doc: 'whether any error was detected on this shot',
     extract: ctx => ctx.shot.errors !== undefined
   },
   {
@@ -328,7 +328,7 @@ const SHOT_PROPS = [
     path: 'hasFault',
     type: 'boolean',
     doc: 'whether this shot committed a rule fault, actual or potential — ' +
-      'e.g. a ball headed out that an opponent played anyway (never unknown)',
+      'e.g. a ball headed out that an opponent played anyway',
     extract: ctx => ctx.shot.errors?.faults !== undefined
   },
   // fault flags are recorded only when the fault happened, so absence means
@@ -336,13 +336,13 @@ const SHOT_PROPS = [
   {
     path: 'errors.faults.net',
     type: 'boolean',
-    doc: 'whether the net stopped the ball (never unknown: absent fault data means the net did not stop it)',
+    doc: 'whether the net stopped the ball',
     extract: ctx => ctx.shot.errors?.faults?.net === true
   },
   {
     path: 'errors.faults.short',
     type: 'boolean',
-    doc: 'whether the shot landed on the hitter\'s own side short of the net (never unknown: absent fault data means it did not)',
+    doc: 'whether the shot landed on the hitter\'s own side short of the net',
     extract: ctx => ctx.shot.errors?.faults?.short === true
   },
   {

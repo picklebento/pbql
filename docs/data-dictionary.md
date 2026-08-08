@@ -44,12 +44,12 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.confidence` | confidence in the reconstructed trajectory | number | 0-1 |
 | `shot.hitTime` | when in the video the ball was struck | number | seconds |
 | `shot.endTime` | when in the video the shot's flight ended | number | seconds |
-| `shot.hasError` | whether any error was detected on this shot (never unknown) | boolean |  |
+| `shot.hasError` | whether any error was detected on this shot | boolean |  |
 | `shot.errors.unforced` | whether the fault on this shot was an unforced error; only assessed on actual faults with a confidently-known rally winner | boolean |  |
 | `shot.errors.popup` | whether a dink or drop popped the ball up ("exploited" = the opponents attacked it out of the air, "potential" = they did not) | string | "exploited"\|"potential" |
-| `shot.hasFault` | whether this shot committed a rule fault, actual or potential — e.g. a ball headed out that an opponent played anyway (never unknown) | boolean |  |
-| `shot.errors.faults.net` | whether the net stopped the ball (never unknown: absent fault data means the net did not stop it) | boolean |  |
-| `shot.errors.faults.short` | whether the shot landed on the hitter's own side short of the net (never unknown: absent fault data means it did not) | boolean |  |
+| `shot.hasFault` | whether this shot committed a rule fault, actual or potential — e.g. a ball headed out that an opponent played anyway | boolean |  |
+| `shot.errors.faults.net` | whether the net stopped the ball | boolean |  |
+| `shot.errors.faults.short` | whether the shot landed on the hitter's own side short of the net | boolean |  |
 | `shot.errors.faults.out.outcome` | whether the out ball landed or was played anyway | string | "landed"\|"intercepted" |
 | `shot.errors.faults.out.direction` | which way the ball went (or was headed) out — "long" past the baseline, "left"/"right" wide of a sideline from the hitter's perspective | string | "left"\|"right"\|"long" |
 | `shot.from.x` | where the ball was struck — hitter-frame x (0-20, grows to the hitter's right) | number | feet |
