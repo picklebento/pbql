@@ -82,7 +82,7 @@ describe('LLM_GUIDE', () => {
     const { LLM_GUIDE } = await import('../src/index.js')
     expect(LLM_GUIDE).toContain('## Query shape')
     expect(LLM_GUIDE).toContain('CONTEXT BEFORE')
-    expect(LLM_GUIDE).toContain('## Data dictionary')
+    expect(LLM_GUIDE).toContain('## Data Dictionary')
     expect(LLM_GUIDE).toContain('## Examples')
   })
 })

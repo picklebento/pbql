@@ -38,7 +38,7 @@ function generateDictionary () {
     '',
     'The complete queryable surface. Any property may be **unknown** when the',
     'underlying data was not detected — see the unknown-handling rules in',
-    '[language.md](language.md). `player.*` rows apply to every player',
+    '[Language](language.md). `player.*` rows apply to every player',
     'reference; positions are measured at the moment the current shot was hit.',
     ''
   ]
@@ -197,7 +197,7 @@ function generateLlmsTxt () {
     '  hitting at/near a player test that player\'s position properties, not',
     '  shot.to coordinates.',
     '',
-    '## Using the pbql CLI',
+    '## Using the PBQL CLI',
     '',
     "    pbql '<query>' [--me N] [--out json|csv|edl|ffmpeg|se]",
     '',
@@ -210,7 +210,7 @@ function generateLlmsTxt () {
     "  (default ~/.cache/pbql); to refetch, delete the game's file (or the",
     '  whole directory).',
     '',
-    '## Data dictionary',
+    '## Data Dictionary',
     ''
   ]
   for (const [objName, entry] of Object.entries(REGISTRY)) {

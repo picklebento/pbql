@@ -128,7 +128,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   hitting at/near a player test that player's position properties, not
   shot.to coordinates.
 
-## Using the pbql CLI
+## Using the PBQL CLI
 
     pbql '<query>' [--me N] [--out json|csv|edl|ffmpeg|se]
 
@@ -141,7 +141,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   (default ~/.cache/pbql); to refetch, delete the game's file (or the
   whole directory).
 
-## Data dictionary
+## Data Dictionary
 
 - shot.hitter (player): the player who hit this shot
 - shot.num (number [1-based]): which shot of the rally this is (the serve is 1)

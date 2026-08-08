@@ -3,7 +3,7 @@
 PBQL selects shots from pickleball games analyzed by PB Vision. This document
 is the normative spec: the grammar in `src/lang/pbql.ne` implements it.
 Property-by-property details live in the generated
-[data dictionary](data-dictionary.md).
+[Data Dictionary](data-dictionary.md).
 
 ## 1. Overall shape
 
@@ -114,7 +114,7 @@ and `!=` only. Players compare with `=`/`!=` by identity
 (`shot.hitter = me`).
 
 String properties with an enumerated value set (the quoted alternatives in
-the [data dictionary](data-dictionary.md)'s unit column, e.g.
+the [Data Dictionary](data-dictionary.md)'s unit column, e.g.
 `shot.winnerType`'s `"clean"|"forced_fault"`) accept **only** those values:
 comparing one (`=`, `!=`, `IN`) with a string literal outside its set — or
 passing such a literal to an enum-typed method argument like
@@ -398,4 +398,4 @@ unknown:
 Player names, the identity of `me`, and tag data come from the host
 application — they are not part of the insights file. Queries never
 reference raw insights field names; the
-[data dictionary](data-dictionary.md) is the complete public surface.
+[Data Dictionary](data-dictionary.md) is the complete public surface.

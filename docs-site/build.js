@@ -30,7 +30,7 @@ function page (title, body) {
 <nav>
   <a href="index.html">PBQL</a>
   <a href="language.html">Language</a>
-  <a href="data-dictionary.html">Data dictionary</a>
+  <a href="data-dictionary.html">Data Dictionary</a>
   <a href="playground/">Playground</a>
   <a href="cli.html">CLI</a>
   <a href="llms.txt">llms.txt</a>
@@ -55,7 +55,7 @@ fs.rmSync(dist, { recursive: true, force: true })
 fs.mkdirSync(path.join(dist, 'playground'), { recursive: true })
 
 renderDoc('language.md', 'language.html', 'The PBQL Language')
-renderDoc('cli.md', 'cli.html', 'The pbql CLI')
+renderDoc('cli.md', 'cli.html', 'The PBQL CLI')
 renderDoc('data-dictionary.md', 'data-dictionary.html', 'PBQL Data Dictionary')
 for (const [from, to] of [
   [[repoRoot, 'docs', 'llms.txt'], ['llms.txt']],

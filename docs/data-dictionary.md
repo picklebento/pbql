@@ -5,7 +5,7 @@
 
 The complete queryable surface. Any property may be **unknown** when the
 underlying data was not detected — see the unknown-handling rules in
-[language.md](language.md). `player.*` rows apply to every player
+[Language](language.md). `player.*` rows apply to every player
 reference; positions are measured at the moment the current shot was hit.
 
 ## shot

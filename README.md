@@ -69,7 +69,7 @@ if (errors) {
 |---|---|
 | `src/lang/` | lexer (moo), grammar (`pbql.ne`, compiled by `yarn build`), `parse()` |
 | `src/index.js` | package entry |
-| `docs/` | language spec, design decisions, generated data dictionary + llms.txt |
+| `docs/` | language spec, CLI doc, generated Data Dictionary + llms.txt |
 | `docs-site/` | static docs site + browser playground (`yarn build:site`) |
 | `test/` | jest unit tests + `demo.pbql` and its golden AST |
 | `scripts/` | grammar build, doc generation, demo runners |

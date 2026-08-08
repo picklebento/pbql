@@ -1,8 +1,8 @@
-# The pbql CLI
+# The PBQL CLI
 
 Run PBQL queries from the command line against pb.vision videos or local
-insights files. The query language is specified in [language.md](language.md);
-the complete property surface is the [data dictionary](data-dictionary.md).
+insights files. The query language is specified in [Language](language.md);
+the complete property surface is the [Data Dictionary](data-dictionary.md).
 
 ```bash
 node bin/pbql.js 'FROM "83gyqyc10y8f" WHERE shot.isVolley' --me 0 --out csv
