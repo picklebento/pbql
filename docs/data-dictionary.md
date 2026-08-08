@@ -27,7 +27,7 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.type` | string | "smash"|"lob"|"dink"|"drop"|"drive"|"atp"|"erne" | the shot classification; never set on serves and returns (use shot.sequence for those) |
 | `shot.verticalType` | string | "dig"|"neutral"|"overhead" | the vertical character of the stroke, from strike height (dig ≤ 2.5ft, overhead ≥ 6ft) |
 | `shot.strokeSide` | string | "left"|"right" | which side of the body the stroke was made on |
-| `shot.strokeType` | string | "forehand"|"backhand" | forehand or backhand, from strokeSide and the hitter's handedness; needs host-augmented insights carrying handedness (strokeSide always works) |
+| `shot.strokeType` | string | "forehand"|"backhand" | forehand or backhand, from strokeSide and the hitter's handedness; needs augmented insights carrying handedness (strokeSide always works) |
 | `shot.winnerType` | string | "clean"|"forced_fault" | how this shot won the rally; unknown if it did not |
 | `shot.quality.overall` | number | 0-1 | the overall quality of the shot, derived from the execution quality (1 is best) |
 | `shot.quality.execution` | number | 0-1 | how well the shot was executed |
@@ -113,7 +113,7 @@ The session (one game of a possibly multi-game video) containing the shot.
 | `game.startTime` | number | seconds | when in the video the game starts (its first rally's start) |
 | `game.endTime` | number | seconds | when in the video the game ends (its last rally's end) |
 | `game.duration` | number | seconds | first rally start to last rally end (game.startTime + game.duration = game.endTime) |
-| `game.videoDuration` | number | seconds | the whole video's duration; only present in host-augmented insights (bucket files lack it) |
+| `game.videoDuration` | number | seconds | the whole video's duration; only present in augmented insights |
 | `game.avgShots` | number |  | average shots per rally |
 | `game.winner` | number | 0|1 | which team won the game (from the recorded outcome) |
 

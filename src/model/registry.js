@@ -175,7 +175,7 @@ const SHOT_PROPS = [
     type: 'string',
     unit: '"forehand"|"backhand"',
     doc: 'forehand or backhand, from strokeSide and the hitter\'s handedness; ' +
-      'needs host-augmented insights carrying handedness (strokeSide always works)',
+      'needs augmented insights carrying handedness (strokeSide always works)',
     extract: ctx => {
       const handedness = ctx.game.playerHandedness(ctx.shot.player_id)
       const side = ctx.shot.stroke_side
@@ -500,8 +500,7 @@ const GAME_PROPS = [
     path: 'videoDuration',
     type: 'number',
     unit: 'seconds',
-    doc: 'the whole video\'s duration; only present in host-augmented insights ' +
-      '(bucket files lack it)',
+    doc: 'the whole video\'s duration; only present in augmented insights',
     extract: ctx => msToSecs(ctx.game.videoDurationMs)
   },
   {

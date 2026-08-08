@@ -246,8 +246,8 @@ that applies:
 1. **pb.vision video** — the string matches `^[a-z0-9]{12}(:[0-9]+)?$`: a
    12-character video id with an optional **1-based** session number
    (`"83gyqyc10y8f"` is the first game; `"83gyqyc10y8f:2"` the second).
-   The CLI asks the pb.vision service for the video's engine version, then
-   fetches its insights from the public production bucket; unknown,
+   The CLI fetches the video's insights from the pb.vision service;
+   unknown,
    unprocessed, still-processing, or failed videos — and sessions that
    don't exist — are reported clearly. Fetched insights are **cached with
    no expiration** in `$XDG_CACHE_HOME/pbql` (default `~/.cache/pbql`),
@@ -290,7 +290,7 @@ BEFORE/AFTER):
   the rally's own start/end by at most `maxSecsBeyondRally` (an engine
   option, default **3s**). Windows are clamped at 0 at the video's start,
   and at the video's end when host-augmented insights carry the video
-  duration (`session.videoDurationMs`, §7); bucket-fetched files don't, so
+  duration (`session.videoDurationMs`, §7); regular insights files don't, so
   their windows may extend past the last rally into the trailing footage.
 - `rally` — to the rally's boundary (what the Shot Explorer calls
   `numBefore=999`).
@@ -402,19 +402,22 @@ the grouped rows downstream.
 
 ## 7. Data requirements
 
-The engine evaluates PB Vision **insights** JSON, latest major version
-(4.x), augmented field names. Older or malformed files are skipped and
-reported. Player
-names, the identity of `me`, and tag data come from the host application —
-they are not part of the insights file. Queries never reference raw insights
-field names; the [data dictionary](data-dictionary.md) is the complete
-public surface.
+The engine evaluates PB Vision **augmented insights** JSON, latest major
+version (4.x). Older or malformed files are skipped and reported.
 
-Some fields exist only when the **serving layer augments** the insights
-with user data (they are absent from files fetched straight from the
-public bucket): `player_data[p].handedness` (`"left"|"right"|"both"`, from
-the tagged player's profile) powers `shot.strokeType` — without it (or for
-`"both"`-handed players) `strokeType` is unknown, while `shot.strokeSide`
-always works. `session.videoDurationMs` (the whole video's length) powers
-`game.videoDuration` and lets `secs` context windows clamp at the video's
-end (§6.3).
+Regular (non-augmented) insights JSON is accepted too, but it lacks the
+user-context fields augmentation adds, so the properties they power stay
+unknown:
+
+- `player_data[p].handedness` (`"left"|"right"|"both"`, from the tagged
+  player's profile) powers `shot.strokeType` — without it (or for
+  `"both"`-handed players) `strokeType` is unknown; `shot.strokeSide`
+  always works.
+- `session.videoDurationMs` (the whole video's length) powers
+  `game.videoDuration` and lets `secs` context windows clamp at the
+  video's end (§6.3).
+
+Player names, the identity of `me`, and tag data come from the host
+application — they are not part of the insights file. Queries never
+reference raw insights field names; the
+[data dictionary](data-dictionary.md) is the complete public surface.
