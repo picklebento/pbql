@@ -117,8 +117,7 @@ the [Data Dictionary](data-dictionary.md)'s unit column, e.g.
 `shot.winnerType`'s `"clean"|"forced_fault"`) accept **only** those values:
 comparing one (`=`, `!=`, `IN`) with a string literal outside its set — or
 passing such a literal to an enum-typed method argument like
-`inHighlight(kind)` — is a validation error (`PBQL_UNKNOWN_ENUM_VALUE`,
-with the valid values and a did-you-mean hint), since production data can
+`inHighlight(kind)` — is a validation error, since production data can
 never hold it. Non-literal comparisons (`shot.from.zone = shot.to.zone`)
 are allowed.
 
@@ -288,10 +287,7 @@ duration is the *later* start.
   flight, `hitTime`…`endTime`). So `CONTEXT BEFORE 0secs` on its own means
   no lead-in *or* lead-out.
 - A projection (`SELECT` or `GROUP BY`) returns rows, not clips, so its
-  context defaults to `0` on both sides and an explicit clause is an error
-  (`PBQL_SELECT_CONTEXT`, `PBQL_GROUP_BY_CONTEXT`).
-- Overlapping windows of adjacent selected shots are merged by the engine
-  when producing clip lists.
+  context defaults to `0` on both sides and an explicit clause is an error.
 
 ### 6.4 ORDER BY
 
@@ -345,12 +341,10 @@ group whose key is null for that component (the key outputs as null).
 
 Because grouped output is rows, not shots:
 
-- `SELECT` is required (`PBQL_GROUP_BY_NO_SELECT`), and every `SELECT` and
-  `ORDER BY` expression must be an aggregate call or structurally equal to
-  one of the group keys (`PBQL_NOT_GROUPED`). `ORDER BY` aggregates need
-  not appear in `SELECT`.
-- `CONTEXT BEFORE`/`AFTER` cannot be combined with `GROUP BY`
-  (`PBQL_GROUP_BY_CONTEXT`).
+- `SELECT` is required, and every `SELECT` and `ORDER BY` expression must
+  be an aggregate call or structurally equal to one of the group keys.
+  `ORDER BY` aggregates need not appear in `SELECT`.
+- `CONTEXT BEFORE`/`AFTER` cannot be combined with `GROUP BY`.
 
 Aggregates evaluate per group — `count()` counts the group's shots and
 `avg(<condition>)` is a per-group rate, with the same coercion rules as
