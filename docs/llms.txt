@@ -29,7 +29,8 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - exists() takes a property, not a bare object: to probe whether a
   shot/rally reference exists, use its num — exists(shot[1].num), not
   exists(shot[1]) — since num is always present when the reference is
-  in range.
+  in range. It tests data on the shot being evaluated, never on other
+  shots — it is not an in-rally quantifier.
 - Fault flags are the exception to unknown-ness: shot.hasError,
   shot.hasFault, shot.errors.faults.net and shot.errors.faults.short
   are never unknown (a fault is recorded only when it happened, so
@@ -491,4 +492,16 @@ Q: Shots that weren't confirmed volleys, including ones with no volley data
 
     FROM "83gyqyc10y8f"
     WHERE NOT shot.isVolley OR NOT exists(shot.isVolley)
+
+Q: Whole rallies we lost in which I dinked from the right side
+
+    FROM "83gyqyc10y8f"
+    WHERE shot.hitter = me AND shot.type = "dink" AND shot.isHitOnSide("right") AND rally.winner != me.team
+    CONTEXT BEFORE rally
+    CONTEXT AFTER rally
+
+Q: Every shot from rallies we lost (the shots themselves, not whole-rally clips)
+
+    FROM "83gyqyc10y8f"
+    WHERE rally.winner != me.team
 

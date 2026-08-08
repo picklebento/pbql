@@ -196,3 +196,13 @@ LIMIT 5
 # Q: Shots that weren't confirmed volleys, including ones with no volley data
 FROM "83gyqyc10y8f"
 WHERE NOT shot.isVolley OR NOT exists(shot.isVolley)
+
+# Q: Whole rallies we lost in which I dinked from the right side
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.type = "dink" AND shot.isHitOnSide("right") AND rally.winner != me.team
+CONTEXT BEFORE rally
+CONTEXT AFTER rally
+
+# Q: Every shot from rallies we lost (the shots themselves, not whole-rally clips)
+FROM "83gyqyc10y8f"
+WHERE rally.winner != me.team
