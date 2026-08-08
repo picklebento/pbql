@@ -679,7 +679,7 @@ const PLAYER_PROPS = [
   {
     path: 'isNearKitchen',
     type: 'boolean',
-    doc: 'whether they are within 4 feet of their kitchen line -- the same threshold the analysis pipeline uses for kitchen arrivals, wider than eyeballing "near" because CV positions carry uncertainty',
+    doc: 'whether they are within 4 feet of their kitchen line',
     extract: (ctx, playerIdx) => mapPos(
       rawPlayerPos(ctx, playerIdx), pos => feetToKitchen(pos) <= NEAR_KITCHEN_FT)
   },

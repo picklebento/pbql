@@ -130,7 +130,7 @@ A player value, reached from the root `me` or a shot's `hitter` (e.g. `shot.hitt
 | `player.pos.absX` | raw court x at the current shot | number | feet |
 | `player.pos.absY` | raw court y at the current shot | number | feet |
 | `player.feetToKitchen` | distance still to cover to reach their kitchen line (0 at/inside it) | number | feet |
-| `player.isNearKitchen` | whether they are within 4 feet of their kitchen line -- the same threshold the analysis pipeline uses for kitchen arrivals, wider than eyeballing "near" because CV positions carry uncertainty | boolean |  |
+| `player.isNearKitchen` | whether they are within 4 feet of their kitchen line | boolean |  |
 | `player.isRightOfTeammate` | whether they are playing the right side of their court (right of their teammate, in their own facing) at the current shot; unknown in singles and when either position is missing | boolean |  |
 | `player.feetToNearestSideline` | distance to the nearest sideline at the current shot | number | feet |
 | `player.feetToNearestBaseline` | distance to the nearest baseline at the current shot | number | feet |
