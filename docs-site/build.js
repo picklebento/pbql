@@ -15,9 +15,26 @@ const siteDir = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.join(siteDir, '..')
 const dist = path.join(siteDir, 'dist')
 
+const NAV_LINKS = [
+  ['index.html', 'PBQL'],
+  ['language.html', 'Language'],
+  ['data-dictionary.html', 'Data Dictionary'],
+  ['playground/', 'Playground'],
+  ['cli.html', 'CLI'],
+  ['llms.txt', 'llms.txt']
+]
+
+// the tab for the page being rendered is marked so the stylesheet can
+// underline it (the static landing/playground pages hardcode the same)
+function nav (activeHref) {
+  return NAV_LINKS.map(([href, label]) => href === activeHref
+    ? `  <a href="${href}" aria-current="page">${label}</a>`
+    : `  <a href="${href}">${label}</a>`).join('\n')
+}
+
 // wraps rendered markdown in the shared chrome (the landing page and the
 // playground are authored as complete HTML files instead)
-function page (title, body) {
+function page (title, body, activeHref) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -28,12 +45,7 @@ function page (title, body) {
 </head>
 <body>
 <nav>
-  <a href="index.html">PBQL</a>
-  <a href="language.html">Language</a>
-  <a href="data-dictionary.html">Data Dictionary</a>
-  <a href="playground/">Playground</a>
-  <a href="cli.html">CLI</a>
-  <a href="llms.txt">llms.txt</a>
+${nav(activeHref)}
 </nav>
 <main>
 ${body}
@@ -48,7 +60,7 @@ function renderDoc (mdName, outName, title) {
   // cross-links between the docs point at the rendered pages
   const body = marked.parse(md)
     .replaceAll(/href="([a-z-]+)\.md"/g, 'href="$1.html"')
-  fs.writeFileSync(path.join(dist, outName), page(title, body))
+  fs.writeFileSync(path.join(dist, outName), page(title, body, outName))
 }
 
 fs.rmSync(dist, { recursive: true, force: true })

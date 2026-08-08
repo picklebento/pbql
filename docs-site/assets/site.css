@@ -51,6 +51,11 @@ nav {
 }
 nav a { font-weight: 600; text-decoration: none; }
 nav a:first-child { color: var(--fg); }
+nav a[aria-current="page"] {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.45em;
+}
 
 a { color: var(--accent); }
 h1, h2, h3 { line-height: 1.25; }
