@@ -30,7 +30,7 @@ WHERE shot.num = 3
 
 # Q: Serves that landed deep
 FROM "83gyqyc10y8f"
-WHERE shot.sequence = "serve" AND shot.to.zone = "deep"
+WHERE shot.num = 1 AND shot.to.zone = "deep"
 
 # Q: Shots faster than 40 mph with a bit of lead-in video
 FROM "83gyqyc10y8f"
@@ -173,7 +173,7 @@ ORDER BY avg(shot.speed) DESC
 
 # Q: My serves in the second half of the game (by the clock)
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.hitTime >= game.startTime + game.duration / 2
+WHERE shot.hitter = me AND shot.num = 1 AND shot.hitTime >= game.startTime + game.duration / 2
 
 # Q: Shots from the second half of the game's rallies
 FROM "83gyqyc10y8f"
