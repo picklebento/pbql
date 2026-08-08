@@ -1,8 +1,8 @@
 # The PBQL Language
 
 PBQL selects shots from pickleball games analyzed by PB Vision. This document
-is the normative spec: the grammar in `src/lang/pbql.ne` implements it, and
-every deviation is a bug. Property-by-property details live in the generated
+is the normative spec: the grammar in `src/lang/pbql.ne` implements it.
+Property-by-property details live in the generated
 [data dictionary](data-dictionary.md).
 
 ## 1. Overall shape
@@ -89,12 +89,14 @@ is a first-class concept with SQL-style three-valued logic:
 - Non-finite numbers never surface as values: data that smuggles in
   `Infinity` or `NaN` (e.g. a JSON `1e400`) evaluates to unknown.
 - Any comparison or arithmetic with an unknown operand is unknown.
-- Kleene logic: `NOT unknown = unknown`; `unknown AND false = false`;
+- Kleene logic — unknown means "could be either," so negating it stays
+  unknown: `NOT unknown = unknown`; `unknown AND false = false`;
   `unknown AND true = unknown`; `unknown OR true = true`;
   `unknown OR false = unknown`.
 - `WHERE` keeps a shot only if the condition is **true** (not unknown).
-- `exists(expr)` is `true`/`false`, never unknown: whether `expr` has a
-  value.
+- `exists(expr)` is `true`/`false`, never unknown: `true` when `expr`
+  evaluates to an actual value, `false` when it would be unknown (absent
+  data, out-of-range reference).
 
 Consequence worth memorizing: `NOT shot.isVolley` does *not* match shots
 where volley-ness is unknown; write `NOT exists(shot.isVolley) OR NOT
