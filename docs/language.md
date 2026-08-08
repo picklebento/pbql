@@ -298,7 +298,7 @@ ORDER BY shot.speed DESC, shot.hitTime
 Stable sort across all games; `ASC` is the default; unknown values sort
 last regardless of direction. Without `ORDER BY`, results keep video order
 (by game, rally, shot). With `GROUP BY`, `ORDER BY` sorts the grouped rows
-instead (§6.7).
+instead.
 
 ### 6.5 LIMIT
 
