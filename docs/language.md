@@ -122,7 +122,7 @@ passing such a literal to an enum-typed method argument like
 `inHighlight(kind)` — is a validation error (`PBQL_UNKNOWN_ENUM_VALUE`,
 with the valid values and a did-you-mean hint), since production data can
 never hold it. Non-literal comparisons (`shot.from.zone = shot.to.zone`)
-are unaffected.
+are allowed.
 
 ## 5. Objects
 
@@ -159,13 +159,12 @@ There is no relative game access.
 ### 5.4 Players
 
 Players are **values you navigate to**, then either read a scalar from or
-compare by identity. Navigation is ordinary path syntax — the same `.`
-segments as any property.
+compare by identity.
 
 **Roots** (a path segment yields a player):
 
 - `me` — the querying user (resolved by the host application; unknown if the
-  user isn't tagged in the game). A player root all by itself.
+  user isn't tagged in the game).
 - `shot.hitter` — the player who hit that shot. Because `hitter` is a
   property of a shot, it composes with relative shots: `shot[1].hitter`
   targets the *next* shot's hitter, `shot[-1].hitter` the previous one.
@@ -174,18 +173,17 @@ segments as any property.
 
 - `teammate` — the partner (`me.teammate`, `shot.hitter.teammate`).
 - `opponent1` / `opponent2` — the opposing players in player-id order.
-- `opponentLHS` / `opponentRHS` — the opponents by side at the moment of the
-  shot the player was reached through: LHS is the opponent on that player's
-  left as they face the net. If positions are unknown at that moment, these
-  are unknown.
+- `opponentLHS` / `opponentRHS` — the opponents by their relative court position at the moment of the
+  shot the player was reached through: LHS is the opponent who is on the left of their side of the court (so the RHS is to their right). If positions are unknown at that moment, these
+  are unknown. So if I'm playing a mixed doubles match against Ben Johns and Anna Leigh Waters, `me.opponentLHS` is typically going to be Ben Johns (unless they've switched their usual sides which happens some rallies).
 
 Relations chain: `shot.hitter.opponentLHS.teammate` is legal (each hop lands
 on a player). In **singles**, `teammate` and `opponent2` are unknown, and
-the lone opponent answers `opponent1`/`opponentLHS`/`opponentRHS`.
+the lone opponent is addressable as `opponent1` or `opponentLHS` or `opponentRHS`.
 
 **Ending a path.** A path that ends *at* a player (no scalar segment after
 it) is that player's **identity**, for `=`/`!=` only:
-`shot.hitter = me`, `shot.hitter != shot[-1].hitter`,
+`shot.hitter = me`, `shot.hitter != shot[-2].hitter`,
 `me.opponentLHS = shot[1].hitter`. Add a scalar segment to read a value
 instead: `id`, `team`, `name`, position (`pos.x`/`pos.y` in the player's own
 frame, `pos.absX`/`pos.absY` raw), and derived distances (`feetToKitchen`,
