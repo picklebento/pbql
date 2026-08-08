@@ -52,7 +52,7 @@ rule, the first that applies:
 - **csv** — one row per selected shot or `SELECT` row.
 - **edl** — a CMX 3600 edit decision list cutting the selected clips
   back-to-back, at the queried video's frame rate (default 30). Import it
-  into an editor to review the reel.
+  into an editor like DaVinci Resolve to review the reel.
 - **ffmpeg** — an ffmpeg command that cuts the clips from `--video-file`
   and concatenates them into `--output-file`. Clips closer together than
   `--merge-gap` seconds are merged into one.
