@@ -1,21 +1,18 @@
 // Context-window computation: each selected shot's video window is
 // its own flight, widened by the CONTEXT clauses. Durations are
 // positive magnitudes; `shots` units never cross rally boundaries (and add
-// the covered shots to the result as context); `secs` units may spill past
-// the rally by at most maxSecsBeyondRally (default 3s), hard-bounded by the
-// video itself (start always; end when the insights carry the video
-// duration); min = cap, max = floor, with identical meaning for BEFORE and
-// AFTER.
-
-export const DEFAULT_MAX_SECS_BEYOND_RALLY = 3
+// the covered shots to the result as context); `secs` units are exact video
+// time, bounded only by the video itself (start always; end when the
+// insights carry the video duration); min = cap, max = floor, with
+// identical meaning for BEFORE and AFTER.
 
 // a candidate window edge plus the context shots it fully includes
-function resolve (dur, side, ctx, opts) {
+function resolve (dur, side, ctx) {
   const { game, rally, shot, shotIdx } = ctx
   const before = side === 'before'
   const anchor = before ? game.hitMs(shot) : game.endMs(shot)
   if (dur.kind === 'durfn') {
-    const candidates = dur.args.map(arg => resolve(arg, side, ctx, opts))
+    const candidates = dur.args.map(arg => resolve(arg, side, ctx))
     // wider = an earlier start (before) or a later end (after)
     const wider = (a, b) => before ? a.edgeMs < b.edgeMs : a.edgeMs > b.edgeMs
     candidates.sort((a, b) => (wider(a, b) ? -1 : 1))
@@ -48,17 +45,17 @@ function resolve (dur, side, ctx, opts) {
       contextShots: contextRange(ctx, shotIdx + 1, target + 1)
     }
   }
-  // secs: may spill past the rally's bounds by at most the allowed amount.
-  // The video's start is a hard floor; its end is a hard ceiling too when
-  // host-augmented insights carry the video duration (bucket files don't,
-  // so windows may then extend into the trailing footage)
-  const spillMs = opts.maxSecsBeyondRally * 1000
+  // secs: exact video time. The video's start is a hard floor; its end is
+  // a hard ceiling too when augmented insights carry the video duration
+  // (regular files don't, so windows may then extend into the trailing
+  // footage)
   if (before) {
-    const limit = Math.max(0, rally.start_ms - spillMs)
-    return { edgeMs: Math.max(limit, anchor - dur.value * 1000), contextShots: [] }
+    return { edgeMs: Math.max(0, anchor - dur.value * 1000), contextShots: [] }
   }
-  const limit = Math.min(rally.end_ms + spillMs, game.videoDurationMs ?? Infinity)
-  return { edgeMs: Math.min(limit, anchor + dur.value * 1000), contextShots: [] }
+  return {
+    edgeMs: Math.min(game.videoDurationMs ?? Infinity, anchor + dur.value * 1000),
+    contextShots: []
+  }
 }
 
 function contextRange (ctx, fromIdx, toIdx) {
@@ -75,12 +72,9 @@ function contextRange (ctx, fromIdx, toIdx) {
  *   number, shotIdx: number}>}} window bounds (ms) and the neighboring
  *   shots that shots-unit context pulled in
  */
-export function computeWindow (ctx, context, options = {}) {
-  const opts = {
-    maxSecsBeyondRally: options.maxSecsBeyondRally ?? DEFAULT_MAX_SECS_BEYOND_RALLY
-  }
-  const before = resolve(context.before, 'before', ctx, opts)
-  const after = resolve(context.after, 'after', ctx, opts)
+export function computeWindow (ctx, context) {
+  const before = resolve(context.before, 'before', ctx)
+  const after = resolve(context.after, 'after', ctx)
   return {
     sMs: before.edgeMs,
     eMs: after.edgeMs,

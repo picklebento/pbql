@@ -43,7 +43,6 @@ rule, the first that applies:
 | `--video-file <path>` | source video path (required for `--out ffmpeg`) |
 | `--output-file <path>` | cut video path for `--out ffmpeg` (default `cut.mp4`) |
 | `--merge-gap <secs>` | merge clips closer than this (default 0.5) |
-| `--max-secs-beyond-rally <n>` | `secs`-context spill limit (default 3) |
 
 ## Output formats
 

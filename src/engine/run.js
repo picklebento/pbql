@@ -238,11 +238,10 @@ function playerWarnings (facts, game) {
  *   {vid, sessionIdx, insights, meta} descriptors (the engine wraps them);
  *   games whose insights version is unsupported are skipped and reported in
  *   warnings
- * @param {object} [args.options] { maxSecsBeyondRally }
  * @returns {{shots: Array, columns?: Array, rows?: Array,
  *   warnings: Array} | {errors: Array}} results, or lex/parse/analyze errors
  */
-export function runQuery ({ text, games, options = {} }) {
+export function runQuery ({ text, games }) {
   const parsed = parse(text)
   if (parsed.errors) {
     return { errors: parsed.errors }
@@ -305,7 +304,7 @@ export function runQuery ({ text, games, options = {} }) {
   }
 
   const shots = selected.map(ctx => {
-    const { sMs, eMs, contextShots } = computeWindow(ctx, query.context, options)
+    const { sMs, eMs, contextShots } = computeWindow(ctx, query.context)
     return {
       vid: ctx.game.vid,
       sessionIdx: ctx.game.sessionIdx,

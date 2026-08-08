@@ -216,21 +216,16 @@ describe('CLI main()', () => {
     }
   })
 
-  test('--merge-gap and --max-secs-beyond-rally must be finite and >= 0',
-    async () => {
-      for (const flag of ['--merge-gap', '--max-secs-beyond-rally']) {
-        for (const bad of ['-0.5', 'fast', 'Infinity', 'NaN', ' ']) {
-          err = []
-          expect(await main([QUERY, `${flag}=${bad}`], io)).toBe(1)
-          expect(err[0]).toContain(
-            `${flag} must be a finite non-negative number`)
-          expect(err[0]).toContain(USAGE)
-        }
-      }
-      // valid values still work end-to-end
-      expect(await main([QUERY, '--merge-gap', '1',
-        '--max-secs-beyond-rally', '0'], io)).toBe(0)
-    })
+  test('--merge-gap must be finite and >= 0', async () => {
+    for (const bad of ['-0.5', 'fast', 'Infinity', 'NaN', ' ']) {
+      err = []
+      expect(await main([QUERY, `--merge-gap=${bad}`], io)).toBe(1)
+      expect(err[0]).toContain('--merge-gap must be a finite non-negative number')
+      expect(err[0]).toContain(USAGE)
+    }
+    // valid values still work end-to-end
+    expect(await main([QUERY, '--merge-gap', '1'], io)).toBe(0)
+  })
 
   test('FROM names files, directories, and globs', async () => {
     expect(await main([`FROM "${insightsFile}" WHERE shot.speed = 50`], io))

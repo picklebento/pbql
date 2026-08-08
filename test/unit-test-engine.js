@@ -14,11 +14,10 @@ function shotsWhere (expr, rest = '') {
   return result.shots.map(s => [s.rallyIdx, s.shotIdx])
 }
 
-function windowFor (contextClauses, options) {
+function windowFor (contextClauses) {
   const result = runQuery({
     text: `FROM "x" WHERE shot.speed = 50 ${contextClauses}`,
-    games: [makeDoublesGame()],
-    options
+    games: [makeDoublesGame()]
   })
   expect(result.shots).toHaveLength(1)
   return result.shots[0]
@@ -206,13 +205,13 @@ describe('runQuery: context windows', () => {
     })
   })
 
-  test('secs stretch, clamped to rally bounds + 3s spill', () => {
+  test('secs stretch exactly, crossing rally bounds freely', () => {
     expect(windowFor('CONTEXT BEFORE 2secs CONTEXT AFTER 1secs').window)
       .toEqual({ sMs: 56000, eMs: 60000 })
     expect(windowFor('CONTEXT BEFORE 12secs CONTEXT AFTER 12secs').window)
-      .toEqual({ sMs: 47000, eMs: 67000 }) // rally is 50000..64000
-    expect(windowFor('CONTEXT BEFORE 12secs', { maxSecsBeyondRally: 0 }).window.sMs)
-      .toBe(50000)
+      .toEqual({ sMs: 46000, eMs: 71000 }) // rally bounds don't cap secs
+    // the video's start is the only hard floor
+    expect(windowFor('CONTEXT BEFORE 999secs').window.sMs).toBe(0)
   })
 
   test('shots units include neighbors as context, clamped to the rally', () => {
@@ -258,16 +257,16 @@ describe('runQuery: context windows', () => {
     const windowOf = text => runQuery({ text, games: [game] }).shots[0].window
     const query = 'FROM "x" WHERE shot.speed = 50 ' +
       'CONTEXT BEFORE 12secs CONTEXT AFTER 12secs'
-    // absent the duration this window would be 47000..67000 (±3s spill)
-    expect(windowOf(query)).toEqual({ sMs: 47000, eMs: 65500 })
+    // absent the duration this window would be 46000..71000 (exact ±12s)
+    expect(windowOf(query)).toEqual({ sMs: 46000, eMs: 65500 })
     // windows that never reach the video's end are untouched
     expect(windowOf('FROM "x" WHERE shot.speed = 50 CONTEXT AFTER 1secs').eMs)
       .toBe(60000)
     // a duration no video can have (zero, negative, non-numeric, infinite)
-    // reads as absent: the plain spill limit applies
+    // reads as absent: no end clamp applies
     for (const bogus of [0, -1, '65500', JSON.parse('1e400')]) {
       game.insights.session.videoDurationMs = bogus
-      expect(windowOf(query).eMs).toBe(67000)
+      expect(windowOf(query).eMs).toBe(71000)
     }
   })
 
@@ -331,12 +330,12 @@ describe('coverage edges', () => {
     expect(tie.contextShots).toEqual([])
   })
 
-  test('computeWindow defaults its options', () => {
+  test('computeWindow stretches secs exactly', () => {
     const game = new Game(makeDoublesGame())
     const ctx = game.shotRefs[7] // rally 2, shot 2
     const zero = { kind: 'dur', unit: 'secs', value: 0 }
     expect(computeWindow(ctx, { before: { kind: 'dur', unit: 'secs', value: 12 }, after: zero }))
-      .toMatchObject({ sMs: 47000 })
+      .toMatchObject({ sMs: 46000 })
   })
 
   test('evalExpr tolerates unanalyzed ASTs (unknown names are unknown)', () => {

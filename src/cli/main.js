@@ -33,8 +33,7 @@ export const USAGE = `usage: pbql [QUERY | -f query.pbql] [options]
                           edl uses the queried video's frame rate, default 30)
   --video-file <path>     source video path (required for --out ffmpeg)
   --output-file <path>    cut video path for --out ffmpeg (default cut.mp4)
-  --merge-gap <secs>      merge clips closer than this (default 0.5)
-  --max-secs-beyond-rally <n>  context spill limit (default 3)`
+  --merge-gap <secs>      merge clips closer than this (default 0.5)`
 
 const OPTIONS = {
   file: { type: 'string', short: 'f' },
@@ -43,7 +42,6 @@ const OPTIONS = {
   'video-file': { type: 'string' },
   'output-file': { type: 'string', default: 'cut.mp4' },
   'merge-gap': { type: 'string', default: '0.5' },
-  'max-secs-beyond-rally': { type: 'string', default: '3' },
   help: { type: 'boolean', short: 'h', default: false }
 }
 
@@ -100,13 +98,10 @@ export async function main (argv, io) {
   if (me !== undefined && (!Number.isInteger(me) || me < 0 || me > 3)) {
     return fail(io, `--me must be an integer 0-3, got "${values.me}"\n${USAGE}`)
   }
-  const numeric = {}
-  for (const flag of ['merge-gap', 'max-secs-beyond-rally']) {
-    numeric[flag] = number(values[flag])
-    if (!Number.isFinite(numeric[flag]) || numeric[flag] < 0) {
-      return fail(io, `--${flag} must be a finite non-negative number, ` +
-        `got "${values[flag]}"\n${USAGE}`)
-    }
+  const mergeGap = number(values['merge-gap'])
+  if (!Number.isFinite(mergeGap) || mergeGap < 0) {
+    return fail(io, '--merge-gap must be a finite non-negative number, ' +
+      `got "${values['merge-gap']}"\n${USAGE}`)
   }
 
   let text
@@ -136,11 +131,7 @@ export async function main (argv, io) {
     }
   }
 
-  const result = runQuery({
-    text,
-    games,
-    options: { maxSecsBeyondRally: numeric['max-secs-beyond-rally'] }
-  })
+  const result = runQuery({ text, games })
   if (result.errors) {
     return reportErrors(io, result.errors)
   }
@@ -148,7 +139,7 @@ export async function main (argv, io) {
     io.stderr(`warning: ${warning.vid}: ${warning.message}`)
   }
 
-  const mergeGapMs = numeric['merge-gap'] * 1000
+  const mergeGapMs = mergeGap * 1000
   switch (values.out) {
     case 'json':
       io.stdout(JSON.stringify(toSelectedShotsJSON(result), null, 2))

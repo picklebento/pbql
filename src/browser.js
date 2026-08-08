@@ -20,7 +20,6 @@ export { Game, InvalidInsightsError, UnsupportedInsightsError, SUPPORTED_MAJOR }
 
 // engine
 export { runQuery } from './engine/run.js'
-export { DEFAULT_MAX_SECS_BEYOND_RALLY } from './engine/window.js'
 
 // outputs
 export { toClips } from './output/clips.js'

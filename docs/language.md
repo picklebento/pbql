@@ -264,12 +264,11 @@ BEFORE/AFTER):
 - `N shots` — include the N previous (or following) shots **in the same
   rally**; those shots also join the result marked as context. Clamped to
   the rally: on a rally's second shot, `BEFORE 5 shots` includes only one.
-- `X secs` — stretch the window by X seconds of video time. May spill past
-  the rally's own start/end by at most `maxSecsBeyondRally` (an engine
-  option, default **3s**). Windows are clamped at 0 at the video's start,
-  and at the video's end when host-augmented insights carry the video
-  duration (`session.videoDurationMs`, §7); regular insights files don't, so
-  their windows may extend past the last rally into the trailing footage.
+- `X secs` — stretch the window by exactly X seconds of video time,
+  crossing rally boundaries freely. Windows are clamped at 0 at the video's
+  start, and at the video's end when the insights carry the video duration
+  (`session.videoDurationMs`, §7); regular insights files don't, so their
+  windows may extend past the last rally into the trailing footage.
 - `rally` — to the rally's boundary (what the Shot Explorer calls
   `numBefore=999`).
 - `min(a, b)` / `max(a, b)` — resolve each alternative **per shot** to a
