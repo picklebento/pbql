@@ -218,9 +218,6 @@ through:
     Negative times are unknown, and the result is a string: it supports
     `=`/`!=` but not ordering comparisons.
 
-Every built-in receives the evaluation context implicitly; user-visible
-signatures never mention it.
-
 ### 5.6 `taggedWith(pattern)`
 
 Matches against the player-tagging data (PB Vision `/user/tag`). On a shot,
