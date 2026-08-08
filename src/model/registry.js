@@ -20,6 +20,11 @@ function isSingles (game) {
 // this team's partner: 0↔1, 2↔3
 const partnerOf = idx => idx ^ 1
 
+// "near the kitchen" = within this many feet of one's own kitchen line;
+// matches the analysis pipeline's kitchen-arrival threshold (CV positions
+// carry enough uncertainty that a tight cutoff would miss real arrivals)
+const NEAR_KITCHEN_FT = 4
+
 // the opposing pair, in player-id order, for a player on either team
 const opponentsOf = idx => idx < 2 ? [2, 3] : [0, 1]
 
@@ -670,6 +675,30 @@ const PLAYER_PROPS = [
     unit: 'feet',
     doc: 'distance still to cover to reach their kitchen line (0 at/inside it)',
     extract: (ctx, playerIdx) => mapPos(rawPlayerPos(ctx, playerIdx), feetToKitchen)
+  },
+  {
+    path: 'isNearKitchen',
+    type: 'boolean',
+    doc: 'whether they are within 4 feet of their kitchen line -- the same threshold the analysis pipeline uses for kitchen arrivals, wider than eyeballing "near" because CV positions carry uncertainty',
+    extract: (ctx, playerIdx) => mapPos(
+      rawPlayerPos(ctx, playerIdx), pos => feetToKitchen(pos) <= NEAR_KITCHEN_FT)
+  },
+  {
+    path: 'isRightOfTeammate',
+    type: 'boolean',
+    doc: 'whether they are playing the right side of their court (right of their teammate, in their own facing) at the current shot; unknown in singles and when either position is missing',
+    extract: (ctx, playerIdx) => {
+      if (isSingles(ctx.game)) {
+        return undefined
+      }
+      const pos = rawPlayerPos(ctx, playerIdx)
+      const partnerPos = rawPlayerPos(ctx, partnerOf(playerIdx))
+      if (pos === undefined || partnerPos === undefined) {
+        return undefined
+      }
+      return toPlayerFrame(pos, isOnFarSide(pos)).x >
+        toPlayerFrame(partnerPos, isOnFarSide(partnerPos)).x
+    }
   },
   {
     path: 'feetToNearestSideline',

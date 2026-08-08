@@ -355,6 +355,30 @@ describe('coverage edges', () => {
     expect(evalExpr(where('shot[-1].num'), bareCtx)).toBe(UNKNOWN)
   })
 
+  test('kitchen and teammate-side sugars', () => {
+    // near-kitchen: within 4ft of one's own kitchen line (the pipeline's
+    // kitchen-arrival threshold)
+    expect(shotsWhere('me.isNearKitchen')).toEqual([[0, 2], [2, 2], [2, 3]])
+    // 9 shots: 3 near, 1 with no position data (unknown, so neither side)
+    expect(shotsWhere('NOT me.isNearKitchen')).toHaveLength(5)
+    // p0 holds her court's right side all fixture long, so her partner
+    // never does; the position-less shot stays unknown
+    expect(shotsWhere('me.isRightOfTeammate')).toHaveLength(8)
+    expect(shotsWhere(
+      'shot.hitter = me.teammate AND shot.hitter.isRightOfTeammate'))
+      .toEqual([])
+    expect(shotsWhere(
+      'shot.hitter = me.teammate AND NOT shot.hitter.isRightOfTeammate'))
+      .toEqual([[0, 2], [2, 2]])
+    // singles: there is no teammate to be right of
+    const singles = runQuery({
+      text: 'FROM "testvid00002" WHERE me.isRightOfTeammate',
+      games: [makeSinglesGame()]
+    })
+    expect(singles.errors).toBeUndefined()
+    expect(singles.shots).toEqual([])
+  })
+
   test('game-object properties evaluate in queries', () => {
     expect(shotsWhere('game.numRallies = 3')).toHaveLength(9)
     expect(shotsWhere('game.winner = me.team')).toHaveLength(9)

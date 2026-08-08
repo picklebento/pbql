@@ -246,6 +246,8 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - player.pos.absX (number [feet]): raw court x at the current shot
 - player.pos.absY (number [feet]): raw court y at the current shot
 - player.feetToKitchen (number [feet]): distance still to cover to reach their kitchen line (0 at/inside it)
+- player.isNearKitchen (boolean): whether they are within 4 feet of their kitchen line -- the same threshold the analysis pipeline uses for kitchen arrivals, wider than eyeballing "near" because CV positions carry uncertainty
+- player.isRightOfTeammate (boolean): whether they are playing the right side of their court (right of their teammate, in their own facing) at the current shot; unknown in singles and when either position is missing
 - player.feetToNearestSideline (number [feet]): distance to the nearest sideline at the current shot
 - player.feetToNearestBaseline (number [feet]): distance to the nearest baseline at the current shot
 - player.feetToNet (number [feet]): distance to the net plane at the current shot
