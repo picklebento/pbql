@@ -237,31 +237,9 @@ FROM "83gyqyc10y8f", "jhc3t8h8b5cj:2", "games/*.json"
 
 `FROM` takes one or more **quoted strings**. The strings are opaque to the
 language: each host interprets them (the pb.vision app queries the
-video/session it is showing; the CLI resolves them as below). PBQL only
-requires that each source resolve to whole games of insights data.
-
-The CLI interprets each source string with exactly one rule, the first
-that applies:
-
-1. **pb.vision video** — the string matches `^[a-z0-9]{12}(:[0-9]+)?$`: a
-   12-character video id with an optional **1-based** session number
-   (`"83gyqyc10y8f"` is the first game; `"83gyqyc10y8f:2"` the second).
-   The CLI fetches the video's insights from the pb.vision service;
-   unknown,
-   unprocessed, still-processing, or failed videos — and sessions that
-   don't exist — are reported clearly. Fetched insights are **cached with
-   no expiration** in `$XDG_CACHE_HOME/pbql` (default `~/.cache/pbql`),
-   one file per game (`{vid}-{session}.json`, session 1-based), and the
-   cache is preferred: a hit skips the network entirely. To refetch a
-   game, delete its cache file (or the whole directory) — there is
-   deliberately no refresh flag.
-2. **file** — an existing file is one insights JSON. A local file is a
-   whole game, so sessions do not apply. A file whose name happens to look
-   like a video id must be written with a path prefix: `"./83gyqyc10y8f"`.
-3. **directory** — an existing directory contributes every `*.json` file
-   beneath it, recursively.
-4. **glob** — anything else is a glob pattern (`"games/*.json"`,
-   `"**/court-2/*.json"`), matched relative to the current directory.
+video/session it is showing; the [CLI](cli.md) accepts video ids, local
+files, directories, and globs). PBQL only requires that each source
+resolve to whole games of insights data.
 
 ### 6.2 WHERE
 

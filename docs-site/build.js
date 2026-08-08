@@ -1,5 +1,5 @@
-// Builds the static docs site into docs-site/dist: renders docs/language.md
-// and docs/data-dictionary.md to HTML, copies llms.txt verbatim, copies the
+// Builds the static docs site into docs-site/dist: renders the docs/*.md
+// pages to HTML, copies llms.txt verbatim, copies the
 // landing page and the playground, and bundles the library for the browser
 // (docs-site/playground/entry.js → dist/playground/pbql.js). Run via
 // `yarn build:site`, which compiles the nearley grammar first (the bundle
@@ -30,6 +30,7 @@ function page (title, body) {
 <nav>
   <a href="index.html">PBQL</a>
   <a href="language.html">Language</a>
+  <a href="cli.html">CLI</a>
   <a href="data-dictionary.html">Data dictionary</a>
   <a href="playground/">Playground</a>
   <a href="llms.txt">llms.txt</a>
@@ -44,7 +45,7 @@ ${body}
 
 function renderDoc (mdName, outName, title) {
   const md = fs.readFileSync(path.join(repoRoot, 'docs', mdName), 'utf8')
-  // cross-links between the two docs point at the rendered pages
+  // cross-links between the docs point at the rendered pages
   const body = marked.parse(md)
     .replaceAll(/href="([a-z-]+)\.md"/g, 'href="$1.html"')
   fs.writeFileSync(path.join(dist, outName), page(title, body))
@@ -54,6 +55,7 @@ fs.rmSync(dist, { recursive: true, force: true })
 fs.mkdirSync(path.join(dist, 'playground'), { recursive: true })
 
 renderDoc('language.md', 'language.html', 'The PBQL Language')
+renderDoc('cli.md', 'cli.html', 'The pbql CLI')
 renderDoc('data-dictionary.md', 'data-dictionary.html', 'PBQL Data Dictionary')
 for (const [from, to] of [
   [[repoRoot, 'docs', 'llms.txt'], ['llms.txt']],

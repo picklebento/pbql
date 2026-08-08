@@ -39,7 +39,8 @@ node scripts/run-lexer.js  [query.pbql]  # print the token stream
 node scripts/run-parser.js [query.pbql]  # print the AST as JSON
 ```
 
-Run a query from the CLI — `FROM` sources are quoted strings: a pb.vision
+Run a query from the CLI (full reference: [docs/cli.md](docs/cli.md)) —
+`FROM` sources are quoted strings: a pb.vision
 video id (`"83gyqyc10y8f"`, optionally `":2"` for the second game — insights
 are fetched from production and cached without expiration in
 `$XDG_CACHE_HOME/pbql`, default `~/.cache/pbql`; delete a game's file, or
