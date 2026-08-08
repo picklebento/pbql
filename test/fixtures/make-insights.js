@@ -138,8 +138,8 @@ export function makeDoublesInsights () {
             isFinal: true,
             // pressure is omitted for serves/returns, so it starts on shot 3
             quality: { overall: 0.95, execution: 0.95, pressure: 0.85 },
-            // p1's opponents in his near-side (x-reflected) frame:
-            // p3 at abs x=15 → x'=5 (his LHS), p2 at abs x=6 → x'=14 (RHS)
+            // p1's opponents hold the far half; in their own frame x' = raw
+            // x, so p2 (abs x=6) plays their left side, p3 (x=15) their right
             playerPositions: [{ x: 5, y: 14 }, { x: 14, y: 12 }, { x: 6, y: 26 }, { x: 15, y: 28 }],
             extra: {
               is_volley: true,

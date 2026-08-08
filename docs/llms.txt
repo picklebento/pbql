@@ -233,8 +233,8 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - player.teammate (player): this player's partner (unknown in singles)
 - player.opponent1 (player): the first opposing player, in player-id order (the lone opponent in singles)
 - player.opponent2 (player): the second opposing player, in player-id order (unknown in singles)
-- player.opponentLHS (player): the opponent on this player's left at the shot's moment (unknown if positions are missing)
-- player.opponentRHS (player): the opponent on this player's right at the shot's moment (unknown if positions are missing)
+- player.opponentLHS (player): the opponent playing the left side of their court (left of their partner) at the shot's moment (unknown if positions are missing)
+- player.opponentRHS (player): the opponent playing the right side of their court (right of their partner) at the shot's moment (unknown if positions are missing)
 - player.id (number [0-3]): the player's index within this game
 - player.team (number [0|1]): the player's team
 - player.name (string): the player's tagged name; untagged players keep their default name ("Player 1"…"Player 4")
@@ -407,7 +407,7 @@ Q: Third-shot drops that landed short of the kitchen with low pace
     FROM "83gyqyc10y8f"
     WHERE shot.num = 3 AND shot.type = "drop" AND shot.to.zone IN ("kitchen", "short") AND shot.speed < 25
 
-Q: Every ball hit at my left-side opponent's feet
+Q: Every ball we hit at the opponents' left-side player's feet
 
     FROM "83gyqyc10y8f"
     WHERE shot.hitter.team = me.team AND me.opponentLHS.feetToNet <= 14 AND shot.to.zone != "out"
@@ -422,7 +422,7 @@ Q: The setup shots where I fed my partner the ball they put away for a winner
     FROM "83gyqyc10y8f"
     WHERE shot.hitter = me AND shot[1].hitter = me.teammate AND exists(shot[1].winnerType)
 
-Q: Balls hit right at the player Ben was guarding (his left-side opponent)
+Q: Balls Ben hit right at the opponents' left-side player
 
     FROM "83gyqyc10y8f"
     WHERE shot.hitter.taggedWith("Ben*") AND shot.to.zone != "out" AND shot.hitter.opponentLHS.feetToNet <= 14

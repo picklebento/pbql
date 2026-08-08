@@ -23,20 +23,21 @@ const partnerOf = idx => idx ^ 1
 // the opposing pair, in player-id order, for a player on either team
 const opponentsOf = idx => idx < 2 ? [2, 3] : [0, 1]
 
-// LHS/RHS resolution: the opponent on `from`'s left/right at the moment of
-// `ctx`'s shot (left = smaller x in `from`'s own frame). In singles the lone
-// opponent answers both sides; unknown when any position is missing.
+// LHS/RHS resolution: the opponent playing the left/right side of their
+// own court at the moment of `ctx`'s shot — left of their partner in the
+// opponents' own facing, i.e. the smaller x in each opponent's own frame.
+// In singles the lone opponent answers both sides; unknown when their
+// positions are missing.
 function opponentBySide (ctx, from, wantLHS) {
   const opponents = opponentsOf(from)
   if (isSingles(ctx.game)) {
     return opponents[0]
   }
-  const rootPos = ctx.game.playerPosAtShot(ctx.shot, from)
   const positions = opponents.map(idx => ctx.game.playerPosAtShot(ctx.shot, idx))
-  if (rootPos === undefined || positions.some(p => p === undefined)) {
+  if (positions.some(p => p === undefined)) {
     return undefined
   }
-  const [a, b] = positions.map(p => toPlayerFrame(p, isOnFarSide(rootPos)).x)
+  const [a, b] = positions.map(p => toPlayerFrame(p, isOnFarSide(p)).x)
   const [lhs, rhs] = a <= b ? opponents : [opponents[1], opponents[0]]
   return wantLHS ? lhs : rhs
 }
@@ -816,12 +817,14 @@ const PLAYER_RELATIONS = [
   },
   {
     name: 'opponentLHS',
-    doc: 'the opponent on this player\'s left at the shot\'s moment (unknown if positions are missing)',
+    doc: 'the opponent playing the left side of their court (left of their ' +
+      'partner) at the shot\'s moment (unknown if positions are missing)',
     resolve: (ctx, from) => opponentBySide(ctx, from, true)
   },
   {
     name: 'opponentRHS',
-    doc: 'the opponent on this player\'s right at the shot\'s moment (unknown if positions are missing)',
+    doc: 'the opponent playing the right side of their court (right of their ' +
+      'partner) at the shot\'s moment (unknown if positions are missing)',
     resolve: (ctx, from) => opponentBySide(ctx, from, false)
   }
 ]

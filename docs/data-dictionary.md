@@ -117,8 +117,8 @@ A player value, reached from the root `me` or a shot's `hitter` (e.g. `shot.hitt
 | `player.teammate` | this player's partner (unknown in singles) | player | |
 | `player.opponent1` | the first opposing player, in player-id order (the lone opponent in singles) | player | |
 | `player.opponent2` | the second opposing player, in player-id order (unknown in singles) | player | |
-| `player.opponentLHS` | the opponent on this player's left at the shot's moment (unknown if positions are missing) | player | |
-| `player.opponentRHS` | the opponent on this player's right at the shot's moment (unknown if positions are missing) | player | |
+| `player.opponentLHS` | the opponent playing the left side of their court (left of their partner) at the shot's moment (unknown if positions are missing) | player | |
+| `player.opponentRHS` | the opponent playing the right side of their court (right of their partner) at the shot's moment (unknown if positions are missing) | player | |
 | `player.id` | the player's index within this game | number | 0-3 |
 | `player.team` | the player's team | number | 0\|1 |
 | `player.name` | the player's tagged name; untagged players keep their default name ("Player 1"…"Player 4") | string |  |

@@ -127,7 +127,7 @@ WHERE me.feetToKitchen = 0 AND me.teammate.feetToKitchen = 0 AND rally.winner !=
 FROM "83gyqyc10y8f"
 WHERE shot.num = 3 AND shot.type = "drop" AND shot.to.zone IN ("kitchen", "short") AND shot.speed < 25
 
-# Q: Every ball hit at my left-side opponent's feet
+# Q: Every ball we hit at the opponents' left-side player's feet
 FROM "83gyqyc10y8f"
 WHERE shot.hitter.team = me.team AND me.opponentLHS.feetToNet <= 14 AND shot.to.zone != "out"
 
@@ -139,7 +139,7 @@ WHERE shot.pitch IN (0, -1)
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot[1].hitter = me.teammate AND exists(shot[1].winnerType)
 
-# Q: Balls hit right at the player Ben was guarding (his left-side opponent)
+# Q: Balls Ben hit right at the opponents' left-side player
 FROM "83gyqyc10y8f"
 WHERE shot.hitter.taggedWith("Ben*") AND shot.to.zone != "out" AND shot.hitter.opponentLHS.feetToNet <= 14
 

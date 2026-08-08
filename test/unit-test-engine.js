@@ -68,15 +68,15 @@ describe('runQuery: filtering', () => {
   })
 
   test('player navigation, including LHS/RHS by position', () => {
-    // near-side hitter p1 at (14,12): his frame reflects x, so p3
-    // (abs x=15 → x'=5) is his LHS and p2 (abs x=6 → x'=14) his RHS
-    expect(shotsWhere('rally.num = 1 AND shot.num = 3 AND shot.hitter.opponentLHS.name = "Dan"'))
+    // p1's opponents hold the far half; in their own frame x' = raw x, so
+    // p2 (abs x=6 → x'=6) plays their side's left and p3 (x=15) its right
+    expect(shotsWhere('rally.num = 1 AND shot.num = 3 AND shot.hitter.opponentLHS.name = "Carol"'))
       .toEqual([[0, 2]])
-    expect(shotsWhere('rally.num = 1 AND shot.num = 3 AND shot.hitter.opponentRHS.name = "Carol"'))
+    expect(shotsWhere('rally.num = 1 AND shot.num = 3 AND shot.hitter.opponentRHS.name = "Dan"'))
       .toEqual([[0, 2]])
-    // far-side hitter p2 at (14,42): his frame keeps x, so p0 (abs x=6)
-    // is on p2's left and p1 (abs x=15) on his right
-    expect(shotsWhere('rally.num = 2 AND shot.num = 1 AND shot.hitter.opponentLHS.name = "Alice"'))
+    // p2's opponents hold the near half; their frame reflects x, so p1
+    // (abs x=15 → x'=5) plays their side's left, p0 (x=6 → x'=14) its right
+    expect(shotsWhere('rally.num = 2 AND shot.num = 1 AND shot.hitter.opponentLHS.name = "Bob"'))
       .toEqual([[1, 0]])
     expect(shotsWhere('me.teammate.name = "Bob"')).toHaveLength(9) // true for every shot
     expect(shotsWhere('shot.hitter.opponent1.name = "Carol"'))
