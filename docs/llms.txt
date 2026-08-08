@@ -29,8 +29,10 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - exists() takes a property, not a bare object: to probe whether a
   shot/rally reference exists, use its num — exists(shot[1].num), not
   exists(shot[1]) — since num is always present when the reference is
-  in range. It tests data on the shot being evaluated, never on other
-  shots — it is not an in-rally quantifier.
+  in range. exists() tests only the property it names (which may be a
+  shot[k] reference) — it never scans the rally. To count or detect
+  shots satisfying a condition anywhere in the rally, use
+  rally.count(condition).
 - Fault flags are the exception to unknown-ness: shot.hasError,
   shot.hasFault, shot.errors.faults.net and shot.errors.faults.short
   are never unknown (a fault is recorded only when it happened, so
@@ -525,4 +527,11 @@ Q: Rally numbers and shot counts for rallies with at least four shots
     WHERE shot.num >= 1
     GROUP BY rally.num
     HAVING count() >= 4
+
+Q: Rallies we lost where I dinked at least three times
+
+    FROM "83gyqyc10y8f"
+    WHERE rally.winner != me.team AND rally.count(shot.hitter = me AND shot.type = "dink") >= 3
+    CONTEXT BEFORE rally
+    CONTEXT AFTER rally
 

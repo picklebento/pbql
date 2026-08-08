@@ -218,3 +218,9 @@ FROM "83gyqyc10y8f"
 WHERE shot.num >= 1
 GROUP BY rally.num
 HAVING count() >= 4
+
+# Q: Rallies we lost where I dinked at least three times
+FROM "83gyqyc10y8f"
+WHERE rally.winner != me.team AND rally.count(shot.hitter = me AND shot.type = "dink") >= 3
+CONTEXT BEFORE rally
+CONTEXT AFTER rally
