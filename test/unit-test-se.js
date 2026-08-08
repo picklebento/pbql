@@ -50,16 +50,25 @@ describe('built-ins', () => {
 })
 
 describe('toShotExplorerURLs', () => {
-  test('one explore link per vid-shaped source, carrying the query in ?q=', () => {
+  test('one explore link per vid-shaped source, carrying the query body in ?q=', () => {
     const text = 'FROM "83gyqyc10y8f", "./games", "jhc3t8h8b5cj:2"\nWHERE shot.isVolley'
+    // the URL path already names the video/session, so the FROM clause is
+    // dropped from the encoded query
+    const body = encodeURIComponent('WHERE shot.isVolley')
     expect(toShotExplorerURLs(text, ['83gyqyc10y8f', './games', 'jhc3t8h8b5cj:2']))
       .toEqual([
         // sessions in URLs are 0-based; local paths have no explore page
-        `https://pb.vision/video/83gyqyc10y8f/0/explore?q=${encodeURIComponent(text)}`,
-        `https://pb.vision/video/jhc3t8h8b5cj/1/explore?q=${encodeURIComponent(text)}`
+        `https://pb.vision/video/83gyqyc10y8f/0/explore?q=${body}`,
+        `https://pb.vision/video/jhc3t8h8b5cj/1/explore?q=${body}`
       ])
     expect(toShotExplorerURLs('FROM "./games" WHERE true', ['./games']))
       .toEqual([])
+  })
+
+  test('unparseable text is encoded as-is', () => {
+    expect(toShotExplorerURLs('not pbql', ['ab12cd34ef56']))
+      .toEqual([`https://pb.vision/video/ab12cd34ef56/0/explore?q=${
+        encodeURIComponent('not pbql')}`])
   })
 
   test('session numbers are 1-based; :0 is rejected', () => {

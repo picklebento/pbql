@@ -12,6 +12,7 @@
   <a href="../language.html">Language</a>
   <a href="../data-dictionary.html">Data dictionary</a>
   <a href="./">Playground</a>
+  <a href="../cli.html">CLI</a>
   <a href="../llms.txt">llms.txt</a>
 </nav>
 <main>
@@ -33,15 +34,6 @@ LIMIT 20</textarea>
   <button id="validate">Validate</button>
   <button id="format">Format</button>
   <button id="run">Run</button>
-  <label>me =
-    <select id="me" aria-label="which player is me">
-      <option value="">not set</option>
-      <option value="0">player 0</option>
-      <option value="1">player 1</option>
-      <option value="2">player 2</option>
-      <option value="3">player 3</option>
-    </select>
-  </label>
 </div>
 
 <fieldset>
@@ -49,10 +41,11 @@ LIMIT 20</textarea>
   <div class="pg-row">
     <input type="text" id="vid" class="mono" size="16"
            placeholder="vid[:sessionNum]" aria-label="pb.vision video id">
-    <button id="load-vid">Load video</button>
-    <button id="load-demo">Load demo game</button>
-    <label>or a local insights JSON:
-      <input type="file" id="file" accept=".json,application/json">
+    <button id="load-vid">Load</button>
+    <label>me =
+      <select id="me" aria-label="which player is me">
+        <option value="">not set</option>
+      </select>
     </label>
   </div>
   <div id="game-status" class="hint">no game loaded</div>

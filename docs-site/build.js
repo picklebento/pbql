@@ -30,9 +30,9 @@ function page (title, body) {
 <nav>
   <a href="index.html">PBQL</a>
   <a href="language.html">Language</a>
-  <a href="cli.html">CLI</a>
   <a href="data-dictionary.html">Data dictionary</a>
   <a href="playground/">Playground</a>
+  <a href="cli.html">CLI</a>
   <a href="llms.txt">llms.txt</a>
 </nav>
 <main>

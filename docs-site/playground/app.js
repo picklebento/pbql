@@ -29,9 +29,32 @@ function setGameStatus (text, cls = 'hint') {
   $('game-status').className = cls
 }
 
+// one option per occupied player slot, labeled "<name> (player N)" with
+// 1-based numbers (names come with augmented insights; fall back to the
+// number alone)
+function setMeOptions (insights) {
+  const select = $('me')
+  const previous = select.value
+  const players = insights?.player_data ?? []
+  const options = [new Option('not set', '')]
+  players.forEach((player, idx) => {
+    if (player === null || player === undefined) {
+      return // unoccupied slot (singles)
+    }
+    const number = `player ${idx + 1}`
+    options.push(new Option(
+      player.name ? `${player.name} (${number})` : number, String(idx)))
+  })
+  select.replaceChildren(...options)
+  select.value = [...select.options].some(o => o.value === previous)
+    ? previous
+    : ''
+}
+
 function setGame (loaded) {
   game = loaded
   const { vid, sessionIdx, insights } = loaded
+  setMeOptions(insights)
   setGameStatus(`loaded ${vid} (session ${sessionIdx + 1}): ` +
     `insights v${insights.version}, ${insights.rallies?.length ?? 0} rallies`)
 }
@@ -51,22 +74,8 @@ async function loadVid (source) {
     setGame(await fetchVidGame(source.trim()))
   } catch (err) {
     game = null
+    setMeOptions(null)
     setGameStatus(err.message, 'err')
-  }
-}
-
-async function loadFile (file) {
-  try {
-    const insights = JSON.parse(await file.text())
-    setGame({
-      vid: file.name.replace(/\.json$/, ''),
-      sessionIdx: 0,
-      insights,
-      source: null
-    })
-  } catch (err) {
-    game = null
-    setGameStatus(`${file.name}: ${err.message}`, 'err')
   }
 }
 
@@ -163,10 +172,7 @@ function onRun () {
   $('results').replaceChildren()
   const text = $('query').value
   if (game === null) {
-    showMessages([{
-      text: 'load a game first (the demo button is the quickest way)',
-      cls: 'err'
-    }])
+    showMessages([{ text: 'load a game first', cls: 'err' }])
     return
   }
   const meta = $('me').value === '' ? {} : { myPlayerIdx: Number($('me').value) }
@@ -187,13 +193,7 @@ $('validate').addEventListener('click', onValidate)
 $('format').addEventListener('click', onFormat)
 $('run').addEventListener('click', onRun)
 $('load-vid').addEventListener('click', () => loadVid($('vid').value))
-$('load-demo').addEventListener('click', () => {
-  $('vid').value = DEMO_VID
-  loadVid(DEMO_VID)
-})
-$('file').addEventListener('change', event => {
-  const [file] = event.target.files
-  if (file !== undefined) {
-    loadFile(file)
-  }
-})
+
+// the demo game loads on page open, ready to Run
+$('vid').value = DEMO_VID
+loadVid(DEMO_VID)

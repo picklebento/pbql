@@ -297,12 +297,13 @@ describe('CLI main()', () => {
     expect(json.selectedShots[0]).toMatchObject({ vid: 'testvid00001', sessionIdx: 0 })
   })
 
-  test('se output prints explore links carrying the query itself', async () => {
+  test('se output prints explore links carrying the query body', async () => {
     // no insights are fetched or evaluated: the links carry the query
+    // minus its FROM clause (the URL path already names the video)
     const q = 'FROM "83gyqyc10y8f:2", "games/*.json" WHERE shot.isVolley'
     expect(await main([q, '--out', 'se'], io)).toBe(0)
     expect(out[0]).toBe('https://pb.vision/video/83gyqyc10y8f/1/explore?q=' +
-      encodeURIComponent(q))
+      encodeURIComponent('WHERE shot.isVolley'))
   })
 
   test('se fails clearly without a video-id source or with a bad query', async () => {
