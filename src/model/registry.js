@@ -837,7 +837,7 @@ export const REGISTRY = {
 // Walks the leading relation segments of a prop path, advancing the object
 // type across each player-transition (shot→hitter, player→teammate/…).
 // Returns the terminal object type and the remaining (scalar/method) path.
-// Shared by the analyzer and normalize(); the engine performs the same walk
+// Shared with the analyzer; the engine performs the same walk
 // while also resolving each relation to a concrete player (evaluate.js).
 export function walkRelations (base, path) {
   let typeName = base.object

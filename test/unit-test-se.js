@@ -12,10 +12,10 @@ function shotsWhere (expr) {
 }
 
 describe('validate()', () => {
-  test('valid queries return no errors plus the canonical AST', () => {
-    const { errors, ast } = validate('FROM "f" WHERE taggedWith(shot, "A*")')
+  test('valid queries return no errors plus the AST', () => {
+    const { errors, ast } = validate('FROM "f" WHERE shot.taggedWith("A*")')
     expect(errors).toEqual([])
-    expect(ast.where.kind).toBe('prop') // alias form was normalized
+    expect(ast.where.kind).toBe('prop')
   })
 
   test('parse and analyze errors flow through', () => {

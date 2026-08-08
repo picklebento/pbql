@@ -55,7 +55,6 @@ returns rows, not clips, so `CONTEXT` applies only to shot-list queries.
 | `==` | `=` |
 | `sec`, `secs`, `seconds` | number agreement: `1sec`, `2secs` |
 | `shot`, `shots` (duration unit) | number agreement: `1 shot`, `2 shots` |
-| `f(x, ...)` for a method | `x.f(...)` |
 
 ## 3. Operators and precedence
 
@@ -204,10 +203,7 @@ through:
 - **Zero-argument derived values are plain properties**:
   `shot.hitter.feetToKitchen`.
 - **Predicates about one subject take arguments as methods**:
-  `shot.taggedWith("Alex*")`, `shot.inHighlight("atp")`. Writing the same
-  call function-style (`taggedWith(shot, "Alex*")`,
-  `taggedWith(shot.hitter, "Alex*")`) is accepted and canonicalized (the
-  method name is appended to the subject's navigation path).
+  `shot.taggedWith("Alex*")`, `shot.inHighlight("atp")`.
 - **Subject-less utilities are functions**:
   - `min(a, b)` / `max(a, b)`
   - `exists(x)`

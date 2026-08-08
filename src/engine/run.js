@@ -2,7 +2,7 @@
 // to search (the host resolves FROM sources to insights JSON — the CLI via
 // src/sources/resolve.js); the engine analyzes, filters, orders,
 // limits, computes context windows, and projects SELECT.
-import { analyze, isAggregateCall, normalize } from '../analyze/analyze.js'
+import { analyze, isAggregateCall } from '../analyze/analyze.js'
 import { parse } from '../lang/parse.js'
 import { printExpr } from '../lang/print.js'
 import { Game, InvalidInsightsError, UnsupportedInsightsError } from '../model/game.js'
@@ -247,8 +247,7 @@ export function runQuery ({ text, games, options = {} }) {
   if (parsed.errors) {
     return { errors: parsed.errors }
   }
-  // canonicalize alias forms (e.g. taggedWith(shot, "x")) before validating
-  const query = normalize(parsed.ast)
+  const query = parsed.ast
   const analysis = analyze(query)
   if (analysis.errors.length > 0) {
     return { errors: analysis.errors }

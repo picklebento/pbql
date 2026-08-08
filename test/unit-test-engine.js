@@ -65,7 +65,6 @@ describe('runQuery: filtering', () => {
     expect(shotsWhere('shot.taggedWith("bob")')).toEqual([[0, 2], [2, 2]])
     expect(shotsWhere('shot.taggedWith("ALICE@EXAMPLE.COM")'))
       .toEqual([[0, 0], [1, 1], [2, 0]])
-    expect(shotsWhere('taggedWith(shot, "bob")')).toEqual([[0, 2], [2, 2]]) // alias form
     expect(shotsWhere('shot.inHighlight("atp")')).toEqual([[0, 2]])
   })
 

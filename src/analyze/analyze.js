@@ -76,40 +76,6 @@ function suggest (name, candidates) {
     : undefined
 }
 
-// Rewrites the function spelling of a method — taggedWith(shot, "x"),
-// taggedWith(shot.hitter, "x") — into its canonical method form:
-// shot.taggedWith("x"), shot.hitter.taggedWith("x"). Returns a new tree.
-export function normalize (node) {
-  if (Array.isArray(node)) {
-    return node.map(normalize)
-  }
-  if (node === null || typeof node !== 'object') {
-    return node
-  }
-  if (node.kind === 'call' && node.args.length >= 1) {
-    const [subject, ...rest] = node.args
-    // the subject must end AT an object/player (only relation segments, no
-    // scalar tail) whose terminal type owns the named method
-    if (subject.kind === 'prop' && !subject.args) {
-      const { typeName, rest: subRest } = walkRelations(subject.base, subject.path)
-      if (subRest.length === 0 && REGISTRY[typeName].methods.has(node.name)) {
-        return normalize({
-          kind: 'prop',
-          base: subject.base,
-          path: [...subject.path, node.name],
-          args: rest,
-          loc: node.loc
-        })
-      }
-    }
-  }
-  const out = {}
-  for (const [key, value] of Object.entries(node)) {
-    out[key] = normalize(value)
-  }
-  return out
-}
-
 // A unit string made solely of quoted alternatives ('"dig"|"neutral"|…')
 // declares the property's complete enum — production never emits anything
 // else, so the analyzer rejects other literals outright. Any other unit
@@ -309,8 +275,7 @@ export function analyze (query) {
       err(node, 'PBQL_UNKNOWN_FUNCTION', `unknown function "${node.name}"`,
         hintFor(node.name, [
           ...SCALAR_FNS.keys(),
-          ...(allowAggregates ? AGGREGATE_FNS.keys() : []),
-          ...REGISTRY.shot.methods.keys()
+          ...(allowAggregates ? AGGREGATE_FNS.keys() : [])
         ]))
     } else {
       err(node, 'PBQL_BAD_ARITY',

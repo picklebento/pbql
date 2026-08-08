@@ -1,8 +1,6 @@
-import { analyze, enumValuesOf, normalize } from '../src/analyze/analyze.js'
+import { analyze, enumValuesOf } from '../src/analyze/analyze.js'
 import { parse } from '../src/index.js'
 import { REGISTRY } from '../src/model/registry.js'
-
-import { stripLoc } from './helpers.js'
 
 function analyzeQuery (text) {
   const { ast, errors } = parse(text)
@@ -314,37 +312,12 @@ describe('analyze()', () => {
   })
 })
 
-describe('normalize()', () => {
-  test('rewrites function-form methods to method form', () => {
-    const { ast } = parse('FROM "f" WHERE taggedWith(shot, "BJ*")')
-    const { ast: canonical } = parse('FROM "f" WHERE shot.taggedWith("BJ*")')
-    expect(stripLoc(normalize(ast))).toEqual(stripLoc(canonical))
-  })
-
-  test('rewrites player-subject methods, appending to the navigation path', () => {
-    const { ast } = parse('FROM "f" WHERE taggedWith(me.teammate, "A*")')
-    const normalized = normalize(ast)
-    expect(analyze(normalized).errors).toEqual([])
-    expect(normalized.where).toMatchObject({
-      kind: 'prop',
-      base: { object: 'player', root: 'me' },
-      path: ['teammate', 'taggedWith'],
-      args: [{ kind: 'lit', value: 'A*' }]
-    })
-    // the same for a hitter reached from a shot base
-    const { ast: h } = parse('FROM "f" WHERE taggedWith(shot.hitter, "B*")')
-    expect(normalize(h).where).toMatchObject({
-      base: { object: 'shot', offset: 0 },
-      path: ['hitter', 'taggedWith']
-    })
-    // subjects with a scalar tail are not method subjects — left alone
-    const { ast: keep } = parse('FROM "f" WHERE taggedWith(shot.hitter.name, "B*")')
-    expect(normalize(keep).where.kind).toBe('call')
-  })
-
-  test('leaves regular functions and non-method calls alone', () => {
-    const { ast } = parse(
-      'FROM "f" WHERE min(shot.from.x, 1) < 2 AND foo(shot.speed) = 1')
-    expect(stripLoc(normalize(ast))).toEqual(stripLoc(ast))
+describe('methods have exactly one spelling', () => {
+  test('a method written function-style is an unknown function', () => {
+    // the bare `shot` argument is also flagged (objects are not values)
+    expect(analyzeWhere('taggedWith(shot, "BJ*")').map(e => e.code))
+      .toContain('PBQL_UNKNOWN_FUNCTION')
+    expect(analyzeWhere('taggedWith(me.teammate, "A*")')[0].code)
+      .toBe('PBQL_UNKNOWN_FUNCTION')
   })
 })
