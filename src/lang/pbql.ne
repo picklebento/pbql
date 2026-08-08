@@ -57,7 +57,9 @@ query -> select:? from where groupBy:? ctxBefore:? ctxAfter:? orderBy:? limit:?
      }) %}
 
 # ---- SELECT ---------------------------------------------------------------
-select -> %kw_select selectList {% d => d[1] %}
+select ->
+    %kw_select selectList {% d => d[1] %}
+  | %kw_select %star      {% () => 'star' %}
 selectList ->
     selectItem                    {% d => [d[0]] %}
   | selectList %comma selectItem  {% d => [...d[0], d[2]] %}

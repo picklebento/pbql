@@ -154,6 +154,8 @@ function generateLlmsTxt () {
     '  =/!=/IN — any other string literal is a validation error. A "speedup"',
     '  or "volley" is never a shot.type: those are the shot.isSpeedup /',
     '  shot.isVolley booleans.',
+    '- SELECT * (alone, never with GROUP BY) lists every scalar column of',
+    '  the shot, its rally, and the game as a table.',
     '- GROUP BY computes per-group breakdowns (win rate by shot type, avg',
     '  speed by player) in one query; with it, every SELECT/ORDER BY item',
     '  must be an aggregate or one of the group keys, and CONTEXT is not',

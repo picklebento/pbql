@@ -88,6 +88,17 @@ describe('analyze()', () => {
       .toBe('PBQL_UNKNOWN_METHOD')
   })
 
+  test('SELECT * stands alone: no GROUP BY, no CONTEXT', () => {
+    const analyzeText = text => analyze(parse(text).ast).errors
+    expect(analyzeText('SELECT * FROM "x" WHERE shot.num = 1')).toEqual([])
+    expect(analyzeText(
+      'SELECT * FROM "x" WHERE shot.num = 1 GROUP BY shot.type')[0].code)
+      .toBe('PBQL_STAR_GROUPED')
+    expect(analyzeText(
+      'SELECT * FROM "x" WHERE shot.num = 1 CONTEXT BEFORE rally')[0].code)
+      .toBe('PBQL_SELECT_CONTEXT')
+  })
+
   test('bare non-player objects are not values; players are (identity)', () => {
     const [bare] = analyzeWhere('shot = 1')
     expect(bare.code).toBe('PBQL_MISSING_PROPERTY')

@@ -409,6 +409,25 @@ describe('coverage edges', () => {
       .toBe(true)
   })
 
+  test('SELECT * lists every scalar column of shot, rally, and game', () => {
+    const r = runQuery({
+      text: 'SELECT * FROM "testvid00001" WHERE shot.num = 1 LIMIT 1',
+      games: [makeDoublesGame()]
+    })
+    expect(r.errors).toBeUndefined()
+    // the whole dictionary, prefixed and in dictionary order
+    expect(r.columns[0]).toBe('shot.num')
+    expect(r.columns).toContain('shot.quality.overall')
+    expect(r.columns).toContain('rally.numShots')
+    expect(r.columns.at(-1)).toBe('game.winner')
+    expect(new Set(r.columns).size).toBe(r.columns.length)
+    expect(r.rows).toHaveLength(1)
+    expect(r.rows[0]).toHaveLength(r.columns.length)
+    // spot values: the serve is shot 1 of rally 1
+    expect(r.rows[0][r.columns.indexOf('shot.num')]).toBe(1)
+    expect(r.rows[0][r.columns.indexOf('rally.num')]).toBe(1)
+  })
+
   test('game-object properties evaluate in queries', () => {
     expect(shotsWhere('game.numRallies = 3')).toHaveLength(9)
     expect(shotsWhere('game.winner = me.team')).toHaveLength(9)

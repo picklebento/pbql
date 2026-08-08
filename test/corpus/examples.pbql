@@ -206,3 +206,8 @@ CONTEXT AFTER rally
 # Q: Every shot from rallies we lost (the shots themselves, not whole-rally clips)
 FROM "83gyqyc10y8f"
 WHERE rally.winner != me.team
+
+# Q: Show me everything about my serves as a table
+SELECT *
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.num = 1

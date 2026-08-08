@@ -354,7 +354,8 @@ export function analyze (query) {
         'rows, not shots')
     }
     const isKey = expr => groupBy.some(key => sameExpr(key, expr))
-    for (const { expr } of [...(query.select ?? []), ...(query.orderBy ?? [])]) {
+    const selectItems = Array.isArray(query.select) ? query.select : []
+    for (const { expr } of [...selectItems, ...(query.orderBy ?? [])]) {
       if (!isAggregateCall(expr) && !isKey(expr)) {
         err(expr, 'PBQL_NOT_GROUPED',
           `"${printExpr(expr)}" must be an aggregate or a GROUP BY key`)
@@ -363,7 +364,14 @@ export function analyze (query) {
   }
 
   const grouped = Boolean(query.groupBy)
-  for (const item of query.select ?? []) {
+  // SELECT * expands to every scalar column at projection time; there are
+  // no item expressions to check, and grouping it makes no sense
+  if (query.select === 'star' && grouped) {
+    err(query.groupBy[0], 'PBQL_STAR_GROUPED',
+      'SELECT * lists per-shot columns: with GROUP BY, select aggregates ' +
+      'and/or group keys explicitly')
+  }
+  for (const item of Array.isArray(query.select) ? query.select : []) {
     checkExpr(item.expr, true)
   }
   checkExpr(query.where, false)
@@ -377,7 +385,8 @@ export function analyze (query) {
     checkGrouping()
   } else if (query.select && !isDefaultContext(query.context)) {
     // a plain projection has no clips either, so CONTEXT is meaningless on it
-    err(query.select[0].expr, 'PBQL_SELECT_CONTEXT',
+    const at = query.select === 'star' ? query.where : query.select[0].expr
+    err(at, 'PBQL_SELECT_CONTEXT',
       'CONTEXT applies to shot clips, not SELECT results')
   }
   return { errors }

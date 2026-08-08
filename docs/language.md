@@ -312,7 +312,9 @@ SELECT shot.hitter.name, shot.speed AS "mph", shot.type
 ```
 
 One row per selected shot; `AS "label"` names the output column (labels are
-purely cosmetic — units never change). Aggregates `count()`, `sum(x)`,
+purely cosmetic — units never change). `SELECT *` (alone, and never with
+`GROUP BY`) lists every scalar column of the shot, its rally, and the game
+— the whole dictionary as a table. Aggregates `count()`, `sum(x)`,
 `avg(x)`, `min(x)`, `max(x)` collapse the result to a single row; mixing
 aggregate and non-aggregate expressions is a validation error unless the
 non-aggregates are `GROUP BY` keys (§6.7). Aggregates coerce their inputs

@@ -6,7 +6,7 @@ import { analyze, isAggregateCall } from '../analyze/analyze.js'
 import { parse } from '../lang/parse.js'
 import { printExpr } from '../lang/print.js'
 import { Game, InvalidInsightsError, UnsupportedInsightsError } from '../model/game.js'
-import { playerMatchesTag } from '../model/registry.js'
+import { playerMatchesTag, REGISTRY } from '../model/registry.js'
 
 import { UNKNOWN, asNumber, evalExpr } from './evaluate.js'
 import { computeWindow } from './window.js'
@@ -82,10 +82,23 @@ function sortByKeys (items, orderBy, keysOf) {
   return keyed.map(k => k.item)
 }
 
+// SELECT * expands to every scalar column of the shot, its rally, and the
+// game -- built once from the registry, in dictionary order
+const STAR_SELECT = ['shot', 'rally', 'game'].flatMap(object =>
+  REGISTRY[object].propList.map(prop => ({
+    expr: {
+      kind: 'prop',
+      base: object === 'game' ? { object } : { object, offset: 0 },
+      path: prop.path.split('.')
+    },
+    label: `${object}.${prop.path}`
+  })))
+
 function project (query, selected) {
-  const columns = query.select.map(({ expr, label }) =>
+  const select = query.select === 'star' ? STAR_SELECT : query.select
+  const columns = select.map(({ expr, label }) =>
     label ?? printExpr(expr))
-  const aggregateFlags = query.select.map(({ expr }) => isAggregateCall(expr))
+  const aggregateFlags = select.map(({ expr }) => isAggregateCall(expr))
   if (aggregateFlags.some(Boolean)) {
     if (!aggregateFlags.every(Boolean)) {
       return {
@@ -99,9 +112,9 @@ function project (query, selected) {
         }]
       }
     }
-    return { columns, rows: [query.select.map(({ expr }) => evalAggregate(expr, selected))] }
+    return { columns, rows: [select.map(({ expr }) => evalAggregate(expr, selected))] }
   }
-  const rows = selected.map(ctx => query.select.map(({ expr }) => {
+  const rows = selected.map(ctx => select.map(({ expr }) => {
     const value = evalExpr(expr, ctx)
     return value === UNKNOWN ? null : value
   }))

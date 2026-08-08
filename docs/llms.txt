@@ -52,6 +52,8 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   =/!=/IN — any other string literal is a validation error. A "speedup"
   or "volley" is never a shot.type: those are the shot.isSpeedup /
   shot.isVolley booleans.
+- SELECT * (alone, never with GROUP BY) lists every scalar column of
+  the shot, its rally, and the game as a table.
 - GROUP BY computes per-group breakdowns (win rate by shot type, avg
   speed by player) in one query; with it, every SELECT/ORDER BY item
   must be an aggregate or one of the group keys, and CONTEXT is not
@@ -507,4 +509,10 @@ Q: Every shot from rallies we lost (the shots themselves, not whole-rally clips)
 
     FROM "83gyqyc10y8f"
     WHERE rally.winner != me.team
+
+Q: Show me everything about my serves as a table
+
+    SELECT *
+    FROM "83gyqyc10y8f"
+    WHERE shot.hitter = me AND shot.num = 1
 

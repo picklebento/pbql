@@ -123,7 +123,9 @@ function isOneShot (dur) {
 
 export function print (query) {
   const lines = []
-  if (query.select) {
+  if (query.select === 'star') {
+    lines.push('SELECT *')
+  } else if (query.select) {
     lines.push('SELECT ' + query.select.map(({ expr, label }) =>
       label === null ? printExpr(expr) : `${printExpr(expr)} AS ${quote(label)}`
     ).join(', '))
