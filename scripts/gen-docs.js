@@ -107,7 +107,7 @@ function generateLlmsTxt () {
     '  shot.hasFault, shot.errors.faults.net and shot.errors.faults.short',
     '  are never unknown (a fault is recorded only when it happened, so',
     '  absent means false). NOT shot.errors.faults.net simply selects every',
-    '  shot that cleared the net — no exists() guard needed.',
+    '  shot the net didn\'t stop — no exists() guard needed.',
     '- Durations: `2secs`, `1 shot`, `rally` (= to the rally boundary), or',
     '  min(a, b)/max(a, b) of two durations.',
     '  `N shots` also adds those shots to the results as context.',

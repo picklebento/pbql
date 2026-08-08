@@ -128,7 +128,8 @@ const SHOT_PROPS = [
   {
     path: 'isReset',
     type: 'boolean',
-    doc: 'whether the shot took significant pace off the ball',
+    doc: 'whether the shot was a volley that took significant pace off a ' +
+      'hard incoming ball; only volleys are assessed',
     extract: ctx => ctx.shot.is_reset
   },
   {
@@ -141,7 +142,8 @@ const SHOT_PROPS = [
   {
     path: 'isPassing',
     type: 'boolean',
-    doc: 'whether the shot passed the nearest opponent untouched',
+    doc: 'whether the shot was a rally-ending drive or smash that got past ' +
+      'the nearest opponent untouched; unknown in singles',
     extract: ctx => ctx.shot.is_passing
   },
   {
@@ -192,7 +194,8 @@ const SHOT_PROPS = [
     path: 'winnerType',
     type: 'string',
     unit: '"clean"|"forced_fault"',
-    doc: 'how this shot won the rally; unknown if it did not',
+    doc: 'how this shot won the rally ("clean" = fault-free final shot, ' +
+      '"forced_fault" = the opponents faulted on their reply); unknown if it did not win',
     extract: ctx => ctx.shot.winner_type
   },
   {
@@ -241,7 +244,8 @@ const SHOT_PROPS = [
     path: 'direction',
     type: 'string',
     unit: '"DownTheMiddle"|"DownTheLineLeft"|"DownTheLineRight"|"MidCrossLeft"|"MidCrossRight"|"LeftToMiddle"|"RightToMiddle"|"LeftCrossRight"|"RightCrossLeft"',
-    doc: 'named direction the ball traveled',
+    doc: 'named direction the ball traveled, from the hitter\'s perspective ' +
+      '(left/middle/right thirds of the court)',
     extract: ctx => ballMovement(ctx)?.angles?.direction
   },
   {
@@ -255,21 +259,23 @@ const SHOT_PROPS = [
     path: 'pitch',
     type: 'number',
     unit: 'degrees',
-    doc: 'vertical launch angle (0 = flat, 90 = straight up)',
+    doc: 'vertical angle from the strike point up to the flight\'s peak ' +
+      '(0 = flat or downward, 90 = straight up)',
     extract: ctx => ballMovement(ctx)?.angles?.pitch
   },
   {
     path: 'distance',
     type: 'number',
     unit: 'feet',
-    doc: 'how far the ball flew before contact with anything',
+    doc: 'straight-line distance from where the ball was struck to where its flight ended',
     extract: ctx => ballMovement(ctx)?.distance
   },
   {
     path: 'distanceFromBaseline',
     type: 'number',
     unit: 'feet',
-    doc: 'where the ball landed relative to the opponent\'s baseline',
+    doc: 'how far in front of the opponent\'s baseline the ball\'s flight ' +
+      'ended (negative = past it)',
     extract: ctx => ballMovement(ctx)?.distance_from_baseline
   },
   {
@@ -315,20 +321,23 @@ const SHOT_PROPS = [
   {
     path: 'errors.unforced',
     type: 'boolean',
-    doc: 'whether the error was unforced',
+    doc: 'whether the fault on this shot was an unforced error; only ' +
+      'assessed on actual faults with a confidently-known rally winner',
     extract: ctx => ctx.shot.errors?.unforced
   },
   {
     path: 'errors.popup',
     type: 'string',
     unit: '"exploited"|"potential"',
-    doc: 'whether the shot popped the ball up (and whether opponents capitalized)',
+    doc: 'whether a dink or drop popped the ball up ("exploited" = the ' +
+      'opponents attacked it out of the air, "potential" = they did not)',
     extract: ctx => ctx.shot.errors?.popup
   },
   {
     path: 'hasFault',
     type: 'boolean',
-    doc: 'whether this shot committed a rule fault (never unknown)',
+    doc: 'whether this shot committed a rule fault, actual or potential — ' +
+      'e.g. a ball headed out that an opponent played anyway (never unknown)',
     extract: ctx => ctx.shot.errors?.faults !== undefined
   },
   // fault flags are recorded only when the fault happened, so absence means
@@ -336,7 +345,7 @@ const SHOT_PROPS = [
   {
     path: 'errors.faults.net',
     type: 'boolean',
-    doc: 'whether the net stopped the ball (never unknown: absent fault data means the ball cleared the net)',
+    doc: 'whether the net stopped the ball (never unknown: absent fault data means the net did not stop it)',
     extract: ctx => ctx.shot.errors?.faults?.net === true
   },
   {
@@ -356,7 +365,8 @@ const SHOT_PROPS = [
     path: 'errors.faults.out.direction',
     type: 'string',
     unit: '"left"|"right"|"long"',
-    doc: 'which way the ball went out',
+    doc: 'which way the ball went (or was headed) out — "long" past the ' +
+      'baseline, else wide of a sideline',
     extract: ctx => ctx.shot.errors?.faults?.out?.direction
   },
   ...positionProps('from', 'where the ball was struck',
@@ -563,7 +573,8 @@ const PLAYER_PROPS = [
   {
     path: 'startedOnLeftSide',
     type: 'boolean',
-    doc: 'whether the player started this rally on the left side',
+    doc: 'whether the player began the rally on the left of their partner, ' +
+      'facing the net; not meaningful in singles',
     extract: (ctx, playerIdx) =>
       playerInRally(ctx, playerIdx)?.started_on_left_side
   },
@@ -703,7 +714,9 @@ const SHOT_METHODS = [
       type: 'string',
       unit: '"atp"|"erne"|"hands_battle"|"long_rally"|"poach"|"sequence"'
     }],
-    doc: 'whether the shot falls inside a highlight of the given kind ("atp", "erne", "hands_battle", "long_rally", "poach", "sequence")',
+    doc: 'whether the shot falls inside a highlight of the given kind ' +
+      '("atp", "erne", "hands_battle" = a rapid volley exchange, ' +
+      '"long_rally", "poach", "sequence" = a notable stretch of shots)',
     apply: (ctx, subject, [kind]) => {
       const highlights = ctx.game.insights.highlights
       const hitMs = ctx.game.hitMs(ctx.shot)

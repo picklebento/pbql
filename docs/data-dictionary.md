@@ -20,39 +20,39 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.isFinal` | whether this is the rally's last shot | boolean |  |
 | `shot.isVolley` | whether the ball was hit before bouncing | boolean |  |
 | `shot.isSpeedup` | whether the shot added significant pace near the kitchen | boolean |  |
-| `shot.isReset` | whether the shot took significant pace off the ball | boolean |  |
+| `shot.isReset` | whether the shot was a volley that took significant pace off a hard incoming ball; only volleys are assessed | boolean |  |
 | `shot.isPoach` | whether the hitter cut across in front of their partner to volley a ball that was headed to the partner | boolean |  |
-| `shot.isPassing` | whether the shot passed the nearest opponent untouched | boolean |  |
+| `shot.isPassing` | whether the shot was a rally-ending drive or smash that got past the nearest opponent untouched; unknown in singles | boolean |  |
 | `shot.isPutaway` | whether the shot functioned as a putaway or rally finisher — a clean winner or a decisive attack that directly created the rally's end (can be a well-placed dink or drop, not only a hard hit) | boolean |  |
 | `shot.type` | the shot classification; never set on serves and returns (use shot.sequence for those) | string | "smash"\|"lob"\|"dink"\|"drop"\|"drive"\|"atp"\|"erne" |
 | `shot.verticalType` | the vertical character of the stroke, from strike height (dig ≤ 2.5ft, overhead ≥ 6ft) | string | "dig"\|"neutral"\|"overhead" |
 | `shot.strokeSide` | which side of the body the stroke was made on | string | "left"\|"right" |
 | `shot.strokeType` | forehand or backhand, from strokeSide and the hitter's handedness; needs augmented insights carrying handedness (strokeSide always works) | string | "forehand"\|"backhand" |
-| `shot.winnerType` | how this shot won the rally; unknown if it did not | string | "clean"\|"forced_fault" |
+| `shot.winnerType` | how this shot won the rally ("clean" = fault-free final shot, "forced_fault" = the opponents faulted on their reply); unknown if it did not win | string | "clean"\|"forced_fault" |
 | `shot.quality.overall` | the overall quality of the shot, derived from the execution quality (1 is best) | number | 0-1 |
 | `shot.quality.execution` | how well the shot was executed | number | 0-1 |
 | `shot.quality.pressure` | positional pressure faced and imposed by this shot (1 = most pressure); unknown for singles, serves, and returns | number | 0-1 |
 | `shot.positioningScore` | how well the hitter was positioned at this shot, against a strong-team baseline (1 is best); unknown for singles, serves, and returns | number | 0-1 |
 | `shot.partnerPositioningScore` | how well the hitter's partner was positioned at this shot, against a strong-team baseline (1 is best); unknown for singles, serves, and returns | number | 0-1 |
 | `shot.speed` | ball speed after the hit | number | mph |
-| `shot.direction` | named direction the ball traveled | string | "DownTheMiddle"\|"DownTheLineLeft"\|"DownTheLineRight"\|"MidCrossLeft"\|"MidCrossRight"\|"LeftToMiddle"\|"RightToMiddle"\|"LeftCrossRight"\|"RightCrossLeft" |
+| `shot.direction` | named direction the ball traveled, from the hitter's perspective (left/middle/right thirds of the court) | string | "DownTheMiddle"\|"DownTheLineLeft"\|"DownTheLineRight"\|"MidCrossLeft"\|"MidCrossRight"\|"LeftToMiddle"\|"RightToMiddle"\|"LeftCrossRight"\|"RightCrossLeft" |
 | `shot.yaw` | horizontal launch angle (0 = toward the hitter's left sideline, 90 = straight at the net) | number | degrees |
-| `shot.pitch` | vertical launch angle (0 = flat, 90 = straight up) | number | degrees |
-| `shot.distance` | how far the ball flew before contact with anything | number | feet |
-| `shot.distanceFromBaseline` | where the ball landed relative to the opponent's baseline | number | feet |
+| `shot.pitch` | vertical angle from the strike point up to the flight's peak (0 = flat or downward, 90 = straight up) | number | degrees |
+| `shot.distance` | straight-line distance from where the ball was struck to where its flight ended | number | feet |
+| `shot.distanceFromBaseline` | how far in front of the opponent's baseline the ball's flight ended (negative = past it) | number | feet |
 | `shot.heightOverNet` | ball height when crossing the net plane | number | feet |
 | `shot.crossedNet` | whether the ball crossed the plane of the net | boolean |  |
 | `shot.confidence` | confidence in the reconstructed trajectory | number | 0-1 |
 | `shot.hitTime` | when in the video the ball was struck | number | seconds |
 | `shot.endTime` | when in the video the shot's flight ended | number | seconds |
 | `shot.hasError` | whether any error was detected on this shot (never unknown) | boolean |  |
-| `shot.errors.unforced` | whether the error was unforced | boolean |  |
-| `shot.errors.popup` | whether the shot popped the ball up (and whether opponents capitalized) | string | "exploited"\|"potential" |
-| `shot.hasFault` | whether this shot committed a rule fault (never unknown) | boolean |  |
-| `shot.errors.faults.net` | whether the net stopped the ball (never unknown: absent fault data means the ball cleared the net) | boolean |  |
+| `shot.errors.unforced` | whether the fault on this shot was an unforced error; only assessed on actual faults with a confidently-known rally winner | boolean |  |
+| `shot.errors.popup` | whether a dink or drop popped the ball up ("exploited" = the opponents attacked it out of the air, "potential" = they did not) | string | "exploited"\|"potential" |
+| `shot.hasFault` | whether this shot committed a rule fault, actual or potential — e.g. a ball headed out that an opponent played anyway (never unknown) | boolean |  |
+| `shot.errors.faults.net` | whether the net stopped the ball (never unknown: absent fault data means the net did not stop it) | boolean |  |
 | `shot.errors.faults.short` | whether the shot landed on the hitter's own side short of the net (never unknown: absent fault data means it did not) | boolean |  |
 | `shot.errors.faults.out.outcome` | whether the out ball landed or was played anyway | string | "landed"\|"intercepted" |
-| `shot.errors.faults.out.direction` | which way the ball went out | string | "left"\|"right"\|"long" |
+| `shot.errors.faults.out.direction` | which way the ball went (or was headed) out — "long" past the baseline, else wide of a sideline | string | "left"\|"right"\|"long" |
 | `shot.from.x` | where the ball was struck — hitter-frame x (0-20, grows to the hitter's right) | number | feet |
 | `shot.from.y` | where the ball was struck — hitter-frame y (own baseline 0, net 22) | number | feet |
 | `shot.from.z` | where the ball was struck — height above the ground | number | feet |
@@ -84,7 +84,7 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.peak.feetToNet` | the highest point of the ball's flight — distance to the plane of the net | number | feet |
 | `shot.isHitOnSide(side)` | whether the ball was struck on the given half ("left"\|"right") of the court in the hitter's frame (right = x >= 10) | boolean | |
 | `shot.taggedWith(pattern)` | whether the hitter matches this name pattern (case-insensitive, * wildcard; untagged players match their default "Player N" name) or exact email | boolean | |
-| `shot.inHighlight(kind)` | whether the shot falls inside a highlight of the given kind ("atp", "erne", "hands_battle", "long_rally", "poach", "sequence") | boolean | |
+| `shot.inHighlight(kind)` | whether the shot falls inside a highlight of the given kind ("atp", "erne", "hands_battle" = a rapid volley exchange, "long_rally", "poach", "sequence" = a notable stretch of shots) | boolean | |
 
 ## rally
 
@@ -131,7 +131,7 @@ A player value, reached from the root `me` or a shot's `hitter` (e.g. `shot.hitt
 | `player.id` | the player's index within this game | number | 0-3 |
 | `player.team` | the player's team | number | 0\|1 |
 | `player.name` | the player's tagged name; untagged players keep their default name ("Player 1"…"Player 4") | string |  |
-| `player.startedOnLeftSide` | whether the player started this rally on the left side | boolean |  |
+| `player.startedOnLeftSide` | whether the player began the rally on the left of their partner, facing the net; not meaningful in singles | boolean |  |
 | `player.reachedKitchen` | whether the player reached the kitchen line this rally | boolean |  |
 | `player.pos.x` | court x at the current shot, in the player's own frame | number | feet |
 | `player.pos.y` | court y at the current shot, in the player's own frame (own baseline 0) | number | feet |

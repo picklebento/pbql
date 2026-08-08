@@ -104,7 +104,7 @@ One deliberate exception: the rule-fault flags (`shot.errors.faults.net`,
 `shot.errors.faults.short`) and the presence flags `shot.hasError` /
 `shot.hasFault` are **never unknown**. The insights data records a fault
 flag only when the fault happened, so an absent flag means `false` — `NOT
-shot.errors.faults.net` genuinely selects the shots that cleared the net,
+shot.errors.faults.net` genuinely selects the shots the net didn't stop,
 no `exists()` guard needed.
 
 Comparisons require matching types (comparing a number to a string is a

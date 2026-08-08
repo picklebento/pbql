@@ -34,7 +34,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   shot.hasFault, shot.errors.faults.net and shot.errors.faults.short
   are never unknown (a fault is recorded only when it happened, so
   absent means false). NOT shot.errors.faults.net simply selects every
-  shot that cleared the net — no exists() guard needed.
+  shot the net didn't stop — no exists() guard needed.
 - Durations: `2secs`, `1 shot`, `rally` (= to the rally boundary), or
   min(a, b)/max(a, b) of two durations.
   `N shots` also adds those shots to the results as context.
@@ -149,39 +149,39 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - shot.isFinal (boolean): whether this is the rally's last shot
 - shot.isVolley (boolean): whether the ball was hit before bouncing
 - shot.isSpeedup (boolean): whether the shot added significant pace near the kitchen
-- shot.isReset (boolean): whether the shot took significant pace off the ball
+- shot.isReset (boolean): whether the shot was a volley that took significant pace off a hard incoming ball; only volleys are assessed
 - shot.isPoach (boolean): whether the hitter cut across in front of their partner to volley a ball that was headed to the partner
-- shot.isPassing (boolean): whether the shot passed the nearest opponent untouched
+- shot.isPassing (boolean): whether the shot was a rally-ending drive or smash that got past the nearest opponent untouched; unknown in singles
 - shot.isPutaway (boolean): whether the shot functioned as a putaway or rally finisher — a clean winner or a decisive attack that directly created the rally's end (can be a well-placed dink or drop, not only a hard hit)
 - shot.type (string ["smash"|"lob"|"dink"|"drop"|"drive"|"atp"|"erne"]): the shot classification; never set on serves and returns (use shot.sequence for those)
 - shot.verticalType (string ["dig"|"neutral"|"overhead"]): the vertical character of the stroke, from strike height (dig ≤ 2.5ft, overhead ≥ 6ft)
 - shot.strokeSide (string ["left"|"right"]): which side of the body the stroke was made on
 - shot.strokeType (string ["forehand"|"backhand"]): forehand or backhand, from strokeSide and the hitter's handedness; needs augmented insights carrying handedness (strokeSide always works)
-- shot.winnerType (string ["clean"|"forced_fault"]): how this shot won the rally; unknown if it did not
+- shot.winnerType (string ["clean"|"forced_fault"]): how this shot won the rally ("clean" = fault-free final shot, "forced_fault" = the opponents faulted on their reply); unknown if it did not win
 - shot.quality.overall (number [0-1]): the overall quality of the shot, derived from the execution quality (1 is best)
 - shot.quality.execution (number [0-1]): how well the shot was executed
 - shot.quality.pressure (number [0-1]): positional pressure faced and imposed by this shot (1 = most pressure); unknown for singles, serves, and returns
 - shot.positioningScore (number [0-1]): how well the hitter was positioned at this shot, against a strong-team baseline (1 is best); unknown for singles, serves, and returns
 - shot.partnerPositioningScore (number [0-1]): how well the hitter's partner was positioned at this shot, against a strong-team baseline (1 is best); unknown for singles, serves, and returns
 - shot.speed (number [mph]): ball speed after the hit
-- shot.direction (string ["DownTheMiddle"|"DownTheLineLeft"|"DownTheLineRight"|"MidCrossLeft"|"MidCrossRight"|"LeftToMiddle"|"RightToMiddle"|"LeftCrossRight"|"RightCrossLeft"]): named direction the ball traveled
+- shot.direction (string ["DownTheMiddle"|"DownTheLineLeft"|"DownTheLineRight"|"MidCrossLeft"|"MidCrossRight"|"LeftToMiddle"|"RightToMiddle"|"LeftCrossRight"|"RightCrossLeft"]): named direction the ball traveled, from the hitter's perspective (left/middle/right thirds of the court)
 - shot.yaw (number [degrees]): horizontal launch angle (0 = toward the hitter's left sideline, 90 = straight at the net)
-- shot.pitch (number [degrees]): vertical launch angle (0 = flat, 90 = straight up)
-- shot.distance (number [feet]): how far the ball flew before contact with anything
-- shot.distanceFromBaseline (number [feet]): where the ball landed relative to the opponent's baseline
+- shot.pitch (number [degrees]): vertical angle from the strike point up to the flight's peak (0 = flat or downward, 90 = straight up)
+- shot.distance (number [feet]): straight-line distance from where the ball was struck to where its flight ended
+- shot.distanceFromBaseline (number [feet]): how far in front of the opponent's baseline the ball's flight ended (negative = past it)
 - shot.heightOverNet (number [feet]): ball height when crossing the net plane
 - shot.crossedNet (boolean): whether the ball crossed the plane of the net
 - shot.confidence (number [0-1]): confidence in the reconstructed trajectory
 - shot.hitTime (number [seconds]): when in the video the ball was struck
 - shot.endTime (number [seconds]): when in the video the shot's flight ended
 - shot.hasError (boolean): whether any error was detected on this shot (never unknown)
-- shot.errors.unforced (boolean): whether the error was unforced
-- shot.errors.popup (string ["exploited"|"potential"]): whether the shot popped the ball up (and whether opponents capitalized)
-- shot.hasFault (boolean): whether this shot committed a rule fault (never unknown)
-- shot.errors.faults.net (boolean): whether the net stopped the ball (never unknown: absent fault data means the ball cleared the net)
+- shot.errors.unforced (boolean): whether the fault on this shot was an unforced error; only assessed on actual faults with a confidently-known rally winner
+- shot.errors.popup (string ["exploited"|"potential"]): whether a dink or drop popped the ball up ("exploited" = the opponents attacked it out of the air, "potential" = they did not)
+- shot.hasFault (boolean): whether this shot committed a rule fault, actual or potential — e.g. a ball headed out that an opponent played anyway (never unknown)
+- shot.errors.faults.net (boolean): whether the net stopped the ball (never unknown: absent fault data means the net did not stop it)
 - shot.errors.faults.short (boolean): whether the shot landed on the hitter's own side short of the net (never unknown: absent fault data means it did not)
 - shot.errors.faults.out.outcome (string ["landed"|"intercepted"]): whether the out ball landed or was played anyway
-- shot.errors.faults.out.direction (string ["left"|"right"|"long"]): which way the ball went out
+- shot.errors.faults.out.direction (string ["left"|"right"|"long"]): which way the ball went (or was headed) out — "long" past the baseline, else wide of a sideline
 - shot.from.x (number [feet]): where the ball was struck — hitter-frame x (0-20, grows to the hitter's right)
 - shot.from.y (number [feet]): where the ball was struck — hitter-frame y (own baseline 0, net 22)
 - shot.from.z (number [feet]): where the ball was struck — height above the ground
@@ -213,7 +213,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - shot.peak.feetToNet (number [feet]): the highest point of the ball's flight — distance to the plane of the net
 - shot.isHitOnSide(side) (boolean): whether the ball was struck on the given half ("left"|"right") of the court in the hitter's frame (right = x >= 10)
 - shot.taggedWith(pattern) (boolean): whether the hitter matches this name pattern (case-insensitive, * wildcard; untagged players match their default "Player N" name) or exact email
-- shot.inHighlight(kind) (boolean): whether the shot falls inside a highlight of the given kind ("atp", "erne", "hands_battle", "long_rally", "poach", "sequence")
+- shot.inHighlight(kind) (boolean): whether the shot falls inside a highlight of the given kind ("atp", "erne", "hands_battle" = a rapid volley exchange, "long_rally", "poach", "sequence" = a notable stretch of shots)
 - rally.num (number [1-based]): which rally of the game this is
 - rally.numShots (number): how many shots the rally contains
 - rally.startTime (number [seconds]): when in the video the rally starts
@@ -239,7 +239,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - player.id (number [0-3]): the player's index within this game
 - player.team (number [0|1]): the player's team
 - player.name (string): the player's tagged name; untagged players keep their default name ("Player 1"…"Player 4")
-- player.startedOnLeftSide (boolean): whether the player started this rally on the left side
+- player.startedOnLeftSide (boolean): whether the player began the rally on the left of their partner, facing the net; not meaningful in singles
 - player.reachedKitchen (boolean): whether the player reached the kitchen line this rally
 - player.pos.x (number [feet]): court x at the current shot, in the player's own frame
 - player.pos.y (number [feet]): court y at the current shot, in the player's own frame (own baseline 0)
