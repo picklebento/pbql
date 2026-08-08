@@ -1,8 +1,7 @@
 # The PBQL Language
 
 PBQL selects shots from pickleball games analyzed by PB Vision. This document
-is the normative spec: the grammar in `src/lang/pbql.ne` implements it.
-Property-by-property details live in the generated
+is the normative spec. Property-by-property details live in the generated
 [Data Dictionary](data-dictionary.md).
 
 ## 1. Overall shape
@@ -22,8 +21,8 @@ A query conceptually builds one row per **shot** across all games named by
 `FROM`, keeps the rows where `WHERE` evaluates to `true`, widens each kept
 shot's video window per `CONTEXT` (a one-shot lead-in and lead-out by default;
 §6.3), sorts, limits, and outputs. Without
-`SELECT`, the output is the selected shots themselves (for the Shot Explorer,
-EDL, or ffmpeg); with `SELECT`, it is one projected row per shot (CSV/JSON),
+`SELECT`, the output is the selected shots themselves, as clips; with
+`SELECT`, it is one projected row per shot,
 or a single row if every selected expression is an aggregate. A projection
 returns rows, not clips, so `CONTEXT` applies only to shot-list queries.
 `GROUP BY` (§6.7) changes the output to one row per group; it requires
@@ -220,7 +219,7 @@ through:
 
 ### 5.6 `taggedWith(pattern)`
 
-Matches against the player-tagging data (PB Vision `/user/tag`). On a shot,
+Matches against the host's player-tagging data. On a shot,
 it tests the hitter (`shot.taggedWith(…)`); on a player, that player
 (`shot.hitter.taggedWith(…)`, `me.teammate.taggedWith(…)`). If `pattern`
 contains `@` it is an email and must match exactly (case-insensitive);
@@ -268,8 +267,7 @@ BEFORE/AFTER):
   crossing rally boundaries freely. Windows are clamped at 0 at the video's
   start, and at the video's end when the insights carry the video duration
   (`session.videoDurationMs`, §7).
-- `rally` — to the rally's boundary (what the Shot Explorer calls
-  `numBefore=999`).
+- `rally` — to the rally's boundary.
 - `min(a, b)` / `max(a, b)` — resolve each alternative **per shot** to a
   concrete magnitude, then take the smaller (`min` = cap) or larger
   (`max` = floor). Same meaning for BEFORE and AFTER.
@@ -285,8 +283,8 @@ previous shot joins as context.
 
 - Writing either `CONTEXT` clause opts a shot-list out of the ±1 default:
   the side you write is used and the side you omit falls to `0` (the bare
-  flight, `hitTime`…`endTime` plus the host's presentation padding). So
-  `CONTEXT BEFORE 0secs` on its own means no lead-in *or* lead-out.
+  flight, `hitTime`…`endTime`). So `CONTEXT BEFORE 0secs` on its own means
+  no lead-in *or* lead-out.
 - A projection (`SELECT` or `GROUP BY`) returns rows, not clips, so its
   context defaults to `0` on both sides and an explicit clause is an error
   (`PBQL_SELECT_CONTEXT`, `PBQL_GROUP_BY_CONTEXT`).
