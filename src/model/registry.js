@@ -41,8 +41,6 @@ function opponentBySide (ctx, from, wantLHS) {
   return wantLHS ? lhs : rhs
 }
 
-const SEQUENCES = ['serve', 'return', '3', '4', '5']
-
 function ballMovement (ctx) {
   return ctx.shot.resulting_ball_movement
 }
@@ -101,13 +99,6 @@ const SHOT_PROPS = [
     extract: ctx => ctx.shotIdx + 1
   },
   {
-    path: 'sequence',
-    type: 'string',
-    unit: '"serve"|"return"|"3"|"4"|"5"',
-    doc: 'the common name for this shot\'s position in the rally; unknown from the 6th shot on',
-    extract: ctx => SEQUENCES[ctx.shotIdx]
-  },
-  {
     path: 'isFinal',
     type: 'boolean',
     doc: 'whether this is the rally\'s last shot',
@@ -156,7 +147,7 @@ const SHOT_PROPS = [
     path: 'type',
     type: 'string',
     unit: '"smash"|"lob"|"dink"|"drop"|"drive"|"atp"|"erne"',
-    doc: 'the shot classification; never set on serves and returns (use shot.sequence for those)',
+    doc: 'the shot classification; never set on serves and returns (shot.num 1 and 2)',
     extract: ctx => ctx.shot.shot_type
   },
   {

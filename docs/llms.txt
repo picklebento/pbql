@@ -145,7 +145,6 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 
 - shot.hitter (player): the player who hit this shot
 - shot.num (number [1-based]): which shot of the rally this is (the serve is 1)
-- shot.sequence (string ["serve"|"return"|"3"|"4"|"5"]): the common name for this shot's position in the rally; unknown from the 6th shot on
 - shot.isFinal (boolean): whether this is the rally's last shot
 - shot.isVolley (boolean): whether the ball was hit before bouncing
 - shot.isSpeedup (boolean): whether the shot added significant pace near the kitchen
@@ -153,7 +152,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - shot.isPoach (boolean): whether the hitter cut across in front of their partner to volley a ball that was headed to the partner
 - shot.isPassing (boolean): whether the shot was a rally-ending drive or smash that got past the nearest opponent untouched; unknown in singles
 - shot.isPutaway (boolean): whether the shot functioned as a putaway or rally finisher — a clean winner or a decisive attack that directly created the rally's end (can be a well-placed dink or drop, not only a hard hit)
-- shot.type (string ["smash"|"lob"|"dink"|"drop"|"drive"|"atp"|"erne"]): the shot classification; never set on serves and returns (use shot.sequence for those)
+- shot.type (string ["smash"|"lob"|"dink"|"drop"|"drive"|"atp"|"erne"]): the shot classification; never set on serves and returns (shot.num 1 and 2)
 - shot.verticalType (string ["dig"|"neutral"|"overhead"]): the vertical character of the stroke, from strike height (dig ≤ 2.5ft, overhead ≥ 6ft)
 - shot.strokeSide (string ["left"|"right"]): which side of the body the stroke was made on
 - shot.strokeType (string ["forehand"|"backhand"]): forehand or backhand, from strokeSide and the hitter's handedness; needs augmented insights carrying handedness (strokeSide always works)

@@ -139,14 +139,11 @@ describe('registry', () => {
     expect(props.get('from.z').extract(farShotCtx)).toBe(3)
   })
 
-  test('num/sequence/times derive from position and timing', () => {
+  test('num/times derive from position and timing', () => {
     const props = REGISTRY.shot.props
     expect(props.get('num').extract(farShotCtx)).toBe(2)
-    expect(props.get('sequence').extract(farShotCtx)).toBe('return')
     expect(props.get('hitTime').extract(farShotCtx)).toBe(15)
     expect(props.get('endTime').extract(farShotCtx)).toBe(16)
-    // 6th shot and beyond has no sequence name
-    expect(props.get('sequence').extract({ ...farShotCtx, shotIdx: 5 })).toBeUndefined()
   })
 
   test('error properties, presence flags never unknown', () => {

@@ -16,7 +16,6 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 |---|---|---|---|
 | `shot.hitter` | the player who hit this shot | player | |
 | `shot.num` | which shot of the rally this is (the serve is 1) | number | 1-based |
-| `shot.sequence` | the common name for this shot's position in the rally; unknown from the 6th shot on | string | "serve"\|"return"\|"3"\|"4"\|"5" |
 | `shot.isFinal` | whether this is the rally's last shot | boolean |  |
 | `shot.isVolley` | whether the ball was hit before bouncing | boolean |  |
 | `shot.isSpeedup` | whether the shot added significant pace near the kitchen | boolean |  |
@@ -24,7 +23,7 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.isPoach` | whether the hitter cut across in front of their partner to volley a ball that was headed to the partner | boolean |  |
 | `shot.isPassing` | whether the shot was a rally-ending drive or smash that got past the nearest opponent untouched; unknown in singles | boolean |  |
 | `shot.isPutaway` | whether the shot functioned as a putaway or rally finisher — a clean winner or a decisive attack that directly created the rally's end (can be a well-placed dink or drop, not only a hard hit) | boolean |  |
-| `shot.type` | the shot classification; never set on serves and returns (use shot.sequence for those) | string | "smash"\|"lob"\|"dink"\|"drop"\|"drive"\|"atp"\|"erne" |
+| `shot.type` | the shot classification; never set on serves and returns (shot.num 1 and 2) | string | "smash"\|"lob"\|"dink"\|"drop"\|"drive"\|"atp"\|"erne" |
 | `shot.verticalType` | the vertical character of the stroke, from strike height (dig ≤ 2.5ft, overhead ≥ 6ft) | string | "dig"\|"neutral"\|"overhead" |
 | `shot.strokeSide` | which side of the body the stroke was made on | string | "left"\|"right" |
 | `shot.strokeType` | forehand or backhand, from strokeSide and the hitter's handedness; needs augmented insights carrying handedness (strokeSide always works) | string | "forehand"\|"backhand" |
