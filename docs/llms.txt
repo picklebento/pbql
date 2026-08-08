@@ -147,7 +147,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - shot.num (number [1-based]): which shot of the rally this is (the serve is 1)
 - shot.sequence (string ["serve"|"return"|"3"|"4"|"5"]): the common name for this shot's position in the rally; unknown from the 6th shot on
 - shot.isFinal (boolean): whether this is the rally's last shot
-- shot.isVolley (boolean): whether the ball was hit out of the air
+- shot.isVolley (boolean): whether the ball was hit before bouncing
 - shot.isSpeedup (boolean): whether the shot added significant pace near the kitchen
 - shot.isReset (boolean): whether the shot took significant pace off the ball
 - shot.isPoach (boolean): whether the hitter cut across in front of their partner to volley a ball that was headed to the partner

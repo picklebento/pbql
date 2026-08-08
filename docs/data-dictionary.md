@@ -18,7 +18,7 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.num` | which shot of the rally this is (the serve is 1) | number | 1-based |
 | `shot.sequence` | the common name for this shot's position in the rally; unknown from the 6th shot on | string | "serve"\|"return"\|"3"\|"4"\|"5" |
 | `shot.isFinal` | whether this is the rally's last shot | boolean |  |
-| `shot.isVolley` | whether the ball was hit out of the air | boolean |  |
+| `shot.isVolley` | whether the ball was hit before bouncing | boolean |  |
 | `shot.isSpeedup` | whether the shot added significant pace near the kitchen | boolean |  |
 | `shot.isReset` | whether the shot took significant pace off the ball | boolean |  |
 | `shot.isPoach` | whether the hitter cut across in front of their partner to volley a ball that was headed to the partner | boolean |  |

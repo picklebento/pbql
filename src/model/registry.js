@@ -116,7 +116,7 @@ const SHOT_PROPS = [
   {
     path: 'isVolley',
     type: 'boolean',
-    doc: 'whether the ball was hit out of the air',
+    doc: 'whether the ball was hit before bouncing',
     extract: ctx => ctx.shot.is_volley
   },
   {
