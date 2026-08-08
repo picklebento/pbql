@@ -137,11 +137,15 @@ into the video. Distances are **feet**, speeds **mph**, angles **degrees**,
 quality/confidence **0–1**.
 
 Positions: `shot.from` (where the ball was struck), `shot.to` (where its
-flight ended), `shot.peak` (apex). Each has hitter-relative coordinates
-`x`/`y`/`z` — mirrored so the hitter's own baseline is `y = 0`, the net is
-`y = 22`, and `x` grows toward the hitter's right (0–20) — plus raw court
-coordinates `absX`/`absY`/`absZ` (origin at the far-left corner relative to
-the camera). `shot.from.zone` / `shot.to.zone` give the depth zone:
+flight ended), `shot.peak` (apex). Each has:
+
+- hitter-relative coordinates `x`/`y`/`z`, mirrored so the hitter's own
+  baseline is `y = 0`, the net is `y = 22`, and `x` grows toward the
+  hitter's right (0–20);
+- raw court coordinates `absX`/`absY`/`absZ` (origin at the far-left corner
+  relative to the camera).
+
+`shot.from.zone` / `shot.to.zone` give the depth zone:
 `"deep"|"mid"|"short"|"kitchen"` for `from.zone`, plus `"net"|"out"` for
 `to.zone` only (a flight can end at the net or out, but strikes always
 happen from a court zone).
@@ -185,10 +189,15 @@ the lone opponent is addressable as `opponent1` or `opponentLHS` or `opponentRHS
 it) is that player's **identity**, for `=`/`!=` only:
 `shot.hitter = me`, `shot.hitter != shot[-2].hitter`,
 `me.opponentLHS = shot[1].hitter`. Add a scalar segment to read a value
-instead: `id`, `team`, `name`, position (`pos.x`/`pos.y` in the player's own
-frame, `pos.absX`/`pos.absY` raw), and derived distances (`feetToKitchen`,
-`feetToNet`, …), all measured at the moment of the shot the player was
-reached through. `taggedWith(pattern)` is a method (§5.6).
+instead — each measured at the moment of the shot the player was reached
+through:
+
+- `id`, `team`, `name`
+- position: `pos.x`/`pos.y` in the player's own frame, `pos.absX`/`pos.absY`
+  raw
+- derived distances: `feetToKitchen`, `feetToNet`, …
+
+`taggedWith(pattern)` is a method (§5.6).
 
 Migration from the old flat player tokens:
 
@@ -210,16 +219,19 @@ Migration from the old flat player tokens:
   call function-style (`taggedWith(shot, "Alex*")`,
   `taggedWith(shot.hitter, "Alex*")`) is accepted and canonicalized (the
   method name is appended to the subject's navigation path).
-- **Subject-less utilities are functions**: `min(a, b)`, `max(a, b)`,
-  `exists(x)`, `abs(x)`, the unit conversions `kph(x)` (mph → km/h),
-  `toMs(x)` (seconds → ms), `toSecs(x)` (ms → seconds), and the formatter
-  `timecode(secs)` — a time in seconds as an `"m:ss"` string (minutes
-  unpadded, seconds floored and 2-padded: `timecode(222.9)` is `"3:42"`).
-  `timecode(secs, true)` appends a 0-based 2-padded frame counter
-  (`"m:ss:ff"`), counted at the game's own frame rate (from the insights
-  camera data); frames are unknown when the game has no usable fps. Negative times are
-  unknown, and the result is a string: it supports `=`/`!=` but not
-  ordering comparisons.
+- **Subject-less utilities are functions**:
+  - `min(a, b)` / `max(a, b)`
+  - `exists(x)`
+  - `abs(x)`
+  - unit conversions: `kph(x)` (mph → km/h), `toMs(x)` (seconds → ms),
+    `toSecs(x)` (ms → seconds)
+  - `timecode(secs)` — a time in seconds as an `"m:ss"` string (minutes
+    unpadded, seconds floored and 2-padded: `timecode(222.9)` is `"3:42"`).
+    `timecode(secs, true)` appends a 0-based 2-padded frame counter
+    (`"m:ss:ff"`), counted at the game's own frame rate (from the insights
+    camera data); frames are unknown when the game has no usable fps.
+    Negative times are unknown, and the result is a string: it supports
+    `=`/`!=` but not ordering comparisons.
 
 Every built-in receives the evaluation context implicitly; user-visible
 signatures never mention it.
@@ -311,14 +323,17 @@ and no context shot is added (the previous shot isn't fully included).
 `BEFORE max(1 shot, 2secs)` picks 3.5s: the window opens at 86.5s and the
 previous shot joins as context.
 
-**Defaults.** Writing either `CONTEXT` clause opts a shot-list out of the ±1
-default: the side you write is used and the side you omit falls to `0` (the
-bare flight, `hitTime`…`endTime` plus the host's presentation padding). So
-`CONTEXT BEFORE 0secs` on its own means no lead-in *or* lead-out. A projection
-(`SELECT` or `GROUP BY`) returns rows, not clips, so its context defaults to
-`0` on both sides and an explicit clause is an error (`PBQL_SELECT_CONTEXT`,
-`PBQL_GROUP_BY_CONTEXT`). Overlapping windows of adjacent selected shots are
-merged by the engine when producing clip lists.
+**Defaults.**
+
+- Writing either `CONTEXT` clause opts a shot-list out of the ±1 default:
+  the side you write is used and the side you omit falls to `0` (the bare
+  flight, `hitTime`…`endTime` plus the host's presentation padding). So
+  `CONTEXT BEFORE 0secs` on its own means no lead-in *or* lead-out.
+- A projection (`SELECT` or `GROUP BY`) returns rows, not clips, so its
+  context defaults to `0` on both sides and an explicit clause is an error
+  (`PBQL_SELECT_CONTEXT`, `PBQL_GROUP_BY_CONTEXT`).
+- Overlapping windows of adjacent selected shots are merged by the engine
+  when producing clip lists.
 
 ### 6.4 ORDER BY
 
@@ -348,9 +363,12 @@ purely cosmetic — units never change). Aggregates `count()`, `sum(x)`,
 aggregate and non-aggregate expressions is a validation error unless the
 non-aggregates are `GROUP BY` keys (§6.7). Aggregates coerce their inputs
 to numbers and skip unknowns:
-**booleans fold to 1/0** (so `sum(<condition>)` counts matches and
-`avg(<condition>)` is a rate, e.g. `avg(rally.winner = me.team)`), finite
-numbers pass through, and anything else (strings, …) is unknown and skipped;
+
+- **booleans fold to 1/0** — so `sum(<condition>)` counts matches and
+  `avg(<condition>)` is a rate, e.g. `avg(rally.winner = me.team)`;
+- finite numbers pass through;
+- anything else (strings, …) is unknown and skipped.
+
 `count()` counts selected shots.
 
 In CSV output, a string cell that starts with `=`, `+`, `-`, `@`, tab, or
@@ -389,9 +407,13 @@ group. Keys may not themselves contain aggregates.
 Row order: `ORDER BY` sorts the rows by its aggregate/key expressions
 (unknown/null values last regardless of direction) and `LIMIT` keeps the
 first n rows. Without `ORDER BY`, rows sort **ascending by key tuple**:
-numbers numerically, strings lexicographically (code-unit order), `false`
-before `true`, null keys last, and — across types, which a single key
-expression cannot produce today — booleans before numbers before strings.
+
+- numbers numerically;
+- strings lexicographically (code-unit order);
+- `false` before `true`;
+- null keys last;
+- across types (which a single key expression cannot produce today):
+  booleans before numbers before strings.
 
 There is no `HAVING` (future work): pre-filter shots in `WHERE`, or filter
 the grouped rows downstream.
