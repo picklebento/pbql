@@ -36,10 +36,16 @@ body {
 }
 
 nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
   display: flex;
   flex-wrap: wrap;
   gap: 1.1rem;
+  padding-top: 0.75rem;
   padding-bottom: 0.75rem;
+  margin-top: -0.75rem;
   margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--border);
 }
