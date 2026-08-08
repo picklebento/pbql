@@ -199,17 +199,6 @@ through:
 
 `taggedWith(pattern)` is a method (§5.6).
 
-Migration from the old flat player tokens:
-
-| old | new |
-|---|---|
-| `hitter = me` | `shot.hitter = me` |
-| `hitter.feetToKitchen <= 2.5` | `shot.hitter.feetToKitchen <= 2.5` |
-| `myTeammate.name = "Anna"` | `me.teammate.name = "Anna"` |
-| `myOpponentLHS` | `me.opponentLHS` |
-| `hittersOpponentRHS.name` | `shot.hitter.opponentRHS.name` |
-| — (was impossible) | `shot[1].hitter.name = "Joe"` (targeting) |
-
 ### 5.5 Calling conventions
 
 - **Zero-argument derived values are plain properties**:
