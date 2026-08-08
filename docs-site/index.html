@@ -77,9 +77,18 @@ CONTEXT AFTER rally</code></pre>
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND exists(shot.type)
 GROUP BY shot.type</code></pre>
+<p>How often we win the rally when I drive the third shot vs drop it
+(the third shot is one row per rally, so rallies are counted once):</p>
+<pre><code>SELECT shot.type, avg(rally.winner = me.team) AS "win rate", count()
+FROM "83gyqyc10y8f"
+WHERE shot.hitter = me AND shot.num = 3 AND shot.type IN ("drive", "drop")
+GROUP BY shot.type</code></pre>
 <p>
 Try these queries, or write your own, in the
-<a href="playground/">Playground</a>.
+<a href="playground/">Playground</a>. When you want more to draw on, the
+worked examples in <a href="llms.txt">llms.txt</a> and the
+<a href="data-dictionary.html">Data Dictionary</a> show everything you
+can query.
 </p>
 </main>
 </body>
