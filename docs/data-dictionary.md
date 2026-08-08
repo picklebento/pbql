@@ -52,38 +52,30 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.errors.faults.short` | whether the shot landed on the hitter's own side short of the net | boolean |  |
 | `shot.errors.faults.out.outcome` | whether the out ball landed or was played anyway | string | "landed"\|"intercepted" |
 | `shot.errors.faults.out.direction` | which way the ball went (or was headed) out — "long" past the baseline, "left"/"right" wide of a sideline from the hitter's perspective | string | "left"\|"right"\|"long" |
-| `shot.from.x` | where the ball was struck — hitter-frame x (0-20, grows to the hitter's right) | number | feet |
-| `shot.from.y` | where the ball was struck — hitter-frame y (own baseline 0, net 22) | number | feet |
-| `shot.from.z` | where the ball was struck — height above the ground | number | feet |
-| `shot.from.absX` | where the ball was struck — raw court x (far-left corner origin) | number | feet |
-| `shot.from.absY` | where the ball was struck — raw court y (far-left corner origin) | number | feet |
-| `shot.from.absZ` | where the ball was struck — height above the ground | number | feet |
-| `shot.from.feetToNearestSideline` | where the ball was struck — distance to the nearest sideline | number | feet |
-| `shot.from.feetToNearestBaseline` | where the ball was struck — distance to the nearest baseline | number | feet |
-| `shot.from.feetToNet` | where the ball was struck — distance to the plane of the net | number | feet |
+| `shot.from` | where the ball was struck | position |  |
 | `shot.from.zone` | depth zone the ball was struck from | string | "deep"\|"mid"\|"short"\|"kitchen" |
-| `shot.to.x` | where the ball's flight ended — hitter-frame x (0-20, grows to the hitter's right) | number | feet |
-| `shot.to.y` | where the ball's flight ended — hitter-frame y (own baseline 0, net 22) | number | feet |
-| `shot.to.z` | where the ball's flight ended — height above the ground | number | feet |
-| `shot.to.absX` | where the ball's flight ended — raw court x (far-left corner origin) | number | feet |
-| `shot.to.absY` | where the ball's flight ended — raw court y (far-left corner origin) | number | feet |
-| `shot.to.absZ` | where the ball's flight ended — height above the ground | number | feet |
-| `shot.to.feetToNearestSideline` | where the ball's flight ended — distance to the nearest sideline | number | feet |
-| `shot.to.feetToNearestBaseline` | where the ball's flight ended — distance to the nearest baseline | number | feet |
-| `shot.to.feetToNet` | where the ball's flight ended — distance to the plane of the net | number | feet |
+| `shot.to` | where the ball's flight ended | position |  |
 | `shot.to.zone` | depth zone where the ball's flight ended | string | "deep"\|"mid"\|"short"\|"kitchen"\|"net"\|"out" |
-| `shot.peak.x` | the highest point of the ball's flight — hitter-frame x (0-20, grows to the hitter's right) | number | feet |
-| `shot.peak.y` | the highest point of the ball's flight — hitter-frame y (own baseline 0, net 22) | number | feet |
-| `shot.peak.z` | the highest point of the ball's flight — height above the ground | number | feet |
-| `shot.peak.absX` | the highest point of the ball's flight — raw court x (far-left corner origin) | number | feet |
-| `shot.peak.absY` | the highest point of the ball's flight — raw court y (far-left corner origin) | number | feet |
-| `shot.peak.absZ` | the highest point of the ball's flight — height above the ground | number | feet |
-| `shot.peak.feetToNearestSideline` | the highest point of the ball's flight — distance to the nearest sideline | number | feet |
-| `shot.peak.feetToNearestBaseline` | the highest point of the ball's flight — distance to the nearest baseline | number | feet |
-| `shot.peak.feetToNet` | the highest point of the ball's flight — distance to the plane of the net | number | feet |
+| `shot.peak` | the highest point of the ball's flight | position |  |
 | `shot.isHitOnSide(side)` | whether the ball was struck on the given half ("left"\|"right") of the court in the hitter's frame (right = x >= 10) | boolean | |
 | `shot.taggedWith(pattern)` | whether the hitter matches this name pattern (case-insensitive, * wildcard; untagged players match their default "Player N" name) or exact email | boolean | |
 | `shot.inHighlight(kind)` | whether the shot falls inside a highlight of the given kind ("atp", "erne", "hands_battle" = a rapid volley exchange, "long_rally", "poach", "sequence" = a notable stretch of shots) | boolean | |
+
+## position
+
+The shape of `shot.from`, `shot.to`, and `shot.peak`: append one of these properties to read a value (`shot.peak.z`, `shot.to.feetToNet`).
+
+| Property | Description | Type | Unit / values |
+|---|---|---|---|
+| `.x` | hitter-frame x (0-20, grows to the hitter's right) | number | feet |
+| `.y` | hitter-frame y (own baseline 0, net 22) | number | feet |
+| `.z` | height above the ground | number | feet |
+| `.absX` | raw court x (far-left corner origin) | number | feet |
+| `.absY` | raw court y (far-left corner origin) | number | feet |
+| `.absZ` | height above the ground | number | feet |
+| `.feetToNearestSideline` | distance to the nearest sideline | number | feet |
+| `.feetToNearestBaseline` | distance to the nearest baseline | number | feet |
+| `.feetToNet` | distance to the plane of the net | number | feet |
 
 ## rally
 

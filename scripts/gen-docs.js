@@ -6,12 +6,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { REGISTRY } from '../src/model/registry.js'
+import { POSITION_ROOT_DOCS, POSITION_SUBPROPS, REGISTRY } from '../src/model/registry.js'
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const OBJECT_DOCS = {
   shot: 'The shot being tested. `shot[k]` addresses the shot k earlier/later in the same rally. `shot.hitter` navigates to the player who hit it.',
+  position: 'The shape of `shot.from`, `shot.to`, and `shot.peak`: append one of these properties to read a value (`shot.peak.z`, `shot.to.feetToNet`).',
   rally: 'The rally containing the current shot. `rally[k]` addresses neighboring rallies in the same game.',
   game: 'The session (one game of a possibly multi-game video) containing the shot.',
   player: 'A player value, reached from the root `me` or a shot\'s `hitter` (e.g. `shot.hitter`, `shot[1].hitter`) and stepped through the relations below. A path ending AT a player is its identity, for `=`/`!=` (`shot.hitter = me`). Scalar props are measured at the moment of the shot the player was reached through.'
@@ -21,10 +22,31 @@ const OBJECT_DOCS = {
 // split it and silently drop the values after the first
 const cell = text => String(text).replaceAll('|', '\\|')
 
+// The shot table shows each position as one position-typed row (its shape
+// is the shared `position` section) instead of nine near-identical rows;
+// the per-position zone rows keep their own entries.
+function collapsePositions (propList) {
+  const out = []
+  const seen = new Set()
+  for (const p of propList) {
+    const root = p.path.match(/^(from|to|peak)\./)?.[1]
+    if (root !== undefined && !p.path.endsWith('.zone')) {
+      if (!seen.has(root)) {
+        seen.add(root)
+        out.push({ path: root, type: 'position', doc: POSITION_ROOT_DOCS[root] })
+      }
+      continue
+    }
+    out.push(p)
+  }
+  return out
+}
+
 function propRows (objName, { propList, methodList, relationList }) {
   const rows = relationList.map(r =>
     `| \`${objName}.${r.name}\` | ${cell(r.doc)} | player | |`)
-  rows.push(...propList.map(p =>
+  const props = objName === 'shot' ? collapsePositions(propList) : propList
+  rows.push(...props.map(p =>
     `| \`${objName}.${p.path}\` | ${cell(p.doc)} | ${p.type} | ${cell(p.unit ?? '')} |`))
   rows.push(...methodList.map(m => {
     const args = m.args.map(a => a.name).join(', ')
@@ -51,6 +73,13 @@ function generateDictionary () {
       '| Property | Description | Type | Unit / values |',
       '|---|---|---|---|',
       ...propRows(objName, entry), '')
+    if (objName === 'shot') {
+      parts.push('## position', '', OBJECT_DOCS.position, '',
+        '| Property | Description | Type | Unit / values |',
+        '|---|---|---|---|',
+        ...POSITION_SUBPROPS.map(s =>
+          `| \`.${s.path}\` | ${cell(s.doc)} | number | ${cell(s.unit)} |`), '')
+    }
   }
   return parts.join('\n')
 }

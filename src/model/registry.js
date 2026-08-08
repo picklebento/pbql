@@ -49,10 +49,79 @@ function trajectory (ctx) {
   return ballMovement(ctx)?.trajectory
 }
 
-// Builds the property set for one position (from/to/peak): hitter-relative
-// x/y/z, raw absX/absY/absZ, and derived distances. The hitter's side (which
-// decides the mirror) comes from where the ball was struck.
-function positionProps (prefix, doc, getPos, extras = []) {
+// The shared shape of a position (shot.from / shot.to / shot.peak):
+// hitter-relative x/y/z, raw absX/absY/absZ, and derived distances.
+// Exported so the generated docs describe the position type once instead
+// of repeating nine rows per position. extractWith builds the extractor
+// from the position's raw accessor and its hitter-frame view; z and absZ
+// share one accessor because height has no mirrored frame.
+export const POSITION_SUBPROPS = [
+  {
+    path: 'x',
+    unit: 'feet',
+    doc: 'hitter-frame x (0-20, grows to the hitter\'s right)',
+    extractWith: (getPos, framed) => ctx => framed(ctx)?.x
+  },
+  {
+    path: 'y',
+    unit: 'feet',
+    doc: 'hitter-frame y (own baseline 0, net 22)',
+    extractWith: (getPos, framed) => ctx => framed(ctx)?.y
+  },
+  {
+    path: 'z',
+    unit: 'feet',
+    doc: 'height above the ground',
+    extractWith: getPos => ctx => getPos(ctx)?.z
+  },
+  {
+    path: 'absX',
+    unit: 'feet',
+    doc: 'raw court x (far-left corner origin)',
+    extractWith: getPos => ctx => getPos(ctx)?.x
+  },
+  {
+    path: 'absY',
+    unit: 'feet',
+    doc: 'raw court y (far-left corner origin)',
+    extractWith: getPos => ctx => getPos(ctx)?.y
+  },
+  {
+    path: 'absZ',
+    unit: 'feet',
+    doc: 'height above the ground',
+    extractWith: getPos => ctx => getPos(ctx)?.z
+  },
+  {
+    path: 'feetToNearestSideline',
+    unit: 'feet',
+    doc: 'distance to the nearest sideline',
+    extractWith: getPos => ctx => mapPos(getPos(ctx), feetToNearestSideline)
+  },
+  {
+    path: 'feetToNearestBaseline',
+    unit: 'feet',
+    doc: 'distance to the nearest baseline',
+    extractWith: getPos => ctx => mapPos(getPos(ctx), feetToNearestBaseline)
+  },
+  {
+    path: 'feetToNet',
+    unit: 'feet',
+    doc: 'distance to the plane of the net',
+    extractWith: getPos => ctx => mapPos(getPos(ctx), feetToNet)
+  }
+]
+
+// the one-line meaning of each position root, shared with the docs
+export const POSITION_ROOT_DOCS = {
+  from: 'where the ball was struck',
+  to: 'where the ball\'s flight ended',
+  peak: 'the highest point of the ball\'s flight'
+}
+
+// Builds a position's property entries. The hitter's side (which decides
+// the mirror) comes from where the ball was struck.
+function positionProps (prefix, getPos, extras = []) {
   function framed (ctx) {
     const pos = getPos(ctx)
     const struckAt = trajectory(ctx)?.start?.location
@@ -61,27 +130,15 @@ function positionProps (prefix, doc, getPos, extras = []) {
     }
     return toPlayerFrame(pos, isOnFarSide(struckAt))
   }
-  const p = (path, type, unit, docStr, extract) =>
-    ({ path: `${prefix}.${path}`, type, unit, doc: docStr, extract })
-  // height has no mirrored frame, so z and absZ share one accessor
-  const height = ctx => getPos(ctx)?.z
+  const doc = POSITION_ROOT_DOCS[prefix]
   return [
-    p('x', 'number', 'feet', `${doc} — hitter-frame x (0-20, grows to the hitter's right)`,
-      ctx => framed(ctx)?.x),
-    p('y', 'number', 'feet', `${doc} — hitter-frame y (own baseline 0, net 22)`,
-      ctx => framed(ctx)?.y),
-    p('z', 'number', 'feet', `${doc} — height above the ground`, height),
-    p('absX', 'number', 'feet', `${doc} — raw court x (far-left corner origin)`,
-      ctx => getPos(ctx)?.x),
-    p('absY', 'number', 'feet', `${doc} — raw court y (far-left corner origin)`,
-      ctx => getPos(ctx)?.y),
-    p('absZ', 'number', 'feet', `${doc} — height above the ground`, height),
-    p('feetToNearestSideline', 'number', 'feet', `${doc} — distance to the nearest sideline`,
-      ctx => mapPos(getPos(ctx), feetToNearestSideline)),
-    p('feetToNearestBaseline', 'number', 'feet', `${doc} — distance to the nearest baseline`,
-      ctx => mapPos(getPos(ctx), feetToNearestBaseline)),
-    p('feetToNet', 'number', 'feet', `${doc} — distance to the plane of the net`,
-      ctx => mapPos(getPos(ctx), feetToNet)),
+    ...POSITION_SUBPROPS.map(sub => ({
+      path: `${prefix}.${sub.path}`,
+      type: 'number',
+      unit: sub.unit,
+      doc: `${doc} — ${sub.doc}`,
+      extract: sub.extractWith(getPos, framed)
+    })),
     ...extras
   ]
 }
@@ -361,8 +418,7 @@ const SHOT_PROPS = [
       'perspective',
     extract: ctx => ctx.shot.errors?.faults?.out?.direction
   },
-  ...positionProps('from', 'where the ball was struck',
-    ctx => trajectory(ctx)?.start?.location,
+  ...positionProps('from', ctx => trajectory(ctx)?.start?.location,
     [{
       path: 'from.zone',
       type: 'string',
@@ -373,8 +429,7 @@ const SHOT_PROPS = [
       doc: 'depth zone the ball was struck from',
       extract: ctx => trajectory(ctx)?.start?.zone
     }]),
-  ...positionProps('to', 'where the ball\'s flight ended',
-    ctx => trajectory(ctx)?.end?.location,
+  ...positionProps('to', ctx => trajectory(ctx)?.end?.location,
     [{
       path: 'to.zone',
       type: 'string',
@@ -382,8 +437,7 @@ const SHOT_PROPS = [
       doc: 'depth zone where the ball\'s flight ended',
       extract: ctx => trajectory(ctx)?.end?.zone
     }]),
-  ...positionProps('peak', 'the highest point of the ball\'s flight',
-    ctx => trajectory(ctx)?.peak)
+  ...positionProps('peak', ctx => trajectory(ctx)?.peak)
 ]
 
 function msToSecs (ms) {
