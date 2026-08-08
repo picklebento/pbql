@@ -290,7 +290,7 @@ BEFORE/AFTER):
   the rally's own start/end by at most `maxSecsBeyondRally` (an engine
   option, default **3s**). Windows are clamped at 0 at the video's start,
   and at the video's end when host-augmented insights carry the video
-  duration (`session.videoDurationMs`, §8); bucket-fetched files don't, so
+  duration (`session.videoDurationMs`, §7); bucket-fetched files don't, so
   their windows may extend past the last rally into the trailing footage.
 - `rally` — to the rally's boundary (what the Shot Explorer calls
   `numBefore=999`).
@@ -400,17 +400,7 @@ first n rows. Without `ORDER BY`, rows sort **ascending by key tuple**:
 There is no `HAVING` (future work): pre-filter shots in `WHERE`, or filter
 the grouped rows downstream.
 
-## 7. Errors
-
-Every phase (lex, parse, validate, evaluate) reports
-`{ code, message, line, col, length, hint? }` with 1-indexed positions.
-Codes are stable strings (`PBQL_LEX_ERROR`, `PBQL_PARSE_ERROR`,
-`PBQL_UNEXPECTED_END`, `PBQL_UNKNOWN_PROPERTY`, `PBQL_TYPE_MISMATCH`,
-`PBQL_UNKNOWN_ENUM_VALUE`, …).
-Unknown property names come with a nearest-match hint
-(`did you mean "isVolley"?`).
-
-## 8. Data requirements
+## 7. Data requirements
 
 The engine evaluates PB Vision **insights** JSON, latest major version
 (4.x), augmented field names. Older or malformed files are skipped and
