@@ -39,7 +39,7 @@ How to use these:
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.hasFault
+WHERE shot.hitter = me AND shot.num = 1 AND shot.hasFault
 ```
 
 ### "[3 Tricks to immediately Add SERIOUS POWER to Your Serve](https://www.youtube.com/watch?v=XZXix27vyvg)" (2025) / "[7 Reasons Your Serve Has No Power (& How to Serve Harder)](https://www.youtube.com/watch?v=V0HhlLojf0k)" (2024)
@@ -50,7 +50,7 @@ WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.hasFault
 ```sql
 SELECT shot.hitTime AS "when (s)", shot.speed AS "mph", shot.to.zone AS "depth"
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "serve"
+WHERE shot.hitter = me AND shot.num = 1
 ORDER BY shot.speed DESC
 ```
 
@@ -61,7 +61,7 @@ ORDER BY shot.speed DESC
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.sequence = "serve" AND shot.peak.z >= 12
+WHERE shot.num = 1 AND shot.peak.z >= 12
 CONTEXT AFTER 1 shot
 ```
 
@@ -77,7 +77,7 @@ Zane Navratil's post-ban weapon: heavy topspin, landed deep.
 ```sql
 SELECT shot.hitTime AS "when (s)", shot.speed AS "mph"
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "serve" AND shot.to.zone = "deep"
+WHERE shot.hitter = me AND shot.num = 1 AND shot.to.zone = "deep"
 ORDER BY shot.speed DESC
 ```
 
@@ -93,7 +93,7 @@ pace instead of RPM.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "return" AND shot.to.zone = "deep"
+WHERE shot.hitter = me AND shot.num = 2 AND shot.to.zone = "deep"
 CONTEXT AFTER 1 shot
 ```
 
@@ -103,7 +103,7 @@ CONTEXT AFTER 1 shot
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "return" AND shot.direction = "DownTheMiddle"
+WHERE shot.hitter = me AND shot.num = 2 AND shot.direction = "DownTheMiddle"
 ```
 
 ### "[The Serve RETURN: The Most Undervalued Shot in Pickleball](https://www.youtube.com/watch?v=722mGzXn4RA)" (2023)
@@ -113,7 +113,7 @@ WHERE shot.hitter = me AND shot.sequence = "return" AND shot.direction = "DownTh
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "return" AND (shot.hasError OR shot.to.zone IN ("kitchen", "short"))
+WHERE shot.hitter = me AND shot.num = 2 AND (shot.hasError OR shot.to.zone IN ("kitchen", "short"))
 CONTEXT BEFORE 1 shot
 ```
 
@@ -132,7 +132,7 @@ shanked.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "3" AND shot.type = "drop" AND shot.to.zone = "kitchen"
+WHERE shot.hitter = me AND shot.num = 3 AND shot.type = "drop" AND shot.to.zone = "kitchen"
 CONTEXT BEFORE rally
 CONTEXT AFTER rally
 ```
@@ -143,7 +143,7 @@ CONTEXT AFTER rally
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "3" AND shot.type = "drop" AND shot.errors.popup = "exploited"
+WHERE shot.hitter = me AND shot.num = 3 AND shot.type = "drop" AND shot.errors.popup = "exploited"
 CONTEXT AFTER 1 shot
 ```
 
@@ -153,7 +153,7 @@ CONTEXT AFTER 1 shot
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "3" AND shot.type = "drive" AND shot.heightOverNet < 5
+WHERE shot.hitter = me AND shot.num = 3 AND shot.type = "drive" AND shot.heightOverNet < 5
 ORDER BY shot.speed DESC
 LIMIT 15
 ```
@@ -166,7 +166,7 @@ LIMIT 15
 ```sql
 SELECT shot.type, shot.speed AS "mph", shot.quality.execution AS "execution", shot.winnerType
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "3"
+WHERE shot.hitter = me AND shot.num = 3
 ORDER BY shot.hitTime
 ```
 
@@ -176,7 +176,7 @@ ORDER BY shot.hitTime
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "4" AND shot.isVolley
+WHERE shot.hitter = me AND shot.num = 4 AND shot.isVolley
 CONTEXT BEFORE 1 shot
 ```
 
@@ -433,7 +433,7 @@ Anna Leigh's green light: a short return means drive it.
 
 ```sql
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "3" AND shot.type = "drive" AND shot[-1].to.zone IN ("short", "kitchen")
+WHERE shot.hitter = me AND shot.num = 3 AND shot.type = "drive" AND shot[-1].to.zone IN ("short", "kitchen")
 CONTEXT BEFORE 1 shot
 ```
 
@@ -562,7 +562,7 @@ approximation exists) offers a runnable **Meanwhile:** query.
 ```
 SELECT shot.hitTime AS "when (s)", shot.to.zone AS "depth", shot.heightOverNet AS "ft over net"
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.sequence = "return" AND shot.verticalType = "slice"
+WHERE shot.hitter = me AND shot.num = 2 AND shot.verticalType = "slice"
 ```
 
 **Missing:** spin-based stroke classes. In practice `shot.verticalType`
