@@ -180,7 +180,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - shot.errors.faults.net (boolean): whether the net stopped the ball (never unknown: absent fault data means the net did not stop it)
 - shot.errors.faults.short (boolean): whether the shot landed on the hitter's own side short of the net (never unknown: absent fault data means it did not)
 - shot.errors.faults.out.outcome (string ["landed"|"intercepted"]): whether the out ball landed or was played anyway
-- shot.errors.faults.out.direction (string ["left"|"right"|"long"]): which way the ball went (or was headed) out — "long" past the baseline, else wide of a sideline
+- shot.errors.faults.out.direction (string ["left"|"right"|"long"]): which way the ball went (or was headed) out — "long" past the baseline, "left"/"right" wide of a sideline from the hitter's perspective
 - shot.from.x (number [feet]): where the ball was struck — hitter-frame x (0-20, grows to the hitter's right)
 - shot.from.y (number [feet]): where the ball was struck — hitter-frame y (own baseline 0, net 22)
 - shot.from.z (number [feet]): where the ball was struck — height above the ground

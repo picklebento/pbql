@@ -51,7 +51,7 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.errors.faults.net` | whether the net stopped the ball (never unknown: absent fault data means the net did not stop it) | boolean |  |
 | `shot.errors.faults.short` | whether the shot landed on the hitter's own side short of the net (never unknown: absent fault data means it did not) | boolean |  |
 | `shot.errors.faults.out.outcome` | whether the out ball landed or was played anyway | string | "landed"\|"intercepted" |
-| `shot.errors.faults.out.direction` | which way the ball went (or was headed) out — "long" past the baseline, else wide of a sideline | string | "left"\|"right"\|"long" |
+| `shot.errors.faults.out.direction` | which way the ball went (or was headed) out — "long" past the baseline, "left"/"right" wide of a sideline from the hitter's perspective | string | "left"\|"right"\|"long" |
 | `shot.from.x` | where the ball was struck — hitter-frame x (0-20, grows to the hitter's right) | number | feet |
 | `shot.from.y` | where the ball was struck — hitter-frame y (own baseline 0, net 22) | number | feet |
 | `shot.from.z` | where the ball was struck — height above the ground | number | feet |

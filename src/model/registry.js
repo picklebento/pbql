@@ -357,7 +357,8 @@ const SHOT_PROPS = [
     type: 'string',
     unit: '"left"|"right"|"long"',
     doc: 'which way the ball went (or was headed) out — "long" past the ' +
-      'baseline, else wide of a sideline',
+      'baseline, "left"/"right" wide of a sideline from the hitter\'s ' +
+      'perspective',
     extract: ctx => ctx.shot.errors?.faults?.out?.direction
   },
   ...positionProps('from', 'where the ball was struck',
