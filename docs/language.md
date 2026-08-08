@@ -255,9 +255,9 @@ CONTEXT BEFORE rally
 Each selected shot has a video window. A **shot-list query with no `CONTEXT`
 clause** frames each clip with a one-shot lead-in and lead-out (as if
 `CONTEXT BEFORE 1 shot` / `CONTEXT AFTER 1 shot` were written) — this is the
-default, so a normal clip query needs no `CONTEXT`. `CONTEXT`
-widens the window; durations are **positive magnitudes** (direction comes from
-BEFORE/AFTER):
+default, so a normal clip query needs no `CONTEXT`. A written `CONTEXT` clause
+overrides that default; durations are **positive magnitudes** (direction comes
+from BEFORE/AFTER):
 
 - `N shots` — include the N previous (or following) shots **in the same
   rally**; those shots also join the result marked as context. Clamped to
@@ -323,14 +323,16 @@ to numbers and skip unknowns:
 - finite numbers pass through;
 - anything else (strings, …) is unknown and skipped.
 
-`count()` counts selected shots.
+`count()` counts selected shots. PBQL's underlying rows are shots, so rally
+and game properties repeat on every selected shot. To calculate a result per
+rally, filter to one shot per rally, commonly with `shot.num = 1`.
 
 ### 6.7 GROUP BY
 
 ```sql
-SELECT shot.type, avg(rally.winner = me.team) AS "win rate"
+SELECT shot.type, avg(shot.speed) AS "average speed (mph)"
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me
+WHERE shot.hitter = me AND exists(shot.type)
 GROUP BY shot.type
 ```
 

@@ -45,8 +45,8 @@ the clips into a reel.
   <li><a href="cli.html">CLI</a> — run queries from the terminal against
     pb.vision videos or local insights files; export JSON, CSV, an EDL, or
     an ffmpeg command.</li>
-  <li><a href="llms.txt">llms.txt</a> — a compact guide for LLMs writing
-    PBQL, with the full property list and worked examples.</li>
+  <li><a href="llms.txt">llms.txt</a> — the machine-facing reference used
+    by LLMs that write PBQL.</li>
 </ul>
 <h2>Install</h2>
 <p>
@@ -58,9 +58,9 @@ The library and CLI live at
 <p>Show me all my drop shots:</p>
 <pre><code>FROM "83gyqyc10y8f"
 WHERE shot.type = "drop" AND shot.hitter = me</code></pre>
-<p>My highest-quality shots, best first, top 20:</p>
+<p>My 20 highest-quality detected shots, best first:</p>
 <pre><code>FROM "83gyqyc10y8f"
-WHERE shot.hitter = me AND shot.quality.overall >= 0.8
+WHERE shot.hitter = me AND exists(shot.quality.overall)
 ORDER BY shot.quality.overall DESC
 LIMIT 20</code></pre>
 <p>Anna's winners, with the shot before each one for context:</p>
@@ -72,14 +72,14 @@ CONTEXT BEFORE 1 shot</code></pre>
 WHERE rally.winner = me.team
 CONTEXT BEFORE rally
 CONTEXT AFTER rally</code></pre>
-<p>My win rate by shot type:</p>
-<pre><code>SELECT shot.type, avg(rally.winner = me.team) AS "win rate", count()
+<p>My average shot speed by shot type:</p>
+<pre><code>SELECT shot.type, avg(shot.speed) AS "average speed (mph)"
 FROM "83gyqyc10y8f"
-WHERE shot.hitter = me
+WHERE shot.hitter = me AND exists(shot.type)
 GROUP BY shot.type</code></pre>
 <p>
-More worked examples, with the reasoning patterns behind them, are in
-<a href="llms.txt">llms.txt</a>.
+Try these queries, or write your own, in the
+<a href="playground/">Playground</a>.
 </p>
 </main>
 </body>
