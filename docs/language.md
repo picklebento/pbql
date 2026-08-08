@@ -353,17 +353,8 @@ group. Keys may not themselves contain aggregates.
 
 Row order: `ORDER BY` sorts the rows by its aggregate/key expressions
 (unknown/null values last regardless of direction) and `LIMIT` keeps the
-first n rows. Without `ORDER BY`, rows sort **ascending by key tuple**:
-
-- numbers numerically;
-- strings lexicographically (code-unit order);
-- `false` before `true`;
-- null keys last;
-- across types (which a single key expression cannot produce today):
-  booleans before numbers before strings.
-
-There is no `HAVING` (future work): pre-filter shots in `WHERE`, or filter
-the grouped rows downstream.
+first n rows. Without `ORDER BY`, rows are in a stable ascending order by
+group key.
 
 ## 7. Data requirements
 
