@@ -17,14 +17,18 @@ const OBJECT_DOCS = {
   player: 'A player value, reached from the root `me` or a shot\'s `hitter` (e.g. `shot.hitter`, `shot[1].hitter`) and stepped through the relations below. A path ending AT a player is its identity, for `=`/`!=` (`shot.hitter = me`). Scalar props are measured at the moment of the shot the player was reached through.'
 }
 
+// pipes inside a cell (enum unit strings like "a"|"b") would otherwise
+// split it and silently drop the values after the first
+const cell = text => String(text).replaceAll('|', '\\|')
+
 function propRows (objName, { propList, methodList, relationList }) {
   const rows = relationList.map(r =>
-    `| \`${objName}.${r.name}\` | ${r.doc} | player | |`)
+    `| \`${objName}.${r.name}\` | ${cell(r.doc)} | player | |`)
   rows.push(...propList.map(p =>
-    `| \`${objName}.${p.path}\` | ${p.doc} | ${p.type} | ${p.unit ?? ''} |`))
+    `| \`${objName}.${p.path}\` | ${cell(p.doc)} | ${p.type} | ${cell(p.unit ?? '')} |`))
   rows.push(...methodList.map(m => {
     const args = m.args.map(a => a.name).join(', ')
-    return `| \`${objName}.${m.name}(${args})\` | ${m.doc} | boolean | |`
+    return `| \`${objName}.${m.name}(${args})\` | ${cell(m.doc)} | boolean | |`
   }))
   return rows
 }
