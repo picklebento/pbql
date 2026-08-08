@@ -90,6 +90,7 @@ The rally containing the current shot. `rally[k]` addresses neighboring rallies 
 | `rally.duration` | how long the rally lasted | number | seconds |
 | `rally.winner` | which team won the rally | number | 0\|1 |
 | `rally.allPlayersReachedKitchen` | whether every player reached the kitchen line this rally | boolean |  |
+| `rally.count(condition)` | how many of the rally's shots satisfy the condition; inside it, shot (and every player position) refers to each shot of the rally in turn, and shots where the condition is unknown are not counted | number | |
 
 ## game
 

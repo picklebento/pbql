@@ -917,9 +917,22 @@ function toMaps (props, methods = [], relations = []) {
   }
 }
 
+// Rally methods are evaluated by the engine directly: the condition
+// argument is an expression evaluated once per shot of the rally (with
+// `shot` re-rooted to each in turn), not a value -- so there is no apply()
+// here, unlike shot/player methods.
+const RALLY_METHODS = [
+  {
+    name: 'count',
+    args: [{ name: 'condition', type: 'condition' }],
+    type: 'number',
+    doc: 'how many of the rally\'s shots satisfy the condition; inside it, shot (and every player position) refers to each shot of the rally in turn, and shots where the condition is unknown are not counted'
+  }
+]
+
 export const REGISTRY = {
   shot: toMaps(SHOT_PROPS, SHOT_METHODS, SHOT_RELATIONS),
-  rally: toMaps(RALLY_PROPS),
+  rally: toMaps(RALLY_PROPS, RALLY_METHODS),
   game: toMaps(GAME_PROPS),
   player: toMaps(PLAYER_PROPS, PLAYER_METHODS, PLAYER_RELATIONS)
 }

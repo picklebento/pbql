@@ -74,6 +74,22 @@ function evalProp (node, ctx) {
     subCtx = { ...ctx, rally: rallies[rallyIdx], rallyIdx }
   }
 
+  // rally.count(condition): how many of the rally's shots satisfy the
+  // condition, which is re-rooted so `shot` (and every position) means
+  // each shot of the rally in turn; unknown does not count
+  if (node.args !== undefined && base.object === 'rally' &&
+      node.path.length === 1 && node.path[0] === 'count') {
+    const shots = subCtx.rally.shots ?? []
+    let count = 0
+    for (let shotIdx = 0; shotIdx < shots.length; shotIdx++) {
+      const innerCtx = { ...subCtx, shot: shots[shotIdx], shotIdx }
+      if (evalExpr(node.args[0], innerCtx) === true) {
+        count++
+      }
+    }
+    return count
+  }
+
   // advance the cursor across leading relation segments
   let i = 0
   while (i < node.path.length) {

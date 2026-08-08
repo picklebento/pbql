@@ -50,7 +50,7 @@ function propRows (objName, { propList, methodList, relationList }) {
     `| \`${objName}.${p.path}\` | ${cell(p.doc)} | ${p.type} | ${cell(p.unit ?? '')} |`))
   rows.push(...methodList.map(m => {
     const args = m.args.map(a => a.name).join(', ')
-    return `| \`${objName}.${m.name}(${args})\` | ${cell(m.doc)} | boolean | |`
+    return `| \`${objName}.${m.name}(${args})\` | ${cell(m.doc)} | ${m.type ?? 'boolean'} | |`
   }))
   return rows
 }

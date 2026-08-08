@@ -66,6 +66,24 @@ describe('analyze()', () => {
       hint: 'did you mean "taggedWith"?'
     })
     expect(analyzeWhere('shot.taggedWith("x", "y")')[0].code).toBe('PBQL_BAD_ARITY')
+    // rally.count: a condition argument, validated recursively, one level
+    expect(analyzeWhere('rally.count(shot.hitter = me) >= 3')).toEqual([])
+    expect(analyzeWhere('rally.count() = 1')[0].code).toBe('PBQL_BAD_ARITY')
+    expect(analyzeWhere('rally.count(shot.nope) = 1')[0].code)
+      .toBe('PBQL_UNKNOWN_PROPERTY')
+    expect(analyzeWhere(
+      'rally.count(rally.count(shot.num = 1) = 1) > 0')[0].code)
+      .toBe('PBQL_NESTED_COUNT')
+    expect(analyzeWhere(
+      'rally.count(NOT (rally.count(shot.num = 1) = 1)) > 0')[0].code)
+      .toBe('PBQL_NESTED_COUNT')
+    // its result is a NUMBER: comparing to a string is a type error
+    expect(analyzeWhere('rally.count(shot.num = 1) = "three"')[0].code)
+      .toBe('PBQL_TYPE_MISMATCH')
+    // an unresolvable method stays untyped, so only the unknown-method
+    // error fires (no bogus type error stacked on top)
+    expect(analyzeWhere('shot.quality.taggedWith("x") = 1').map(e => e.code))
+      .toEqual(['PBQL_UNKNOWN_METHOD'])
     expect(analyzeWhere('shot.quality.taggedWith("x")')[0].code)
       .toBe('PBQL_UNKNOWN_METHOD')
   })

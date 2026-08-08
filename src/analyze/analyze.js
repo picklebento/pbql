@@ -102,8 +102,16 @@ function inferType (node) {
     case 'neg': return 'number'
     case 'prop': {
       const { typeName, rest } = walkRelations(node.base, node.path)
-      if (node.args || rest.length === 0) {
-        return undefined // methods are boolean; player identities compare loosely
+      if (node.args) {
+        // most methods stay untyped (boolean, comparing loosely); a method
+        // that declares a result type (rally.count -> number) reports it
+        const method = rest.length === 1
+          ? REGISTRY[typeName].methods.get(rest[0])
+          : undefined
+        return method?.type
+      }
+      if (rest.length === 0) {
+        return undefined // player identities compare loosely
       }
       return REGISTRY[typeName].props.get(rest.join('.'))?.type
     }
@@ -111,6 +119,24 @@ function inferType (node) {
     // (min/max double as duration combinators, exists/methods are boolean)
     case 'call': return node.name === 'timecode' ? 'string' : undefined
     default: return undefined
+  }
+}
+
+// walks an expression, invoking fn on every rally.count(...) node within
+function forEachRallyCount (node, fn) {
+  if (node === undefined || typeof node !== 'object') {
+    return
+  }
+  if (node.kind === 'prop' && node.args !== undefined &&
+      node.base.object === 'rally' &&
+      node.path.length === 1 && node.path[0] === 'count') {
+    fn(node)
+  }
+  for (const key of ['arg', 'lhs', 'rhs']) {
+    forEachRallyCount(node[key], fn)
+  }
+  for (const child of node.args ?? []) {
+    forEachRallyCount(child, fn)
   }
 }
 
@@ -211,8 +237,17 @@ export function analyze (query) {
             err(node, 'PBQL_BAD_ARITY',
               `${name}() takes ${method.args.length} argument(s), got ${node.args.length}`)
           } else {
-            // enum-typed arguments only accept their declared values
             method.args.forEach((spec, i) => {
+              // a condition argument is a nested boolean expression; one
+              // level only -- rally.count inside rally.count is an error
+              if (spec.type === 'condition') {
+                forEachRallyCount(node.args[i], inner =>
+                  err(inner, 'PBQL_NESTED_COUNT',
+                    'rally.count() cannot appear inside a rally.count() ' +
+                    'condition'))
+                return
+              }
+              // enum-typed arguments only accept their declared values
               const values = enumValuesOf(spec.unit)
               if (values !== undefined && node.args[i].kind === 'lit') {
                 checkEnumValue(node.args[i], values, `${name}() ${spec.name}`,

@@ -379,6 +379,36 @@ describe('coverage edges', () => {
     expect(singles.shots).toEqual([])
   })
 
+  test('rally.count() counts condition-satisfying shots per rally', () => {
+    // rally 2 is the only rally where p0 stood near the kitchen twice
+    expect(shotsWhere('rally.count(me.isNearKitchen) >= 2'))
+      .toEqual([[2, 0], [2, 1], [2, 2], [2, 3]])
+    // exactly one drop: rally 0
+    expect(shotsWhere('rally.count(shot.type = "drop") = 1'))
+      .toEqual([[0, 0], [0, 1], [0, 2]])
+    // unknown never counts: rally 1's second shot has no position data, so
+    // its near-kitchen count is 0, not unknown
+    expect(shotsWhere('rally.count(me.isNearKitchen) = 0 AND rally.num = 2'))
+      .toHaveLength(2)
+    // relative rally offsets resolve before counting; out-of-range is
+    // unknown (rally 0 has no predecessor)
+    expect(shotsWhere('rally[-1].count(shot.num = 1) = 1'))
+      .toEqual([[1, 0], [1, 1], [2, 0], [2, 1], [2, 2], [2, 3]])
+    // usable as a SELECT column and GROUP BY-free projection input
+    const rows = runQuery({
+      text: 'SELECT rally.num, rally.count(shot.hitter = me) AS "mine" ' +
+        'FROM "testvid00001" WHERE shot.num = 1',
+      games: [makeDoublesGame()]
+    })
+    expect(rows.errors).toBeUndefined()
+    expect(rows.rows).toEqual([[1, 1], [2, 1], [3, 1]])
+    // a bare context with no rally shots counts zero
+    expect(evalExpr(
+      parse('FROM "x" WHERE rally.count(shot.num = 1) = 0').ast.where,
+      { game: { rallies: [{}] }, rally: {}, rallyIdx: 0, shot: {}, shotIdx: 0 }))
+      .toBe(true)
+  })
+
   test('game-object properties evaluate in queries', () => {
     expect(shotsWhere('game.numRallies = 3')).toHaveLength(9)
     expect(shotsWhere('game.winner = me.team')).toHaveLength(9)
