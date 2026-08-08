@@ -33,8 +33,10 @@ function nav (activeHref) {
 }
 
 // wraps rendered markdown in the shared chrome (the landing page and the
-// playground are authored as complete HTML files instead)
+// playground are authored as complete HTML files instead); each page gets
+// a main class ("page-<name>") so the stylesheet can scope per-page rules
 function page (title, body, activeHref) {
+  const pageClass = `page-${activeHref.replace(/\..*$|\/$/, '')}`
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -47,7 +49,7 @@ function page (title, body, activeHref) {
 <nav>
 ${nav(activeHref)}
 </nav>
-<main>
+<main class="${pageClass}">
 ${body}
 </main>
 </body>

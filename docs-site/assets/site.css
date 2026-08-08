@@ -84,6 +84,20 @@ th, td {
 }
 th { background: var(--code-bg); }
 
+/* the dictionary's enum strings are unbreakable, so auto layout starves
+   the Description column; fix the proportions and let cells wrap */
+.page-data-dictionary table {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+}
+.page-data-dictionary th:nth-child(1) { width: 24%; }
+.page-data-dictionary th:nth-child(2) { width: 47%; }
+.page-data-dictionary th:nth-child(3) { width: 8%; }
+.page-data-dictionary th:nth-child(4) { width: 21%; }
+.page-data-dictionary td { overflow-wrap: break-word; }
+.page-data-dictionary td:nth-child(4) { overflow-wrap: anywhere; }
+
 /* --- playground --- */
 .pg-row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin: 0.6rem 0; }
 fieldset {
