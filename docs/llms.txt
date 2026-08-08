@@ -57,7 +57,9 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - GROUP BY computes per-group breakdowns (win rate by shot type, avg
   speed by player) in one query; with it, every SELECT/ORDER BY item
   must be an aggregate or one of the group keys, and CONTEXT is not
-  allowed.
+  allowed. HAVING (after GROUP BY) filters the grouped rows using
+  aggregates and group keys, e.g. GROUP BY rally.num HAVING
+  count() >= 4.
 - WHERE is required in every query — there is no bare FROM … GROUP BY.
   When no filter is wanted (count everything, a whole-game breakdown),
   write WHERE true.
@@ -515,4 +517,12 @@ Q: Show me everything about my serves as a table
     SELECT *
     FROM "83gyqyc10y8f"
     WHERE shot.hitter = me AND shot.num = 1
+
+Q: Rally numbers and shot counts for rallies with at least four shots
+
+    SELECT rally.num, count()
+    FROM "83gyqyc10y8f"
+    WHERE shot.num >= 1
+    GROUP BY rally.num
+    HAVING count() >= 4
 

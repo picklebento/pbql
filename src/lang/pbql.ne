@@ -44,16 +44,17 @@
 @lexer pbqlLexer
 @preprocessor module
 
-query -> select:? from where groupBy:? ctxBefore:? ctxAfter:? orderBy:? limit:?
+query -> select:? from where groupBy:? having:? ctxBefore:? ctxAfter:? orderBy:? limit:?
   {% d => ({
        kind: 'query',
        select: d[0],
        sources: d[1],
        where: d[2],
        groupBy: d[3],
-       context: resolveContext(d[0], d[3], d[4], d[5]),
-       orderBy: d[6],
-       limit: d[7]
+       having: d[4],
+       context: resolveContext(d[0], d[3], d[5], d[6]),
+       orderBy: d[7],
+       limit: d[8]
      }) %}
 
 # ---- SELECT ---------------------------------------------------------------
@@ -163,6 +164,7 @@ segName ->
   | %kw_where   {% d => d[0].text %}
   | %kw_limit   {% d => d[0].text %}
   | %kw_as      {% d => d[0].text %}
+  | %kw_having  {% d => d[0].text %}
   | %kw_in      {% d => d[0].text %}
   | %kw_and     {% d => d[0].text %}
   | %kw_or      {% d => d[0].text %}
@@ -203,6 +205,9 @@ duration ->
        } %}
 # the singular "shot" is an accepted alias for the shots unit
 shotsUnit -> %unit_shots {% id %} | %kw_shot {% id %}
+
+# ---- HAVING (filters grouped rows; validated against GROUP BY) ------------
+having -> %kw_having expr {% d => d[1] %}
 
 # ---- GROUP BY --------------------------------------------------------------
 # grouped output is one row per key tuple; the analyzer holds SELECT and

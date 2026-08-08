@@ -355,6 +355,14 @@ Aggregates evaluate per group — `count()` counts the group's shots and
 §6.6. Group keys are constant within their group and evaluate once per
 group. Keys may not themselves contain aggregates.
 
+`HAVING <condition>` (written after `GROUP BY`) filters the grouped rows
+before `ORDER BY`/`LIMIT`. Aggregates and group keys combine freely in
+the condition — `HAVING count() >= 4`, `HAVING rally.num >= 2 AND
+avg(shot.speed) > 25` — but a bare per-shot property is a validation
+error (it has no single value within a group). A group whose condition
+is unknown (say, an aggregate over all-unknown inputs) is dropped, like
+`WHERE`.
+
 Row order: `ORDER BY` sorts the rows by its aggregate/key expressions
 (unknown/null values last regardless of direction) and `LIMIT` keeps the
 first n rows. Without `ORDER BY`, rows are in a stable ascending order by

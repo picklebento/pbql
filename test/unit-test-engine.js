@@ -428,6 +428,25 @@ describe('coverage edges', () => {
     expect(r.rows[0][r.columns.indexOf('rally.num')]).toBe(1)
   })
 
+  test('HAVING filters grouped rows before ORDER BY and LIMIT', () => {
+    const grouped = rest => runQuery({
+      text: 'SELECT rally.num, count() FROM "x" WHERE shot.num >= 1 ' +
+        'GROUP BY rally.num ' + rest,
+      games: [makeDoublesGame()]
+    })
+    expect(grouped('HAVING count() >= 3').rows).toEqual([[1, 3], [3, 4]])
+    // keys and aggregates combine freely, at any depth
+    expect(grouped('HAVING rally.num >= 2 AND count() * 2 >= 4').rows)
+      .toEqual([[2, 2], [3, 4]])
+    // the filter runs before ORDER BY/LIMIT
+    expect(grouped('HAVING count() >= 3 ORDER BY count() DESC LIMIT 1').rows)
+      .toEqual([[3, 4]])
+    // a group whose condition is unknown is dropped (pressure is unknown
+    // on every shot of rally 2)
+    expect(grouped('HAVING avg(shot.quality.pressure) >= 0').rows)
+      .toEqual([[1, 3], [3, 4]])
+  })
+
   test('game-object properties evaluate in queries', () => {
     expect(shotsWhere('game.numRallies = 3')).toHaveLength(9)
     expect(shotsWhere('game.winner = me.team')).toHaveLength(9)

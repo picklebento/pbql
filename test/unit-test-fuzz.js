@@ -128,12 +128,14 @@ const sourceArb = fc.oneof(
 
 const queryArb = fc.record({
   kind: fc.constant('query'),
-  select: fc.option(
+  select: fc.option(fc.oneof(
+    fc.constant('star'),
     fc.array(fc.record({ expr: exprArb, label: fc.option(stringArb) }),
-      { minLength: 1, maxLength: 3 })),
+      { minLength: 1, maxLength: 3 }))),
   sources: fc.array(sourceArb, { minLength: 1, maxLength: 3 }),
   where: exprArb,
   groupBy: fc.constant(null),
+  having: fc.constant(null),
   context: fc.record({ before: durArb, after: durArb }),
   orderBy: fc.option(
     fc.array(fc.record({ expr: exprArb, dir: fc.constantFrom('asc', 'desc') }),
@@ -162,6 +164,14 @@ const groupedQueryArb = fc.array(exprArb, { minLength: 1, maxLength: 2 })
       sources: fc.array(sourceArb, { minLength: 1, maxLength: 3 }),
       where: exprArb,
       groupBy: fc.constant(groupBy),
+      // HAVING combines aggregates and group keys, at any depth
+      having: fc.option(fc.record({
+        kind: fc.constant('cmp'),
+        op: fc.constantFrom('>=', '<', '='),
+        lhs: fc.oneof(fc.constantFrom(...groupBy), aggregateArb),
+        rhs: fc.integer({ min: 0, max: 9 })
+          .map(value => ({ kind: 'lit', value }))
+      })),
       context: fc.constant(
         { before: { kind: 'dur', unit: 'secs', value: 0 }, after: { kind: 'dur', unit: 'secs', value: 0 } }),
       orderBy: fc.option(

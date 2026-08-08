@@ -211,3 +211,10 @@ WHERE rally.winner != me.team
 SELECT *
 FROM "83gyqyc10y8f"
 WHERE shot.hitter = me AND shot.num = 1
+
+# Q: Rally numbers and shot counts for rallies with at least four shots
+SELECT rally.num, count()
+FROM "83gyqyc10y8f"
+WHERE shot.num >= 1
+GROUP BY rally.num
+HAVING count() >= 4

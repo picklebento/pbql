@@ -167,6 +167,29 @@ function projectGrouped (query, selected) {
     }
     groups.get(id).members.push(ctx)
   }
+  // HAVING: evaluate the condition once per group by substituting each
+  // aggregate call with its computed value (a literal), then reusing the
+  // ordinary expression evaluator on the rewritten tree (group keys are
+  // constant within a group, so the first member anchors them). null
+  // aggregates (empty/all-unknown inputs) become UNKNOWN, which filters.
+  const withAggregatesEvaluated = (node, members) => {
+    if (Array.isArray(node)) {
+      return node.map(child => withAggregatesEvaluated(child, members))
+    }
+    if (node === null || typeof node !== 'object') {
+      return node
+    }
+    if (isAggregateCall(node)) {
+      const value = evalAggregate(node, members)
+      return { kind: 'lit', value: value === null ? UNKNOWN : value }
+    }
+    const out = {}
+    for (const [key, child] of Object.entries(node)) {
+      out[key] = withAggregatesEvaluated(child, members)
+    }
+    return out
+  }
+
   // the analyzer guarantees every SELECT/ORDER BY expr is one or the other
   const valueOf = (expr, group) => {
     if (isAggregateCall(expr)) {
@@ -176,6 +199,11 @@ function projectGrouped (query, selected) {
     return value === UNKNOWN ? null : value
   }
   let rows = [...groups.values()]
+  if (query.having) {
+    rows = rows.filter(group => evalExpr(
+      withAggregatesEvaluated(query.having, group.members),
+      group.members[0]) === true)
+  }
   rows = query.orderBy
     ? sortByKeys(rows, query.orderBy, group => query.orderBy.map(({ expr }) => {
       const value = valueOf(expr, group)

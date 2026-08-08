@@ -136,6 +136,9 @@ export function print (query) {
   if (query.groupBy) {
     lines.push('GROUP BY ' + query.groupBy.map(printExpr).join(', '))
   }
+  if (query.having) {
+    lines.push('HAVING ' + printExpr(query.having))
+  }
   // CONTEXT. A shot-list at the ±1 default (a one-shot lead-in and lead-out)
   // prints no clause — that very absence is what reparses to the default. A
   // projection's context is inert and defaults to zero, so it prints only its

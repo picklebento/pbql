@@ -99,6 +99,22 @@ describe('analyze()', () => {
       .toBe('PBQL_SELECT_CONTEXT')
   })
 
+  test('HAVING needs GROUP BY and groups its references', () => {
+    const analyzeText = text => analyze(parse(text).ast).errors
+    expect(analyzeText('SELECT rally.num, count() FROM "x" ' +
+      'WHERE shot.num >= 1 GROUP BY rally.num HAVING count() >= 3'))
+      .toEqual([])
+    expect(analyzeText('SELECT count() FROM "x" WHERE shot.num >= 1 ' +
+      'HAVING count() >= 3')[0].code).toBe('PBQL_HAVING_NO_GROUP_BY')
+    // a bare per-shot property has no single value within a group
+    expect(analyzeText('SELECT rally.num FROM "x" WHERE shot.num >= 1 ' +
+      'GROUP BY rally.num HAVING shot.speed > 3')[0].code)
+      .toBe('PBQL_NOT_GROUPED')
+    // SELECT items still take aggregates only at the top
+    expect(analyzeText('SELECT count() * 2 FROM "x" WHERE shot.num >= 1')[0]
+      .code).toBe('PBQL_UNKNOWN_FUNCTION')
+  })
+
   test('bare non-player objects are not values; players are (identity)', () => {
     const [bare] = analyzeWhere('shot = 1')
     expect(bare.code).toBe('PBQL_MISSING_PROPERTY')

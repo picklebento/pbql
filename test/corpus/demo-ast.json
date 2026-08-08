@@ -585,6 +585,7 @@
     ]
   },
   "groupBy": null,
+  "having": null,
   "context": {
     "before": {
       "kind": "durfn",

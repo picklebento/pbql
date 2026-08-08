@@ -15,6 +15,7 @@ const KEYWORDS = {
   kw_where: 'where',
   kw_limit: 'limit',
   kw_as: 'as',
+  kw_having: 'having',
   kw_in: 'in',
   kw_and: 'and',
   kw_or: 'or',

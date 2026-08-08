@@ -164,19 +164,22 @@ export function analyze (query) {
   }
 
   function checkExpr (node, allowAggregates, existsArg = false) {
+    // aggregates normally live only at the top of a SELECT/ORDER BY item;
+    // HAVING passes 'deep', where they may sit anywhere in the condition
+    const inner = allowAggregates === 'deep' ? 'deep' : false
     switch (node.kind) {
       case 'lit':
         return
       case 'not':
       case 'neg':
-        return checkExpr(node.arg, false)
+        return checkExpr(node.arg, inner)
       case 'and':
       case 'or':
-        return node.args.forEach(a => checkExpr(a, false))
+        return node.args.forEach(a => checkExpr(a, inner))
       case 'arith':
       case 'cmp': {
-        checkExpr(node.lhs, false)
-        checkExpr(node.rhs, false)
+        checkExpr(node.lhs, inner)
+        checkExpr(node.rhs, inner)
         if (node.kind === 'cmp') {
           const lhsType = inferType(node.lhs)
           const rhsType = inferType(node.rhs)
@@ -361,6 +364,31 @@ export function analyze (query) {
           `"${printExpr(expr)}" must be an aggregate or a GROUP BY key`)
       }
     }
+    // HAVING is a boolean over the grouped row: aggregates and group keys
+    // may combine freely, but a bare per-shot reference has no single
+    // value within a group
+    const checkHavingRefs = node => {
+      if (node === null || typeof node !== 'object') {
+        return
+      }
+      if (isAggregateCall(node) || isKey(node)) {
+        return
+      }
+      if (node.kind === 'prop') {
+        err(node, 'PBQL_NOT_GROUPED',
+          `"${printExpr(node)}" must be an aggregate or a GROUP BY key`)
+        return
+      }
+      for (const key of ['arg', 'lhs', 'rhs']) {
+        checkHavingRefs(node[key])
+      }
+      for (const child of node.args ?? []) {
+        checkHavingRefs(child)
+      }
+    }
+    if (query.having) {
+      checkHavingRefs(query.having)
+    }
   }
 
   const grouped = Boolean(query.groupBy)
@@ -380,6 +408,14 @@ export function analyze (query) {
   }
   for (const item of query.orderBy ?? []) {
     checkExpr(item.expr, grouped) // grouped rows may order by aggregates
+  }
+  if (query.having) {
+    checkExpr(query.having, 'deep') // aggregates anywhere in the condition
+    if (!grouped) {
+      err(query.having, 'PBQL_HAVING_NO_GROUP_BY',
+        'HAVING filters grouped rows: add a GROUP BY (or move the ' +
+        'condition into WHERE)')
+    }
   }
   if (grouped) {
     checkGrouping()
