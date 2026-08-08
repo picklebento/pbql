@@ -442,8 +442,7 @@ const RALLY_PROPS = [
       }
       return players
         .filter(p => p !== null && p !== undefined)
-        .every(p => (p.kitchen_arrivals?.length ?? 0) > 0 ||
-          p.ms_to_kitchen !== undefined)
+        .every(p => (p.kitchen_arrivals?.length ?? 0) > 0)
     }
   }
 ]
@@ -578,7 +577,7 @@ const PLAYER_PROPS = [
       if (p === undefined) {
         return undefined
       }
-      return (p.kitchen_arrivals?.length ?? 0) > 0 || p.ms_to_kitchen !== undefined
+      return (p.kitchen_arrivals?.length ?? 0) > 0
     }
   },
   {

@@ -95,7 +95,7 @@ export function makeDoublesInsights () {
         players: [
           { started_on_left_side: true, kitchen_arrivals: [{ since_ms: 13000, ft_moved: { x: 1, y: 10 } }] },
           { started_on_left_side: false },
-          { started_on_left_side: true, ms_to_kitchen: 4000 },
+          { started_on_left_side: true, kitchen_arrivals: [{ since_ms: 14000, ft_moved: { x: 1, y: 10 } }] },
           { started_on_left_side: false, kitchen_arrivals: [] }
         ],
         shots: [
@@ -191,7 +191,7 @@ export function makeDoublesInsights () {
         players: [
           { started_on_left_side: true, kitchen_arrivals: [{ since_ms: 53000, ft_moved: { x: 0, y: 8 } }] },
           { started_on_left_side: false, kitchen_arrivals: [{ since_ms: 54000, ft_moved: { x: 0, y: 9 } }] },
-          { started_on_left_side: true, ms_to_kitchen: 3500 },
+          { started_on_left_side: true, kitchen_arrivals: [{ since_ms: 53500, ft_moved: { x: 1, y: 8 } }] },
           { started_on_left_side: false, kitchen_arrivals: [{ since_ms: 56000, ft_moved: { x: 1, y: 7 } }] }
         ],
         shots: [

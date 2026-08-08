@@ -266,7 +266,7 @@ describe('registry', () => {
     expect(props.get('startedOnLeftSide').extract(farShotCtx, 0)).toBe(true)
     expect(props.get('reachedKitchen').extract(farShotCtx, 0)).toBe(true)
     expect(props.get('reachedKitchen').extract(farShotCtx, 1)).toBe(false)
-    expect(props.get('reachedKitchen').extract(farShotCtx, 2)).toBe(true) // legacy ms_to_kitchen
+    expect(props.get('reachedKitchen').extract(farShotCtx, 2)).toBe(true)
     // no position data on the sparse shot
     expect(props.get('pos.x').extract(sparseCtx, 0)).toBeUndefined()
     expect(props.get('feetToKitchen').extract(sparseCtx, 0)).toBeUndefined()
