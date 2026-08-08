@@ -3,8 +3,8 @@
 // positive magnitudes; `shots` units never cross rally boundaries (and add
 // the covered shots to the result as context); `secs` units are exact video
 // time, bounded only by the video itself (start always; end when the
-// insights carry the video duration); min = cap, max = floor, with
-// identical meaning for BEFORE and AFTER.
+// insights carry the video duration); min/max take the smaller/larger
+// resolved duration, with identical meaning for BEFORE and AFTER.
 
 // a candidate window edge plus the context shots it fully includes
 function resolve (dur, side, ctx) {

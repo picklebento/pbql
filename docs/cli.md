@@ -48,7 +48,11 @@ rule, the first that applies:
 
 - **json** — the selected shots (or `SELECT` rows) as JSON, including each
   shot's video window and context shots.
-- **csv** — one row per selected shot or `SELECT` row.
+- **csv** — one row per selected shot or `SELECT` row. A string cell
+  starting with `=`, `+`, `-`, `@`, tab, or carriage return is prefixed
+  with a single quote so spreadsheets import it as text instead of
+  executing it as a formula (the OWASP CSV-injection guard); numeric cells
+  are unaffected.
 - **edl** — a CMX 3600 edit decision list cutting the selected clips
   back-to-back, at the queried video's frame rate (default 30). Import it
   into an editor like DaVinci Resolve to review the reel.

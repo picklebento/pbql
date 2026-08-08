@@ -184,7 +184,7 @@ argList ->
     expr                 {% d => [d[0]] %}
   | argList %comma expr  {% d => [...d[0], d[2]] %}
 
-# ---- CONTEXT (positive magnitudes; min = cap, max = floor) ----------------
+# ---- CONTEXT (positive magnitudes; min/max take the smaller/larger) -------
 ctxBefore -> %contextBefore duration {% d => d[1] %}
 ctxAfter -> %contextAfter duration   {% d => d[1] %}
 duration ->

@@ -269,8 +269,9 @@ BEFORE/AFTER):
   (`session.videoDurationMs`, §7).
 - `rally` — to the rally's boundary.
 - `min(a, b)` / `max(a, b)` — resolve each alternative **per shot** to a
-  concrete magnitude, then take the smaller (`min` = cap) or larger
-  (`max` = floor). Same meaning for BEFORE and AFTER.
+  concrete magnitude, then take the smaller (`min`: never more context
+  than either bound, "at most") or the larger (`max`: "at least"). Same
+  meaning for BEFORE and AFTER.
 
 Worked example: the selected shot is hit at 90.0s; the previous shot starts
 at 86.5s. `BEFORE min(1 shot, 2secs)`: the candidates are 3.5s (to include
@@ -326,11 +327,6 @@ to numbers and skip unknowns:
 - anything else (strings, …) is unknown and skipped.
 
 `count()` counts selected shots.
-
-In CSV output, a string cell that starts with `=`, `+`, `-`, `@`, tab, or
-carriage return is prefixed with a single quote so spreadsheets import it
-as text instead of executing it as a formula (the OWASP CSV-injection
-guard). Numeric cells (e.g. `-4`) are unaffected.
 
 ### 6.7 GROUP BY
 
