@@ -529,6 +529,13 @@ const GAME_PROPS = [
     extract: ctx => ctx.game.meta.videoName ?? undefined
   },
   {
+    path: 'epoch',
+    type: 'number',
+    unit: 'epoch seconds',
+    doc: 'when the game was played, in seconds since 1970 (host-supplied, like the name); sort or filter games chronologically with it, and format it with date()',
+    extract: ctx => ctx.game.meta.gameEpoch ?? undefined
+  },
+  {
     path: 'numRallies',
     type: 'number',
     doc: 'how many rallies the game contains',

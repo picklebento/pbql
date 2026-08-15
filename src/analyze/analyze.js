@@ -19,7 +19,10 @@ export const SCALAR_FNS = new Map([
   ['toSecs', { minArgs: 1, maxArgs: 1 }],
   // timecode(secs[, withFrames]) formats a video position as an "m:ss"
   // string ("m:ss:ff" with withFrames — see the engine for the semantics)
-  ['timecode', { minArgs: 1, maxArgs: 2 }]
+  ['timecode', { minArgs: 1, maxArgs: 2 }],
+  // date(epoch) formats an epoch-seconds moment (like game.epoch) as a
+  // local "YYYY-MM-DD" string
+  ['date', { minArgs: 1, maxArgs: 1 }]
 ])
 export const AGGREGATE_FNS = new Map([
   ['count', { minArgs: 0, maxArgs: 0 }],
@@ -115,9 +118,11 @@ function inferType (node) {
       }
       return REGISTRY[typeName].props.get(rest.join('.'))?.type
     }
-    // timecode() is the one string-valued function; the rest stay untyped
-    // (min/max double as duration combinators, exists/methods are boolean)
-    case 'call': return node.name === 'timecode' ? 'string' : undefined
+    // timecode() and date() are the string-valued functions; the rest stay
+    // untyped (min/max double as duration combinators, exists/methods are
+    // boolean)
+    case 'call':
+      return ['timecode', 'date'].includes(node.name) ? 'string' : undefined
     default: return undefined
   }
 }

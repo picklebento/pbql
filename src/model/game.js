@@ -54,7 +54,10 @@ export class Game {
    * @param {number} args.sessionIdx 0-based session index within the video
    * @param {object} args.insights parsed insights JSON (augmented names)
    * @param {object} [args.meta] host-supplied metadata: players
-   *   ([{uid?, name?, addr?}] by player index), myPlayerIdx, videoName
+   *   ([{uid?, name?, addr?}] by player index), myPlayerIdx, videoName,
+   *   gameEpoch (when the game was played, in epoch seconds), tz (the
+   *   IANA zone date() renders in — e.g. the signed-in user's — else
+   *   the process's own local zone)
    */
   constructor ({ vid, sessionIdx, insights, meta }) {
     validateInsights(insights)

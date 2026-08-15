@@ -161,6 +161,24 @@ function timecode (node, ctx) {
   return `${base}:${pad(Math.floor((secs - Math.floor(secs)) * fps))}`
 }
 
+// date(epoch): an epoch-seconds moment as a "YYYY-MM-DD" calendar date in
+// the game's meta.tz (an IANA zone the host passes through, e.g. the
+// signed-in user's), else the process's own local zone (game.epoch is the
+// intended subject: chart labels, grouping shots by day). Epochs beyond
+// what Date can represent, and an unrecognized zone, are UNKNOWN -- never
+// a date in silently the wrong place.
+function localDate (epochSecs, tz) {
+  const date = new Date(epochSecs * 1000)
+  if (!Number.isFinite(date.getTime())) {
+    return UNKNOWN
+  }
+  try {
+    return date.toLocaleDateString('en-CA', { timeZone: tz }) // YYYY-MM-DD
+  } catch {
+    return UNKNOWN
+  }
+}
+
 function evalCall (node, ctx) {
   if (node.name === 'exists') {
     return evalExpr(node.args[0], ctx) !== UNKNOWN
@@ -183,6 +201,7 @@ function evalCall (node, ctx) {
     case 'kph': return args[0] * 1.609344
     case 'toMs': return args[0] * 1000
     case 'toSecs': return args[0] / 1000
+    case 'date': return localDate(args[0], ctx.game.meta.tz)
     default: return UNKNOWN // unknown functions never reach here via runQuery
   }
 }

@@ -224,3 +224,10 @@ FROM "83gyqyc10y8f"
 WHERE rally.winner != me.team AND rally.count(shot.hitter = me AND shot.type = "dink") >= 3
 CONTEXT BEFORE rally
 CONTEXT AFTER rally
+
+# Q: How many shots did I hit each day I played?
+SELECT date(game.epoch) AS "day", count()
+FROM "games/*.json"
+WHERE shot.hitter = me
+GROUP BY date(game.epoch)
+ORDER BY min(game.epoch)

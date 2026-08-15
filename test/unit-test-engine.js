@@ -118,6 +118,44 @@ describe('runQuery: filtering', () => {
     expect(shotsWhere('min(1, shot.type) = 1')).toEqual([]) // min of a string
   })
 
+  test('game.epoch and date(): when the game was played', () => {
+    // the fixture's meta.gameEpoch is 2025-01-01T12:00:00Z; it is a plain
+    // number, so it filters and orders like any other
+    expect(shotsWhere('game.epoch = 1735732800')).toHaveLength(9)
+    expect(shotsWhere('game.epoch > 1735732800')).toEqual([])
+    // date() renders the calendar date in the game's host-supplied
+    // timezone; pinning zones via meta keeps these deterministic on any
+    // machine
+    const inZone = (expr, tz) => runQuery({
+      text: `FROM "x" WHERE ${expr}`,
+      games: [(game => ({ ...game, meta: { ...game.meta, tz } }))(
+        makeDoublesGame())]
+    }).shots.length
+    expect(inZone('date(game.epoch) = "2025-01-01"', 'UTC')).toBe(9)
+    // midnight UTC is still the prior evening in New York...
+    expect(inZone('date(1735689600) = "2024-12-31"', 'America/New_York'))
+      .toBe(9)
+    // ...month and day both 2-pad, and an unrecognized zone renders no
+    // date at all (never a date in silently the wrong place)
+    expect(inZone('date(1757410000) = "2025-09-09"', 'UTC')).toBe(9)
+    expect(inZone('exists(date(game.epoch))', 'Mars/Olympus')).toBe(0)
+    // without meta.tz the process's own local zone applies, whatever
+    // this machine's is (cross-checked against Intl's local rendering)
+    const localDay = new Date(1735732800 * 1000).toLocaleDateString('en-CA')
+    expect(shotsWhere(`date(game.epoch) = "${localDay}"`)).toHaveLength(9)
+    // unknown in, unknown out; epochs beyond what a date can represent
+    // are unknown too, never garbage strings
+    expect(shotsWhere('exists(date(shot.speed))')).toEqual(
+      shotsWhere('exists(shot.speed)'))
+    expect(shotsWhere('exists(date(99999999999999))')).toEqual([])
+    // a game whose host supplied no gameEpoch has an unknown epoch
+    const result = runQuery({
+      text: 'FROM "x" WHERE exists(game.epoch)',
+      games: [{ ...makeDoublesGame(), meta: {} }]
+    })
+    expect(result.shots).toEqual([])
+  })
+
   test('timecode formats video positions: floored m:ss, optional frames', () => {
     // fixture hit times: (0,2) at 18s, (1,1) at 35s, (2,3) at 61s
     expect(shotsWhere('timecode(shot.hitTime) = "0:18"')).toEqual([[0, 2]])

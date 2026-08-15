@@ -231,6 +231,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - game.vid (string): the video ID this game is from
 - game.sessionNum (number [1-based]): which game of the video this is
 - game.name (string): the video/session name, if any
+- game.epoch (number [epoch seconds]): when the game was played, in seconds since 1970 (host-supplied, like the name); sort or filter games chronologically with it, and format it with date()
 - game.numRallies (number): how many rallies the game contains
 - game.startTime (number [seconds]): when in the video the game starts (its first rally's start)
 - game.endTime (number [seconds]): when in the video the game ends (its last rally's end)
@@ -534,4 +535,12 @@ Q: Rallies we lost where I dinked at least three times
     WHERE rally.winner != me.team AND rally.count(shot.hitter = me AND shot.type = "dink") >= 3
     CONTEXT BEFORE rally
     CONTEXT AFTER rally
+
+Q: How many shots did I hit each day I played?
+
+    SELECT date(game.epoch) AS "day", count()
+    FROM "games/*.json"
+    WHERE shot.hitter = me
+    GROUP BY date(game.epoch)
+    ORDER BY min(game.epoch)
 

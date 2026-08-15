@@ -312,6 +312,8 @@ export function makeSinglesInsights () {
 export const TEST_META = {
   myPlayerIdx: 0,
   videoName: 'Test Game',
+  gameEpoch: 1735732800, // 2025-01-01T12:00:00Z
+
   players: [
     { name: 'Alice', addr: 'alice@example.com' },
     { name: 'Bob' },

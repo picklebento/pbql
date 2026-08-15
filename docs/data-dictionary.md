@@ -101,6 +101,7 @@ The session (one game of a possibly multi-game video) containing the shot.
 | `game.vid` | the video ID this game is from | string |  |
 | `game.sessionNum` | which game of the video this is | number | 1-based |
 | `game.name` | the video/session name, if any | string |  |
+| `game.epoch` | when the game was played, in seconds since 1970 (host-supplied, like the name); sort or filter games chronologically with it, and format it with date() | number | epoch seconds |
 | `game.numRallies` | how many rallies the game contains | number |  |
 | `game.startTime` | when in the video the game starts (its first rally's start) | number | seconds |
 | `game.endTime` | when in the video the game ends (its last rally's end) | number | seconds |

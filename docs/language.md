@@ -215,6 +215,15 @@ through:
     camera data); frames are unknown when the game has no usable fps.
     Negative times are unknown, and the result is a string: it supports
     `=`/`!=` but not ordering comparisons.
+  - `date(epoch)` — an epoch-seconds moment as a `"YYYY-MM-DD"` calendar
+    date, rendered in the game's host-supplied timezone (`meta.tz`, an
+    IANA zone — typically the signed-in user's) or, absent one, the
+    process's own local zone. Its intended subject is `game.epoch`
+    (`date(game.epoch)` labels each game with the day it was played; to
+    order games chronologically, `ORDER BY game.epoch`). Epochs beyond
+    what a date can represent are unknown — as is an unrecognized zone,
+    never a date in silently the wrong place — and like `timecode()` the
+    string result supports `=`/`!=` but not ordering comparisons.
 
 ### 5.6 `taggedWith(pattern)`
 

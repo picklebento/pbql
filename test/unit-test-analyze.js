@@ -194,6 +194,20 @@ describe('analyze()', () => {
     expect(analyzeWhere('timecode(1, exists(shot.speed)) = "0:01"')).toEqual([])
   })
 
+  test('date: one arity, string result', () => {
+    expect(analyzeWhere('date(game.epoch) = "2025-01-01"')).toEqual([])
+    expect(analyzeWhere('date() = "x"')[0].code).toBe('PBQL_BAD_ARITY')
+    expect(analyzeWhere('date(1, 2) = "x"')[0].code).toBe('PBQL_BAD_ARITY')
+    // string result: equality is fine, ordering is not (order games by
+    // game.epoch itself instead)
+    expect(analyzeWhere('date(game.epoch) < "2025-01-01"')[0]).toMatchObject({
+      code: 'PBQL_TYPE_MISMATCH',
+      message: '"<" needs numbers, not string'
+    })
+    expect(analyzeWhere('date(game.epoch) = 5')[0].message)
+      .toBe('cannot compare string with number')
+  })
+
   test('enum properties reject values production never emits', () => {
     expect(analyzeWhere('shot.type = "smsh"')[0]).toMatchObject({
       code: 'PBQL_UNKNOWN_ENUM_VALUE',
