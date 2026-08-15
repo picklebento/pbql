@@ -5,10 +5,13 @@ import { REGISTRY } from '../model/registry.js'
 
 export const UNKNOWN = Symbol('pbql.unknown')
 
-// missing data — and non-finite numbers (JSON like 1e400 parses to
-// Infinity) — surface as UNKNOWN, never as a value
+// Missing data — an absent value or an explicit JSON null, which the
+// insights write interchangeably — and non-finite numbers (JSON like 1e400
+// parses to Infinity) surface as UNKNOWN, never as a value. A null that
+// slipped through would compare equal to the next null and sort as a value.
 const u = value =>
-  value === undefined || (typeof value === 'number' && !Number.isFinite(value))
+  value === undefined || value === null ||
+  (typeof value === 'number' && !Number.isFinite(value))
     ? UNKNOWN
     : value
 

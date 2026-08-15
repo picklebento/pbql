@@ -452,7 +452,15 @@ const SHOT_PROPS = [
 ]
 
 function msToSecs (ms) {
-  return ms === undefined ? undefined : ms / 1000
+  return typeof ms === 'number' ? ms / 1000 : undefined
+}
+
+// seconds between two insights timestamps; unknown unless both are really
+// there (a null endpoint would otherwise arithmetic into a plausible 0)
+function msSpanSecs (fromMs, toMs) {
+  return typeof fromMs === 'number' && typeof toMs === 'number'
+    ? (toMs - fromMs) / 1000
+    : undefined
 }
 
 const RALLY_PROPS = [
@@ -488,7 +496,7 @@ const RALLY_PROPS = [
     type: 'number',
     unit: 'seconds',
     doc: 'how long the rally lasted',
-    extract: ctx => (ctx.rally.end_ms - ctx.rally.start_ms) / 1000
+    extract: ctx => msSpanSecs(ctx.rally.start_ms, ctx.rally.end_ms)
   },
   {
     path: 'winner',
@@ -567,7 +575,7 @@ const GAME_PROPS = [
     doc: 'first rally start to last rally end (game.startTime + game.duration = game.endTime)',
     extract: ctx => {
       const { rallies } = ctx.game
-      return (rallies[rallies.length - 1].end_ms - rallies[0].start_ms) / 1000
+      return msSpanSecs(rallies[0].start_ms, rallies[rallies.length - 1].end_ms)
     }
   },
   {

@@ -959,6 +959,45 @@ describe('null and malformed data', () => {
     expect(runOn('shot.hasFault', game).shots).toEqual([])
   })
 
+  test('a null value is unknown, never a value of its own', () => {
+    const game = damaged(i => {
+      i.rallies[2].shots[0].shot_type = null
+      i.rallies[2].shots[1].shot_type = null
+    })
+    expect(runOn('exists(shot.type)', game).shots).toHaveLength(6)
+    // two absent types are not "the same type": only the real pair matches
+    expect(runOn('shot.type = shot[1].type', game).shots
+      .map(s => [s.rallyIdx, s.shotIdx])).toEqual([[2, 2]])
+  })
+
+  test('null sort keys sort last, in both directions', () => {
+    const game = damaged(i => { i.rallies[0].shots[0].shot_type = null })
+    const lastTwo = dir => runQuery({
+      text: `FROM "x" WHERE shot.num >= 1 ORDER BY shot.type ${dir}`,
+      games: [game]
+    }).shots.map(s => [s.rallyIdx, s.shotIdx]).slice(-2)
+    // the nulled shot joins the sparse one at the end, in video order
+    expect(lastTwo('')).toEqual([[0, 0], [1, 1]])
+    expect(lastTwo('DESC')).toEqual([[0, 0], [1, 1]])
+  })
+
+  test('null timestamps are unknown, not time zero', () => {
+    const game = damaged(i => {
+      const shot = i.rallies[0].shots[0]
+      shot.start_ms = null
+      shot.resulting_ball_movement.trajectory.start.ms = null
+      i.rallies[1].end_ms = null
+    })
+    expect(runOn('shot.hitTime <= 0', game).shots).toEqual([])
+    expect(runOn('exists(shot.hitTime)', game).shots).toHaveLength(8)
+    expect(runOn('exists(rally.endTime)', game).shots).toHaveLength(7)
+    expect(runOn('exists(rally.duration)', game).shots).toHaveLength(7)
+    // the game's own span needs both ends too
+    const spanless = damaged(i => { i.rallies[0].start_ms = null })
+    expect(runOn('exists(game.startTime)', spanless).shots).toEqual([])
+    expect(runOn('exists(game.duration)', spanless).shots).toEqual([])
+  })
+
   test('a shot that is not an object skips the game with a warning', () => {
     for (const broken of [null, 7]) {
       const result = runQuery({
