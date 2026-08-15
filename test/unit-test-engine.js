@@ -866,6 +866,116 @@ describe('runQuery: inputs and errors', () => {
   })
 })
 
+// Real files carry explicit JSON nulls wherever the pipeline had nothing
+// to say; the engine must read them as unknown (docs §3) instead of
+// dereferencing them, and skip-and-report what is structurally broken.
+describe('null and malformed data', () => {
+  const damaged = mutate => {
+    const game = makeDoublesGame()
+    mutate(game.insights)
+    return game
+  }
+  const runOn = (expr, game) => {
+    const result = runQuery({ text: `FROM "x" WHERE ${expr}`, games: [game] })
+    expect(result.errors).toBeUndefined()
+    return result
+  }
+
+  test('a null position is unknown, and only for the shot that lost it', () => {
+    // the strike point sets the hitter frame, so losing it takes every
+    // position of that shot with it (the sparse shot has none either way)
+    const struck = damaged(i => {
+      i.rallies[0].shots[0].resulting_ball_movement.trajectory.start.location =
+        null
+    })
+    expect(runOn('exists(shot.from.x)', struck).shots).toHaveLength(7)
+    expect(runOn('exists(shot.from.feetToNet)', struck).shots).toHaveLength(7)
+    expect(runOn('exists(shot.to.x)', struck).shots).toHaveLength(7)
+    // a null endpoint takes only its own position with it
+    const landed = damaged(i => {
+      i.rallies[2].shots[0].resulting_ball_movement.trajectory.end.location =
+        null
+    })
+    expect(runOn('exists(shot.to.x)', landed).shots).toHaveLength(7)
+    expect(runOn('exists(shot.to.absY)', landed).shots).toHaveLength(7)
+    expect(runOn('exists(shot.from.x)', landed).shots).toHaveLength(8)
+  })
+
+  test('a game outcome that is not a pair is unknown', () => {
+    expect(runOn('game.winner = 0',
+      damaged(i => { i.game_data.game_outcome = null })).shots).toEqual([])
+    expect(runOn('exists(game.winner)',
+      damaged(i => { i.game_data.game_outcome = 7 })).shots).toEqual([])
+    // SELECT * reads it for every row, so it must not throw there either
+    const projected = runQuery({
+      text: 'SELECT * FROM "x" WHERE shot.num = 1',
+      games: [damaged(i => { i.game_data.game_outcome = null })]
+    })
+    expect(projected.rows).toHaveLength(3)
+  })
+
+  test('missing and null highlights are unknown, not crashes', () => {
+    expect(runOn('shot.inHighlight("atp")',
+      damaged(i => { i.highlights = null })).shots).toEqual([])
+    expect(runOn('shot.inHighlight("atp")',
+      damaged(i => { i.highlights = [null] })).shots).toEqual([])
+    // a null entry among real ones is skipped, not fatal
+    expect(runOn('shot.inHighlight("atp")',
+      damaged(i => { i.highlights.unshift(null) })).shots).toHaveLength(1)
+  })
+
+  test('null rally players are unknown, not "nobody reached"', () => {
+    // rally 0 loses its answer; rally 1 (nobody arrived) still answers false
+    const game = damaged(i => { i.rallies[0].players = null })
+    expect(runOn('NOT rally.allPlayersReachedKitchen', game).shots
+      .map(s => [s.rallyIdx, s.shotIdx])).toEqual([[1, 0], [1, 1]])
+    expect(runOn('rally.allPlayersReachedKitchen', game).shots).toHaveLength(4)
+  })
+
+  test('null player_data falls back instead of aborting the query', () => {
+    const game = damaged(i => { i.player_data = null })
+    expect(runOn('shot.taggedWith("Alice")', game).shots).toHaveLength(3)
+    // the batch-wide tag warning probes every slot: it must survive too
+    const none = runOn('shot.taggedWith("Nobody")', game)
+    expect(none.shots).toEqual([])
+    expect(none.warnings[0].code).toBe('PBQL_TAG_NOT_FOUND')
+  })
+
+  test('a null tagged address matches nothing, quietly', () => {
+    const game = makeDoublesGame()
+    game.meta = { ...game.meta, players: [{ name: 'Alice', addr: null }] }
+    const result = runOn('shot.taggedWith("alice@example.com")', game)
+    expect(result.shots).toEqual([])
+    expect(result.warnings[0].code).toBe('PBQL_TAG_NOT_FOUND')
+  })
+
+  test('null error blocks mean no error, not an unknown one', () => {
+    const game = damaged(i => {
+      i.rallies[1].shots[1].errors = null
+      i.rallies[2].shots[3].errors.faults = null
+    })
+    expect(runOn('shot.hasError', game).shots.map(s => [s.rallyIdx, s.shotIdx]))
+      .toEqual([[0, 1], [2, 3]])
+    expect(runOn('shot.hasFault', game).shots).toEqual([])
+  })
+
+  test('a shot that is not an object skips the game with a warning', () => {
+    for (const broken of [null, 7]) {
+      const result = runQuery({
+        text: 'FROM "x" WHERE shot.num = 1',
+        games: [damaged(i => { i.rallies[0].shots[1] = broken })]
+      })
+      expect(result.shots).toEqual([])
+      expect(result.warnings).toEqual([{
+        vid: 'testvid00001',
+        sessionIdx: 0,
+        code: 'PBQL_INVALID_INSIGHTS',
+        message: expect.stringContaining('rallies[0].shots[1] is not an object')
+      }])
+    }
+  })
+})
+
 describe('default "Player N" names', () => {
   test('untagged players are queryable by the name the UI shows', () => {
     const game = makeDoublesGame()

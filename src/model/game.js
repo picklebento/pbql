@@ -44,6 +44,15 @@ function validateRallies (insights) {
     if (rally.shots !== undefined && !Array.isArray(rally.shots)) {
       throw new InvalidInsightsError(`rallies[${rallyIdx}].shots is not an array`)
     }
+    // every shot is read property by property, so a shot that is not an
+    // object makes the whole game unqueryable rather than merely unknown
+    const shots = rally.shots ?? []
+    shots.forEach((shot, shotIdx) => {
+      if (shot === null || typeof shot !== 'object') {
+        throw new InvalidInsightsError(
+          `rallies[${rallyIdx}].shots[${shotIdx}] is not an object`)
+      }
+    })
   })
 }
 
@@ -103,7 +112,7 @@ export class Game {
   // whether this player slot is occupied (singles leave slots 1 and 3 empty)
   playerExists (playerIdx) {
     const playerData = this.insights.player_data
-    if (playerData !== undefined) {
+    if (Array.isArray(playerData)) { // absent (or null) falls back below
       return playerData[playerIdx] !== null && playerData[playerIdx] !== undefined
     }
     return this.insights.session?.num_players === 2

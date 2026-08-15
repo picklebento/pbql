@@ -126,15 +126,13 @@ export const POSITION_ROOT_DOCS = {
 }
 
 // Builds a position's property entries. The hitter's side (which decides
-// the mirror) comes from where the ball was struck.
+// the mirror) comes from where the ball was struck; either position may be
+// missing.
 function positionProps (prefix, getPos, extras = []) {
   function framed (ctx) {
-    const pos = getPos(ctx)
     const struckAt = trajectory(ctx)?.start?.location
-    if (pos === undefined || struckAt === undefined) {
-      return undefined
-    }
-    return toPlayerFrame(pos, isOnFarSide(struckAt))
+    return mapPos(struckAt, at =>
+      mapPos(getPos(ctx), pos => toPlayerFrame(pos, isOnFarSide(at))))
   }
   const doc = POSITION_ROOT_DOCS[prefix]
   return [
@@ -149,8 +147,15 @@ function positionProps (prefix, getPos, extras = []) {
   ]
 }
 
+// Insights JSON spells a missing value as either an absent key or an
+// explicit null; both mean "no data" here, and neither may become a value
+// (the engine maps undefined to unknown).
+function isPresent (value) {
+  return value !== undefined && value !== null
+}
+
 function mapPos (pos, fn) {
-  return pos === undefined ? undefined : fn(pos)
+  return isPresent(pos) ? fn(pos) : undefined
 }
 
 const SHOT_PROPS = [
@@ -370,7 +375,7 @@ const SHOT_PROPS = [
     path: 'hasError',
     type: 'boolean',
     doc: 'whether any error was detected on this shot',
-    extract: ctx => ctx.shot.errors !== undefined
+    extract: ctx => isPresent(ctx.shot.errors)
   },
   {
     path: 'errors.unforced',
@@ -392,7 +397,7 @@ const SHOT_PROPS = [
     type: 'boolean',
     doc: 'whether this shot committed a rule fault, actual or potential — ' +
       'e.g. a ball headed out that an opponent played anyway',
-    extract: ctx => ctx.shot.errors?.faults !== undefined
+    extract: ctx => isPresent(ctx.shot.errors?.faults)
   },
   // fault flags are recorded only when the fault happened, so absence means
   // false, never unknown (the `=== true` guard also shrugs off malformed data)
@@ -498,11 +503,11 @@ const RALLY_PROPS = [
     doc: 'whether every player reached the kitchen line this rally',
     extract: ctx => {
       const players = ctx.rally.players
-      if (players === undefined) {
+      if (!Array.isArray(players)) {
         return undefined
       }
       return players
-        .filter(p => p !== null && p !== undefined)
+        .filter(isPresent)
         .every(p => (p.kitchen_arrivals?.length ?? 0) > 0)
     }
   }
@@ -585,7 +590,7 @@ const GAME_PROPS = [
     doc: 'which team won the game (from the recorded outcome)',
     extract: ctx => {
       const outcome = ctx.game.insights.game_data?.game_outcome
-      if (outcome === undefined) {
+      if (!Array.isArray(outcome)) {
         return undefined
       }
       const [a, b] = outcome
@@ -802,10 +807,10 @@ const SHOT_METHODS = [
     apply: (ctx, subject, [kind]) => {
       const highlights = ctx.game.insights.highlights
       const hitMs = ctx.game.hitMs(ctx.shot)
-      if (highlights === undefined || hitMs === undefined) {
+      if (!Array.isArray(highlights) || hitMs === undefined) {
         return undefined
       }
-      return highlights.some(h => h.kind === kind &&
+      return highlights.some(h => isPresent(h) && h.kind === kind &&
         (h.rally_idx === undefined || h.rally_idx === ctx.rallyIdx) &&
         h.s <= hitMs && hitMs <= h.e)
     }
@@ -874,7 +879,9 @@ export function playerMatchesTag (ctx, playerIdx, pattern) {
   if (pattern.includes('@')) {
     // email: exact match, case-insensitive; addresses are host-supplied
     const addr = ctx.game.meta.players?.[playerIdx]?.addr
-    return addr === undefined ? undefined : addr.toLowerCase() === pattern.toLowerCase()
+    return typeof addr === 'string'
+      ? addr.toLowerCase() === pattern.toLowerCase()
+      : undefined
   }
   const name = ctx.game.playerName(playerIdx)
   if (name === undefined) {
