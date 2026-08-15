@@ -265,6 +265,15 @@ export function analyze (query) {
                     'condition'))
                 return
               }
+              // a declared argument type is enforced like a comparison's;
+              // expressions of unknown type pass (they evaluate per the
+              // Kleene rules)
+              const argType = inferType(node.args[i])
+              if (argType !== undefined && argType !== spec.type) {
+                err(node, 'PBQL_TYPE_MISMATCH',
+                  `${name}() takes a ${spec.type} ${spec.name}, not ${argType}`)
+                return
+              }
               // enum-typed arguments only accept their declared values
               const values = enumValuesOf(spec.unit)
               if (values !== undefined && node.args[i].kind === 'lit') {

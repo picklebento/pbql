@@ -116,6 +116,13 @@ describe('runQuery: filtering', () => {
     expect(shotsWhere('min(2, 3) IN ("x", 2)')).toHaveLength(9) // skips the string
     expect(shotsWhere('abs(shot.type) = 1')).toEqual([]) // abs of a string
     expect(shotsWhere('min(1, shot.type) = 1')).toEqual([]) // min of a string
+    // a string-typed argument whose data is not a string: unknown, no crash
+    const game = makeDoublesGame()
+    game.insights.rallies[0].shots[0].shot_type = 5
+    expect(runQuery({
+      text: 'FROM "x" WHERE shot.taggedWith(shot.type)',
+      games: [game]
+    }).shots).toEqual([])
   })
 
   test('game.epoch and date(): when the game was played', () => {
@@ -826,10 +833,9 @@ describe('runQuery: inputs and errors', () => {
       expect.objectContaining({ code: 'PBQL_TAG_NOT_FOUND' })])
   })
 
-  test('only literal string taggedWith patterns are checked', () => {
+  test('only literal taggedWith patterns are checked', () => {
     const result = runQuery({
-      text: 'FROM "x" WHERE false AND ' +
-        '(shot.taggedWith(shot.winnerType) OR shot.taggedWith(5))',
+      text: 'FROM "x" WHERE false AND shot.taggedWith(shot.winnerType)',
       games: [makeDoublesGame()]
     })
     expect(result.warnings).toEqual([])

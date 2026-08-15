@@ -235,9 +235,11 @@ function collectPlayerFacts (node, facts) {
     if (base.object === 'player') { // the only player root is `me`
       facts.referencesMe = true
     }
-    // taggedWith is always the final path segment of a method call
+    // taggedWith is always the final path segment of a method call; the
+    // analyzer has already held its argument to a string, so a literal
+    // one here is a pattern this game either holds or does not
     if (node.args && node.path[node.path.length - 1] === 'taggedWith' &&
-        node.args[0].kind === 'lit' && typeof node.args[0].value === 'string') {
+        node.args[0].kind === 'lit') {
       facts.tagPatterns.add(node.args[0].value)
     }
   }

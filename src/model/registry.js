@@ -866,7 +866,9 @@ const PLAYER_RELATIONS = [
 ]
 
 export function playerMatchesTag (ctx, playerIdx, pattern) {
-  if (playerIdx === undefined) {
+  // the analyzer rejects non-string patterns it can type, but an untyped
+  // expression can still deliver one at runtime: no match, no crash
+  if (playerIdx === undefined || typeof pattern !== 'string') {
     return undefined
   }
   if (pattern.includes('@')) {

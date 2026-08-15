@@ -88,6 +88,27 @@ describe('analyze()', () => {
       .toBe('PBQL_UNKNOWN_METHOD')
   })
 
+  test('method arguments are checked against their declared type', () => {
+    expect(analyzeWhere('shot.taggedWith(5)')[0]).toEqual({
+      code: 'PBQL_TYPE_MISMATCH',
+      message: 'taggedWith() takes a string pattern, not number',
+      line: 1,
+      col: 16,
+      length: 0
+    })
+    expect(analyzeWhere('me.taggedWith(true)')[0].code).toBe('PBQL_TYPE_MISMATCH')
+    expect(analyzeWhere('shot.isHitOnSide(1 + 2)')[0].message)
+      .toBe('isHitOnSide() takes a string side, not number')
+    // typed property arguments are checked too; untyped expressions pass
+    expect(analyzeWhere('shot.taggedWith(shot.speed)')[0].code)
+      .toBe('PBQL_TYPE_MISMATCH')
+    expect(analyzeWhere('shot.taggedWith(shot.type)')).toEqual([])
+    expect(analyzeWhere('shot.taggedWith(min(1, 2))')).toEqual([])
+    // the enum check still fires for well-typed strings
+    expect(analyzeWhere('shot.isHitOnSide("up")')[0].code)
+      .toBe('PBQL_UNKNOWN_ENUM_VALUE')
+  })
+
   test('a relation called like a method is an error, not a crash', () => {
     expect(analyzeWhere('shot.hitter("a")')[0]).toEqual({
       code: 'PBQL_UNKNOWN_METHOD',
@@ -296,7 +317,9 @@ describe('analyze()', () => {
     // non-string literals stay the type checker's business
     expect(analyzeWhere('shot.type = 5')).toEqual([
       expect.objectContaining({ code: 'PBQL_TYPE_MISMATCH' })])
-    expect(analyzeWhere('shot.taggedWith(5)')).toEqual([]) // no enum declared
+    // a non-string argument is the type check's business, not the enum's
+    expect(analyzeWhere('shot.taggedWith(5)').map(e => e.code))
+      .toEqual(['PBQL_TYPE_MISMATCH'])
   })
 
   test('GROUP BY: keys and aggregates in SELECT and ORDER BY are valid', () => {

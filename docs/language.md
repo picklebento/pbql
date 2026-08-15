@@ -108,9 +108,10 @@ shot.errors.faults.net` genuinely selects the shots the net didn't stop,
 no `exists()` guard needed.
 
 Comparisons require matching types (comparing a number to a string is a
-validation error, not `false`). Strings compare case-sensitively with `=`
-and `!=` only. Players compare with `=`/`!=` by identity
-(`shot.hitter = me`).
+validation error, not `false`). Method arguments are held to their declared
+type the same way (`shot.taggedWith(5)` is a validation error). Strings
+compare case-sensitively with `=` and `!=` only. Players compare with
+`=`/`!=` by identity (`shot.hitter = me`).
 
 String properties with an enumerated value set (the quoted alternatives in
 the [Data Dictionary](data-dictionary.md)'s unit column, e.g.

@@ -308,6 +308,8 @@ describe('registry', () => {
     expect(playerMatchesTag(farShotCtx, 0, 'Al*e')).toBe(true)
     expect(playerMatchesTag(farShotCtx, 0, 'Bob')).toBe(false)
     expect(playerMatchesTag(farShotCtx, undefined, 'x')).toBeUndefined()
+    // a pattern the analyzer could not type away is unknown, not a crash
+    expect(playerMatchesTag(farShotCtx, 0, 5)).toBeUndefined()
     // even with no tags and no player_data, default names still match
     const noTags = new Game({ ...makeDoublesGame(), meta: {} })
     delete noTags.insights.player_data
