@@ -854,6 +854,9 @@ describe('runQuery: inputs and errors', () => {
       .toBe('PBQL_LEX_ERROR')
     expect(runQuery({ text: 'FROM "f" WHERE shot.isVoley', games: [] })
       .errors[0].code).toBe('PBQL_UNKNOWN_PROPERTY')
+    // a relation called like a method: an error, never a thrown TypeError
+    expect(runQuery({ text: 'FROM "f" WHERE shot.hitter("a")', games: [] })
+      .errors[0].code).toBe('PBQL_UNKNOWN_METHOD')
   })
 })
 

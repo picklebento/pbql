@@ -88,6 +88,27 @@ describe('analyze()', () => {
       .toBe('PBQL_UNKNOWN_METHOD')
   })
 
+  test('a relation called like a method is an error, not a crash', () => {
+    expect(analyzeWhere('shot.hitter("a")')[0]).toEqual({
+      code: 'PBQL_UNKNOWN_METHOD',
+      message: 'shot.hitter is a player, not a method',
+      line: 1,
+      col: 16,
+      length: 0,
+      hint: 'call a player method on it (e.g. shot.hitter.taggedWith("Alex")) ' +
+        'or compare it (e.g. shot.hitter = me)'
+    })
+    // every relation root: the `me` root, a multi-hop path, no arguments at all
+    expect(analyzeWhere('me.teammate(1)')[0].message)
+      .toBe('me.teammate is a player, not a method')
+    expect(analyzeWhere('shot[1].hitter.opponentLHS(1)')[0].message)
+      .toBe('shot[1].hitter.opponentLHS is a player, not a method')
+    expect(analyzeWhere('shot.hitter()')[0].code).toBe('PBQL_UNKNOWN_METHOD')
+    // the arguments are still checked (they are ordinary expressions)
+    expect(analyzeWhere('shot.hitter(shot.isVoley)').map(e => e.code))
+      .toEqual(['PBQL_UNKNOWN_PROPERTY', 'PBQL_UNKNOWN_METHOD'])
+  })
+
   test('SELECT * stands alone: no GROUP BY, no CONTEXT', () => {
     const analyzeText = text => analyze(parse(text).ast).errors
     expect(analyzeText('SELECT * FROM "x" WHERE shot.num = 1')).toEqual([])

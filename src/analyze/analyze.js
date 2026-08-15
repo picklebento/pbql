@@ -235,6 +235,16 @@ export function analyze (query) {
         const table = REGISTRY[typeName]
         if (node.args) {
           node.args.forEach(a => checkExpr(a, false))
+          if (rest.length === 0) {
+            // the path ended at a relation (shot.hitter(…), me.teammate(…)):
+            // a relation names a player, it is not callable
+            const ref = printExpr({ ...node, args: undefined })
+            err(node, 'PBQL_UNKNOWN_METHOD',
+              `${ref} is a player, not a method`,
+              `call a player method on it (e.g. ${ref}.taggedWith("Alex")) ` +
+              `or compare it (e.g. ${ref} = me)`)
+            return
+          }
           const name = rest[rest.length - 1]
           const method = rest.length === 1 ? table.methods.get(name) : undefined
           if (method === undefined) {
