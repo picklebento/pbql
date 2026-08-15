@@ -998,6 +998,25 @@ describe('null and malformed data', () => {
     expect(runOn('exists(game.duration)', spanless).shots).toEqual([])
   })
 
+  test('a shot without a player_id has no hitter at all', () => {
+    const game = damaged(i => { i.rallies[0].shots[0].player_id = null })
+    // "null" is not a player: it is neither on team 0 nor anyone's partner
+    expect(runOn('shot.hitter.team = 0', game).shots
+      .map(s => [s.rallyIdx, s.shotIdx])).toEqual([[0, 2], [1, 1], [2, 0], [2, 2]])
+    expect(runOn('exists(shot.hitter.teammate.id)', game).shots).toHaveLength(8)
+    expect(runOn('shot.hitter = me', game).shots).toHaveLength(2)
+    expect(runOn('shot.taggedWith("Alice")', game).shots).toHaveLength(2)
+  })
+
+  test('a null myPlayerIdx is untagged, warning and all', () => {
+    const game = makeDoublesGame()
+    game.meta = { ...game.meta, myPlayerIdx: null }
+    const result = runOn('me.team = 0', game)
+    expect(result.shots).toEqual([])
+    expect(result.warnings).toEqual([
+      expect.objectContaining({ code: 'PBQL_ME_NOT_TAGGED' })])
+  })
+
   test('a shot that is not an object skips the game with a warning', () => {
     for (const broken of [null, 7]) {
       const result = runQuery({

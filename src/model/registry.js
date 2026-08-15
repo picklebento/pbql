@@ -880,8 +880,9 @@ const PLAYER_RELATIONS = [
 
 export function playerMatchesTag (ctx, playerIdx, pattern) {
   // the analyzer rejects non-string patterns it can type, but an untyped
-  // expression can still deliver one at runtime: no match, no crash
-  if (playerIdx === undefined || typeof pattern !== 'string') {
+  // expression can still deliver one at runtime: no match, no crash. A
+  // hitter without a player_id is nobody, not "Player NaN".
+  if (!Number.isInteger(playerIdx) || typeof pattern !== 'string') {
     return undefined
   }
   if (pattern.includes('@')) {

@@ -85,6 +85,9 @@ describe('Game', () => {
     const untagged = new Game({ ...makeDoublesGame(), meta: {} })
     expect(untagged.playerName(0)).toBe('Player 1')
     expect(untagged.myPlayerIdx).toBeUndefined()
+    // a null tag is no tag: it must not read as player slot 0
+    const nulled = new Game({ ...makeDoublesGame(), meta: { myPlayerIdx: null } })
+    expect(nulled.myPlayerIdx).toBeUndefined()
   })
 
   test('playerHandedness only surfaces the orientable values', () => {

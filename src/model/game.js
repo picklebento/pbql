@@ -146,8 +146,12 @@ export class Game {
     return handedness === 'left' || handedness === 'right' ? handedness : undefined
   }
 
+  // The host's "me" slot, when it names a player at all: anything else (no
+  // tag, or a null one) reads as untagged, so `me` conditions are unknown
+  // and the query reports why (PBQL_ME_NOT_TAGGED).
   get myPlayerIdx () {
-    return this.meta.myPlayerIdx
+    const idx = this.meta.myPlayerIdx
+    return Number.isInteger(idx) ? idx : undefined
   }
 
   // The whole video's duration (ms), when the serving layer augmented the

@@ -101,7 +101,9 @@ function evalProp (node, ctx) {
       break
     }
     const nextIdx = relation.resolve(subCtx, playerIdx)
-    if (nextIdx === undefined) {
+    // only a real player slot advances the cursor: a null player_id would
+    // otherwise navigate (null^1 = 1) and read properties as player "null"
+    if (!Number.isInteger(nextIdx)) {
       return UNKNOWN
     }
     playerIdx = nextIdx
