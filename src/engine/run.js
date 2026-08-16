@@ -2,7 +2,7 @@
 // to search (the host resolves FROM sources to insights JSON — the CLI via
 // src/sources/resolve.js); the engine analyzes, filters, orders,
 // limits, computes context windows, and projects SELECT.
-import { analyze, isAggregateCall } from '../analyze/analyze.js'
+import { analyze, containsAggregate, isAggregateCall } from '../analyze/analyze.js'
 import { parse } from '../lang/parse.js'
 import { printExpr } from '../lang/print.js'
 import { Game, InvalidInsightsError, UnsupportedInsightsError } from '../model/game.js'
@@ -19,6 +19,11 @@ function aggregateNumber (value) {
     return value ? 1 : 0
   }
   return asNumber(value)
+}
+
+// projected rows carry unknown as JSON null
+function nullIfUnknown (value) {
+  return value === UNKNOWN ? null : value
 }
 
 // one aggregate value over a set of shots; all inputs unknown (or an empty
@@ -39,6 +44,39 @@ function evalAggregate (expr, shots) {
     case 'min': return values.reduce((a, b) => Math.min(a, b))
     default: return values.reduce((a, b) => Math.max(a, b))
   }
+}
+
+// Substitutes every aggregate call within an expression with its computed
+// value (as a literal), so the surrounding expression can then be evaluated
+// by the ordinary evaluator — that is what lets an aggregate be an operand
+// (avg(x) * 100). A null aggregate (empty or all-unknown inputs) becomes
+// UNKNOWN, which propagates through the arithmetic instead of counting as 0.
+function withAggregatesEvaluated (node, shots) {
+  if (Array.isArray(node)) {
+    return node.map(child => withAggregatesEvaluated(child, shots))
+  }
+  if (node === null || typeof node !== 'object') {
+    return node
+  }
+  if (isAggregateCall(node)) {
+    const value = evalAggregate(node, shots)
+    return { kind: 'lit', value: value === null ? UNKNOWN : value }
+  }
+  const out = {}
+  for (const [key, child] of Object.entries(node)) {
+    out[key] = withAggregatesEvaluated(child, shots)
+  }
+  return out
+}
+
+// One value for an expression over a set of shots: its aggregates fold over
+// the whole set and the rest evaluates against the set's first shot (group
+// keys are constant within a group, and an aggregating projection has no
+// other per-shot references — the analyzer enforces both).
+function evalOverShots (expr, shots) {
+  return evalExpr(
+    containsAggregate(expr) ? withAggregatesEvaluated(expr, shots) : expr,
+    shots[0])
 }
 
 function compareValues (a, b) {
@@ -98,26 +136,12 @@ function project (query, selected) {
   const select = query.select === 'star' ? STAR_SELECT : query.select
   const columns = select.map(({ expr, label }) =>
     label ?? printExpr(expr))
-  const aggregateFlags = select.map(({ expr }) => isAggregateCall(expr))
-  if (aggregateFlags.some(Boolean)) {
-    if (!aggregateFlags.every(Boolean)) {
-      return {
-        errors: [{
-          code: 'PBQL_MIXED_AGGREGATES',
-          message: 'SELECT cannot mix aggregate and per-shot expressions ' +
-            '(unless the per-shot expressions are GROUP BY keys)',
-          line: 1,
-          col: 1,
-          length: 0
-        }]
-      }
-    }
-    return { columns, rows: [select.map(({ expr }) => evalAggregate(expr, selected))] }
-  }
-  const rows = selected.map(ctx => select.map(({ expr }) => {
-    const value = evalExpr(expr, ctx)
-    return value === UNKNOWN ? null : value
-  }))
+  // any aggregate collapses the whole projection to a single row (the
+  // analyzer has already rejected per-shot references alongside it)
+  const rows = select.some(({ expr }) => containsAggregate(expr))
+    ? [select.map(({ expr }) => nullIfUnknown(evalOverShots(expr, selected)))]
+    : selected.map(ctx =>
+      select.map(({ expr }) => nullIfUnknown(evalExpr(expr, ctx))))
   return { columns, rows }
 }
 
@@ -167,42 +191,16 @@ function projectGrouped (query, selected) {
     }
     groups.get(id).members.push(ctx)
   }
-  // HAVING: evaluate the condition once per group by substituting each
-  // aggregate call with its computed value (a literal), then reusing the
-  // ordinary expression evaluator on the rewritten tree (group keys are
-  // constant within a group, so the first member anchors them). null
-  // aggregates (empty/all-unknown inputs) become UNKNOWN, which filters.
-  const withAggregatesEvaluated = (node, members) => {
-    if (Array.isArray(node)) {
-      return node.map(child => withAggregatesEvaluated(child, members))
-    }
-    if (node === null || typeof node !== 'object') {
-      return node
-    }
-    if (isAggregateCall(node)) {
-      const value = evalAggregate(node, members)
-      return { kind: 'lit', value: value === null ? UNKNOWN : value }
-    }
-    const out = {}
-    for (const [key, child] of Object.entries(node)) {
-      out[key] = withAggregatesEvaluated(child, members)
-    }
-    return out
-  }
-
-  // the analyzer guarantees every SELECT/ORDER BY expr is one or the other
-  const valueOf = (expr, group) => {
-    if (isAggregateCall(expr)) {
-      return evalAggregate(expr, group.members)
-    }
-    const value = evalExpr(expr, group.members[0])
-    return value === UNKNOWN ? null : value
-  }
+  // the analyzer guarantees every SELECT/ORDER BY expr is built from
+  // aggregates (folded over the group) and group keys (constant within it)
+  const valueOf = (expr, group) =>
+    nullIfUnknown(evalOverShots(expr, group.members))
   let rows = [...groups.values()]
   if (query.having) {
-    rows = rows.filter(group => evalExpr(
-      withAggregatesEvaluated(query.having, group.members),
-      group.members[0]) === true)
+    // a group whose condition is unknown — an aggregate over empty or
+    // all-unknown inputs, say — filters out, exactly like WHERE
+    rows = rows.filter(group =>
+      evalOverShots(query.having, group.members) === true)
   }
   rows = query.orderBy
     ? sortByKeys(rows, query.orderBy, group => query.orderBy.map(({ expr }) => {
@@ -368,12 +366,9 @@ export function runQuery ({ text, games }) {
     result.columns = columns
     result.rows = rows
   } else if (query.select) {
-    const projected = project(query, selected)
-    if (projected.errors) {
-      return projected
-    }
-    result.columns = projected.columns
-    result.rows = projected.rows
+    const { columns, rows } = project(query, selected)
+    result.columns = columns
+    result.rows = rows
   }
   return result
 }

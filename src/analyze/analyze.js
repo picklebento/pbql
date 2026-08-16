@@ -40,6 +40,39 @@ export function isAggregateCall (expr) {
     expr.args.length === (expr.name === 'count' ? 0 : 1)
 }
 
+// Whether an aggregate appears anywhere within an expression. An aggregate
+// may be an operand of a larger expression (avg(x) * 100), so "does this
+// aggregate?" is a question about the whole tree, not just its root.
+export function containsAggregate (node) {
+  if (Array.isArray(node)) {
+    return node.some(containsAggregate)
+  }
+  if (node === null || typeof node !== 'object') {
+    return false
+  }
+  // loc objects and IN lists hold no nodes, so visiting them is harmless
+  return isAggregateCall(node) || containsAggregate(Object.values(node))
+}
+
+// The first per-shot reference (a property or a method call) OUTSIDE every
+// aggregate of the expression, or undefined. An aggregate's own argument is
+// per-shot by design, so it is skipped.
+function firstShotRef (node) {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = firstShotRef(child)
+      if (found !== undefined) {
+        return found
+      }
+    }
+    return undefined
+  }
+  if (node === null || typeof node !== 'object' || isAggregateCall(node)) {
+    return undefined
+  }
+  return node.kind === 'prop' ? node : firstShotRef(Object.values(node))
+}
+
 // structural AST equality ignoring source positions — the GROUP BY rule:
 // a SELECT/ORDER BY expression "is" a group key when the trees match
 function sameExpr (a, b) {
@@ -168,23 +201,25 @@ export function analyze (query) {
     })
   }
 
-  function checkExpr (node, allowAggregates, existsArg = false) {
-    // aggregates normally live only at the top of a SELECT/ORDER BY item;
-    // HAVING passes 'deep', where they may sit anywhere in the condition
-    const inner = allowAggregates === 'deep' ? 'deep' : false
+  // `aggregates` says what an aggregate call means at this point of the
+  // tree: true where they are allowed (SELECT items, HAVING, ORDER BY on a
+  // grouped query) — at any depth, so avg(x) * 100 works — 'nested' inside
+  // an aggregate's own argument (where they cannot go), and false where
+  // they were never allowed (WHERE, GROUP BY keys, ungrouped ORDER BY).
+  function checkExpr (node, aggregates, existsArg = false) {
     switch (node.kind) {
       case 'lit':
         return
       case 'not':
       case 'neg':
-        return checkExpr(node.arg, inner)
+        return checkExpr(node.arg, aggregates)
       case 'and':
       case 'or':
-        return node.args.forEach(a => checkExpr(a, inner))
+        return node.args.forEach(a => checkExpr(a, aggregates))
       case 'arith':
       case 'cmp': {
-        checkExpr(node.lhs, inner)
-        checkExpr(node.rhs, inner)
+        checkExpr(node.lhs, aggregates)
+        checkExpr(node.rhs, aggregates)
         if (node.kind === 'cmp') {
           const lhsType = inferType(node.lhs)
           const rhsType = inferType(node.rhs)
@@ -212,7 +247,7 @@ export function analyze (query) {
         return
       }
       case 'in': {
-        checkExpr(node.lhs, false)
+        checkExpr(node.lhs, aggregates)
         const lhsType = inferType(node.lhs)
         for (const value of node.list) {
           // eslint-disable-next-line valid-typeof -- lhsType is a typeof string
@@ -234,7 +269,7 @@ export function analyze (query) {
         const { typeName, rest } = walkRelations(node.base, node.path)
         const table = REGISTRY[typeName]
         if (node.args) {
-          node.args.forEach(a => checkExpr(a, false))
+          node.args.forEach(a => checkExpr(a, aggregates))
           if (rest.length === 0) {
             // the path ended at a relation (shot.hitter(…), me.teammate(…)):
             // a relation names a player, it is not callable
@@ -311,16 +346,24 @@ export function analyze (query) {
         return
       }
       case 'call':
-        return checkCall(node, allowAggregates)
+        return checkCall(node, aggregates)
     }
   }
 
-  function checkCall (node, allowAggregates) {
-    node.args.forEach(a => checkExpr(a, false, node.name === 'exists'))
+  function checkCall (node, aggregates) {
     const scalar = SCALAR_FNS.get(node.name)
-    const aggregate = allowAggregates ? AGGREGATE_FNS.get(node.name) : undefined
+    const aggregate = aggregates === true ? AGGREGATE_FNS.get(node.name) : undefined
     const fits = fn => fn !== undefined &&
       node.args.length >= fn.minArgs && node.args.length <= fn.maxArgs
+    // an aggregate folds many shots into one value, so its argument is an
+    // ordinary per-shot expression: aggregates cannot nest
+    node.args.forEach(a =>
+      checkExpr(a, fits(aggregate) ? 'nested' : aggregates, node.name === 'exists'))
+    if (aggregates === 'nested' && isAggregateCall(node)) {
+      err(node, 'PBQL_NESTED_AGGREGATE',
+        `${node.name}() cannot appear inside another aggregate`)
+      return
+    }
     if (fits(aggregate) || fits(scalar)) {
       // timecode's second argument is the withFrames flag; expressions of
       // unknown type pass (they evaluate per the Kleene rules)
@@ -337,7 +380,7 @@ export function analyze (query) {
       err(node, 'PBQL_UNKNOWN_FUNCTION', `unknown function "${node.name}"`,
         hintFor(node.name, [
           ...SCALAR_FNS.keys(),
-          ...(allowAggregates ? AGGREGATE_FNS.keys() : [])
+          ...(aggregates === true ? AGGREGATE_FNS.keys() : [])
         ]))
     } else {
       err(node, 'PBQL_BAD_ARITY',
@@ -381,17 +424,11 @@ export function analyze (query) {
         'rows, not shots')
     }
     const isKey = expr => groupBy.some(key => sameExpr(key, expr))
-    const selectItems = Array.isArray(query.select) ? query.select : []
-    for (const { expr } of [...selectItems, ...(query.orderBy ?? [])]) {
-      if (!isAggregateCall(expr) && !isKey(expr)) {
-        err(expr, 'PBQL_NOT_GROUPED',
-          `"${printExpr(expr)}" must be an aggregate or a GROUP BY key`)
-      }
-    }
-    // HAVING is a boolean over the grouped row: aggregates and group keys
-    // may combine freely, but a bare per-shot reference has no single
-    // value within a group
-    const checkHavingRefs = node => {
+    // Every grouped expression must have one value per group: aggregates
+    // and group keys do, and they combine freely (avg(shot.speed) * 2,
+    // count() >= 4), but a bare per-shot reference does not. SELECT,
+    // ORDER BY and HAVING all answer to this rule.
+    const checkGroupedRefs = node => {
       if (node === null || typeof node !== 'object') {
         return
       }
@@ -404,14 +441,36 @@ export function analyze (query) {
         return
       }
       for (const key of ['arg', 'lhs', 'rhs']) {
-        checkHavingRefs(node[key])
+        checkGroupedRefs(node[key])
       }
       for (const child of node.args ?? []) {
-        checkHavingRefs(child)
+        checkGroupedRefs(child)
       }
     }
+    const selectItems = Array.isArray(query.select) ? query.select : []
+    for (const { expr } of [...selectItems, ...(query.orderBy ?? [])]) {
+      checkGroupedRefs(expr)
+    }
     if (query.having) {
-      checkHavingRefs(query.having)
+      checkGroupedRefs(query.having)
+    }
+  }
+
+  // An aggregating SELECT without GROUP BY collapses every shot into ONE
+  // row, so a per-shot reference beside (or inside) the aggregates has no
+  // single value to report — the ungrouped counterpart of checkGrouping.
+  function checkUngroupedAggregates () {
+    const select = Array.isArray(query.select) ? query.select : []
+    if (!select.some(({ expr }) => containsAggregate(expr))) {
+      return
+    }
+    for (const { expr } of select) {
+      const ref = firstShotRef(expr)
+      if (ref !== undefined) {
+        err(ref, 'PBQL_MIXED_AGGREGATES',
+          'SELECT cannot mix aggregate and per-shot expressions ' +
+          '(unless the per-shot expressions are GROUP BY keys)')
+      }
     }
   }
 
@@ -434,7 +493,7 @@ export function analyze (query) {
     checkExpr(item.expr, grouped) // grouped rows may order by aggregates
   }
   if (query.having) {
-    checkExpr(query.having, 'deep') // aggregates anywhere in the condition
+    checkExpr(query.having, true) // aggregates anywhere in the condition
     if (!grouped) {
       err(query.having, 'PBQL_HAVING_NO_GROUP_BY',
         'HAVING filters grouped rows: add a GROUP BY (or move the ' +
@@ -443,11 +502,14 @@ export function analyze (query) {
   }
   if (grouped) {
     checkGrouping()
-  } else if (query.select && !isDefaultContext(query.context)) {
-    // a plain projection has no clips either, so CONTEXT is meaningless on it
-    const at = query.select === 'star' ? query.where : query.select[0].expr
-    err(at, 'PBQL_SELECT_CONTEXT',
-      'CONTEXT applies to shot clips, not SELECT results')
+  } else {
+    checkUngroupedAggregates()
+    if (query.select && !isDefaultContext(query.context)) {
+      // a plain projection has no clips either, so CONTEXT is meaningless
+      const at = query.select === 'star' ? query.where : query.select[0].expr
+      err(at, 'PBQL_SELECT_CONTEXT',
+        'CONTEXT applies to shot clips, not SELECT results')
+    }
   }
   return { errors }
 }

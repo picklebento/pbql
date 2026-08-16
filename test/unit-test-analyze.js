@@ -152,9 +152,10 @@ describe('analyze()', () => {
     expect(analyzeText('SELECT rally.num FROM "x" WHERE shot.num >= 1 ' +
       'GROUP BY rally.num HAVING shot.speed > 3')[0].code)
       .toBe('PBQL_NOT_GROUPED')
-    // SELECT items still take aggregates only at the top
-    expect(analyzeText('SELECT count() * 2 FROM "x" WHERE shot.num >= 1')[0]
-      .code).toBe('PBQL_UNKNOWN_FUNCTION')
+    // an aggregate may be scaled inside the condition
+    expect(analyzeText('SELECT rally.num, avg(shot.speed) FROM "x" ' +
+      'WHERE shot.num >= 1 GROUP BY rally.num ' +
+      'HAVING avg(shot.speed) * 1.609 > 50')).toEqual([])
   })
 
   test('bare non-player objects are not values; players are (identity)', () => {
@@ -333,6 +334,68 @@ describe('analyze()', () => {
       'ORDER BY avg(shot.speed) DESC, shot.type')).toEqual([])
   })
 
+  test('aggregates combine with operators wherever they are allowed', () => {
+    // the motivating case: a rate charted as a percentage
+    expect(analyzeQuery(
+      'SELECT shot.type, avg(rally.winner = me.team) * 100 AS "win %" ' +
+      'FROM "f" WHERE shot.hitter = me GROUP BY shot.type')).toEqual([])
+    // ungrouped: one aggregate scaled, and two combined
+    expect(analyzeQuery('SELECT count() / 2 FROM "f" WHERE true')).toEqual([])
+    expect(analyzeQuery('SELECT max(shot.speed) - min(shot.speed) AS "spread" ' +
+      'FROM "f" WHERE true')).toEqual([])
+    // grouped ORDER BY, and a scalar function wrapping an aggregate
+    expect(analyzeQuery('SELECT shot.type FROM "f" WHERE true ' +
+      'GROUP BY shot.type ORDER BY avg(shot.quality.overall) * 100 DESC'))
+      .toEqual([])
+    expect(analyzeQuery('SELECT kph(avg(shot.speed)) FROM "f" WHERE true'))
+      .toEqual([])
+    // constants ride along with an aggregate; a per-shot column does not
+    expect(analyzeQuery('SELECT count(), 100 FROM "f" WHERE true')).toEqual([])
+    expect(analyzeQuery('SELECT count() * 2, shot.type FROM "f" WHERE true')[0])
+      .toMatchObject({
+        code: 'PBQL_MIXED_AGGREGATES',
+        message: 'SELECT cannot mix aggregate and per-shot expressions ' +
+          '(unless the per-shot expressions are GROUP BY keys)',
+        col: 21 // reported at the ungrouped reference itself
+      })
+    // ...including within one expression, where nothing pairs them up
+    expect(analyzeQuery('SELECT count() * shot.speed FROM "f" WHERE true')[0].code)
+      .toBe('PBQL_MIXED_AGGREGATES')
+    expect(analyzeQuery('SELECT count() * rally.count(shot.isVolley) ' +
+      'FROM "f" WHERE true')[0].code).toBe('PBQL_MIXED_AGGREGATES')
+  })
+
+  test('aggregates stay illegal where they have no set of shots', () => {
+    // WHERE, GROUP BY keys and an ungrouped ORDER BY reject them, and
+    // arithmetic around one changes nothing
+    expect(analyzeWhere('avg(shot.speed) * 100 > 20')[0].code)
+      .toBe('PBQL_UNKNOWN_FUNCTION')
+    expect(analyzeQuery('SELECT count() FROM "f" WHERE true ' +
+      'GROUP BY count() * 2')[0].code).toBe('PBQL_UNKNOWN_FUNCTION')
+    expect(analyzeQuery('FROM "f" WHERE true ORDER BY count() * 2')[0].code)
+      .toBe('PBQL_UNKNOWN_FUNCTION')
+  })
+
+  test('aggregates never nest', () => {
+    // one clear error, not a confusing "unknown function"
+    expect(analyzeQuery('SELECT avg(count()) FROM "f" WHERE true')).toEqual([
+      expect.objectContaining({
+        code: 'PBQL_NESTED_AGGREGATE',
+        message: 'count() cannot appear inside another aggregate'
+      })
+    ])
+    expect(analyzeQuery('SELECT sum(avg(shot.speed) * 2) FROM "f" WHERE true')[0]
+      .code).toBe('PBQL_NESTED_AGGREGATE')
+    // 1-ary min() is the aggregate; the 2-ary scalar min() is fine there
+    expect(analyzeQuery('SELECT avg(min(shot.speed)) FROM "f" WHERE true')[0]
+      .message).toBe('min() cannot appear inside another aggregate')
+    expect(analyzeQuery('SELECT avg(min(shot.speed, 40)) FROM "f" WHERE true'))
+      .toEqual([])
+    // an unknown function inside an aggregate is still just unknown
+    expect(analyzeQuery('SELECT avg(nope(shot.speed)) FROM "f" WHERE true')[0]
+      .code).toBe('PBQL_UNKNOWN_FUNCTION')
+  })
+
   test('GROUP BY: non-key, non-aggregate expressions are PBQL_NOT_GROUPED', () => {
     const [select] = analyzeQuery(
       'SELECT shot.speed FROM "f" WHERE true GROUP BY shot.type')
@@ -344,13 +407,22 @@ describe('analyze()', () => {
     expect(analyzeQuery(
       'SELECT shot[1].type FROM "f" WHERE true GROUP BY shot.type')[0].code)
       .toBe('PBQL_NOT_GROUPED')
-    // 2-ary min() is the scalar function, not the aggregate
+    // 2-ary min() is the scalar function, not the aggregate, so its
+    // ungrouped argument is what has no per-group value
     expect(analyzeQuery(
       'SELECT count() FROM "f" WHERE true GROUP BY shot.type ' +
       'ORDER BY min(shot.speed, 1)')[0]).toMatchObject({
       code: 'PBQL_NOT_GROUPED',
-      message: '"min(shot.speed, 1)" must be an aggregate or a GROUP BY key'
+      message: '"shot.speed" must be an aggregate or a GROUP BY key'
     })
+    // an aggregate combined with a per-shot property is caught inside the
+    // expression too
+    expect(analyzeQuery(
+      'SELECT count() * shot.speed FROM "f" WHERE true GROUP BY shot.type')[0])
+      .toMatchObject({
+        code: 'PBQL_NOT_GROUPED',
+        message: '"shot.speed" must be an aggregate or a GROUP BY key'
+      })
   })
 
   test('GROUP BY needs a SELECT and cannot carry CONTEXT', () => {

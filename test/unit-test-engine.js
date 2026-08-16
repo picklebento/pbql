@@ -579,6 +579,32 @@ describe('runQuery: SELECT', () => {
     })
     expect(result.errors[0].code).toBe('PBQL_MIXED_AGGREGATES')
   })
+
+  test('aggregates are operands: arithmetic on them projects one row', () => {
+    const project = text => runQuery({ text, games: [makeDoublesGame()] })
+    // 9 shots; speeds 35, 20, 45, 38, 30, 30, 50, 30 (the sparse shot has none)
+    const result = project('SELECT count() / 2, ' +
+      'max(shot.speed) - min(shot.speed) AS "spread", ' +
+      'kph(max(shot.speed)) FROM "x" WHERE true')
+    expect(result.columns).toEqual(['count() / 2', 'spread', 'kph(max(shot.speed))'])
+    expect(result.rows).toEqual([[4.5, 30, 50 * 1.609344]])
+    // unknown propagates through the arithmetic: it never becomes 0
+    expect(project('SELECT avg(shot.type) * 100 FROM "x" WHERE true').rows)
+      .toEqual([[null]])
+    // an empty selection still projects its one row (and 100/0 is unknown)
+    expect(project('SELECT count(), 100 / count() FROM "x" WHERE false').rows)
+      .toEqual([[0, null]])
+  })
+
+  test('an aggregate row over no shots has no game context', () => {
+    // nothing was selected, so there is no shot to read the game off: the
+    // frame rate is unknown and date() falls back to the local zone
+    const result = runQuery({
+      text: 'SELECT timecode(count(), true), date(count()) FROM "x" WHERE false',
+      games: [makeDoublesGame()]
+    })
+    expect(result.rows).toEqual([[null, new Date(0).toLocaleDateString('en-CA')]])
+  })
 })
 
 describe('runQuery: GROUP BY', () => {
@@ -624,6 +650,28 @@ describe('runQuery: GROUP BY', () => {
       'sum(rally.winner = shot.hitter.team) FROM "x" WHERE true ' +
       'GROUP BY shot.hitter.team')
     expect(result.rows).toEqual([[0, 0.8, 4], [1, 0.25, 1]])
+  })
+
+  test('scaled aggregates: a rate as a percentage, per group', () => {
+    // the AI Coach case: my rallies by shot type — rallies 0 and 2 (both my
+    // drives) went to my team, rally 1 (my sparse, type-less shot) did not
+    const result = group('SELECT shot.type, ' +
+      'avg(rally.winner = me.team) * 100 AS "win %" FROM "x" ' +
+      'WHERE shot.hitter = me GROUP BY shot.type')
+    expect(result.columns).toEqual(['shot.type', 'win %'])
+    expect(result.rows).toEqual([['drive', 100], [null, 0]])
+  })
+
+  test('HAVING and ORDER BY take scaled aggregates too', () => {
+    // avg speeds are drive 35.5, drop 20, smash 45 (the null-type group has
+    // no speeds at all): only the groups past 50 km/h survive
+    expect(group('SELECT shot.type, avg(shot.speed) AS "mph" FROM "x" ' +
+      'WHERE true GROUP BY shot.type HAVING avg(shot.speed) * 1.609 > 50').rows)
+      .toEqual([['drive', 35.5], ['smash', 45]])
+    // avg overall quality: smash 0.95, drop 0.9, drive ~0.692, null-type 0.2
+    expect(group('SELECT shot.type FROM "x" WHERE true GROUP BY shot.type ' +
+      'ORDER BY avg(shot.quality.overall) * 100 DESC').rows)
+      .toEqual([['smash'], ['drop'], ['drive'], [null]])
   })
 
   test('ORDER BY an aggregate DESC with LIMIT keeps the top rows', () => {

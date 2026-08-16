@@ -159,7 +159,9 @@ function timecode (node, ctx) {
   if (!withFrames) {
     return base
   }
-  const fps = ctx.game.insights.camera?.fps
+  // an aggregating projection over zero shots has no game context to read a
+  // frame rate from, so frames are unknown there (as they are without fps)
+  const fps = ctx?.game.insights.camera?.fps
   if (!Number.isFinite(fps) || fps <= 0) {
     return UNKNOWN
   }
@@ -206,7 +208,9 @@ function evalCall (node, ctx) {
     case 'kph': return args[0] * 1.609344
     case 'toMs': return args[0] * 1000
     case 'toSecs': return args[0] / 1000
-    case 'date': return localDate(args[0], ctx.game.meta.tz)
+    // with no shot context (an aggregating projection over zero shots) there
+    // is no host timezone either, so the process's own local zone applies
+    case 'date': return localDate(args[0], ctx?.game.meta.tz)
     default: return UNKNOWN // unknown functions never reach here via runQuery
   }
 }
