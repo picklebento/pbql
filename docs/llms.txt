@@ -56,9 +56,15 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   shot.isVolley booleans.
 - SELECT * (alone, never with GROUP BY) lists every scalar column of
   the shot, its rally, and the game as a table.
+- Aggregates (count, sum, avg, min, max) are operands like any other:
+  they can be scaled and combined inside a bigger expression, in
+  SELECT, HAVING, or a grouped ORDER BY. A rate becomes a percentage
+  with avg(<condition>) * 100 — use that whenever the answer is asked
+  for (or charted) as a percentage. Aggregates never nest
+  (avg(count()) is an error) and never appear in WHERE or GROUP BY.
 - GROUP BY computes per-group breakdowns (win rate by shot type, avg
   speed by player) in one query; with it, every SELECT/ORDER BY item
-  must be an aggregate or one of the group keys, and CONTEXT is not
+  must be built from aggregates and group keys, and CONTEXT is not
   allowed. HAVING (after GROUP BY) filters the grouped rows using
   aggregates and group keys, e.g. GROUP BY rally.num HAVING
   count() >= 4.
@@ -462,6 +468,19 @@ Q: My win rate by shot type — how do rallies go when I hit each kind of shot?
     FROM "83gyqyc10y8f"
     WHERE shot.hitter = me
     GROUP BY shot.type
+
+Q: What percentage of rallies does my team win by the shot type I open with?
+
+    SELECT shot.type, avg(rally.winner = me.team) * 100 AS "win %"
+    FROM "83gyqyc10y8f"
+    WHERE shot.num = 1 AND shot.hitter = me
+    GROUP BY shot.type
+
+Q: How much faster is my hardest shot than my softest one?
+
+    SELECT max(shot.speed) - min(shot.speed) AS "mph spread"
+    FROM "83gyqyc10y8f"
+    WHERE shot.hitter = me
 
 Q: Average ball speed for each stroke side, fastest first
 

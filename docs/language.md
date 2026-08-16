@@ -23,7 +23,7 @@ shot's video window per `CONTEXT` (a one-shot lead-in and lead-out by default;
 §6.3), sorts, limits, and outputs. Without
 `SELECT`, the output is the selected shots themselves, as clips; with
 `SELECT`, it is one projected row per shot,
-or a single row if every selected expression is an aggregate. A projection
+or a single row if any selected expression uses an aggregate. A projection
 returns rows, not clips, so `CONTEXT` applies only to shot-list queries.
 `GROUP BY` (§6.7) changes the output to one row per group; it requires
 `SELECT` and, like any projection, excludes `CONTEXT`.
@@ -326,15 +326,31 @@ One row per selected shot; `AS "label"` names the output column (labels are
 purely cosmetic — units never change). `SELECT *` (alone, and never with
 `GROUP BY`) lists every scalar column of the shot, its rally, and the game
 — the whole dictionary as a table. Aggregates `count()`, `sum(x)`,
-`avg(x)`, `min(x)`, `max(x)` collapse the result to a single row; mixing
-aggregate and non-aggregate expressions is a validation error unless the
-non-aggregates are `GROUP BY` keys (§6.7). Aggregates coerce their inputs
+`avg(x)`, `min(x)`, `max(x)` collapse the result to a single row; mixing an
+aggregate with a per-shot property is a validation error unless the per-shot
+expressions are `GROUP BY` keys (§6.7). Aggregates coerce their inputs
 to numbers and skip unknowns:
 
 - **booleans fold to 1/0** — so `sum(<condition>)` counts matches and
   `avg(<condition>)` is a rate, e.g. `avg(rally.winner = me.team)`;
 - finite numbers pass through;
 - anything else (strings, …) is unknown and skipped.
+
+An aggregate is an ordinary operand: it may sit anywhere inside a larger
+expression, so a rate can be charted as a percentage and two aggregates can
+be combined.
+
+```sql
+SELECT avg(rally.winner = me.team) * 100 AS "win %",
+       max(shot.speed) - min(shot.speed) AS "speed spread"
+```
+
+The unknown rules of §4 still apply — an aggregate with nothing to fold
+(no shots, or every input unknown) is unknown, and unknown times 100 stays
+unknown, never 0. Aggregates never nest (`avg(count())` is a validation
+error), and they exist only in `SELECT`, `HAVING`, and a grouped
+`ORDER BY` — never in `WHERE` or a `GROUP BY` key, which are evaluated one
+shot at a time.
 
 `count()` counts selected shots. PBQL's underlying rows are shots, so rally
 and game properties repeat on every selected shot. To calculate a result per
@@ -357,8 +373,10 @@ group whose key is null for that component (the key outputs as null).
 Because grouped output is rows, not shots:
 
 - `SELECT` is required, and every `SELECT` and `ORDER BY` expression must
-  be an aggregate call or structurally equal to one of the group keys.
-  `ORDER BY` aggregates need not appear in `SELECT`.
+  be built from aggregates, group keys (matched structurally), and
+  constants — `avg(shot.speed) * 2` and `count() / rally.num` are fine,
+  a bare per-shot property is not. `ORDER BY` aggregates need not appear
+  in `SELECT`.
 - `CONTEXT BEFORE`/`AFTER` cannot be combined with `GROUP BY`.
 
 Aggregates evaluate per group — `count()` counts the group's shots and
@@ -369,10 +387,10 @@ group. Keys may not themselves contain aggregates.
 `HAVING <condition>` (written after `GROUP BY`) filters the grouped rows
 before `ORDER BY`/`LIMIT`. Aggregates and group keys combine freely in
 the condition — `HAVING count() >= 4`, `HAVING rally.num >= 2 AND
-avg(shot.speed) > 25` — but a bare per-shot property is a validation
-error (it has no single value within a group). A group whose condition
-is unknown (say, an aggregate over all-unknown inputs) is dropped, like
-`WHERE`.
+avg(shot.speed) > 25`, `HAVING avg(shot.speed) * 1.609 > 50` — but a bare
+per-shot property is a validation error (it has no single value within a
+group). A group whose condition is unknown (say, an aggregate over
+all-unknown inputs) is dropped, like `WHERE`.
 
 Row order: `ORDER BY` sorts the rows by its aggregate/key expressions
 (unknown/null values last regardless of direction) and `LIMIT` keeps the
