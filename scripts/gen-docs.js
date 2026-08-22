@@ -98,7 +98,18 @@ function readExamples () {
   return examples.map(e => ({ ...e, query: e.query.join('\n') }))
 }
 
-function generateLlmsTxt () {
+/**
+ * The guide, for two audiences.
+ *
+ * `withCli` keeps the CLI section: docs/llms.txt is read by people (and
+ * their own LLMs) who run `pbql` in a shell. LLM_GUIDE is not -- every
+ * consumer of it drives PBQL through tools (the AI Coach, /video/nl_to_pbql,
+ * the MCP server, the app's "build with AI" prompt), none of which has a
+ * shell. Measured on the NL->PBQL gate, 84 cases, gemini-2.5-flash: with
+ * the section 82/84 exact in all of 6 runs, without it 84/84 in all of 3.
+ * The section is not merely unused, it costs two cases.
+ */
+function generateLlmsTxt ({ withCli = true } = {}) {
   const parts = [
     '# PBQL (Pickleball Query Language) — guide for LLMs',
     '',
@@ -243,19 +254,23 @@ function generateLlmsTxt () {
     '  hitting at/near a player test that player\'s position properties, not',
     '  shot.to coordinates.',
     '',
-    '## Using the PBQL CLI',
-    '',
-    "    pbql '<query>' [--me N] [--out json|csv|edl|ffmpeg|se]",
-    '',
-    '- Each FROM string resolves by one rule: a pb.vision video id with an',
-    '  optional 1-based session ("83gyqyc10y8f", "83gyqyc10y8f:2") fetched',
-    '  from pb.vision; else an existing file (one insights JSON); else a',
-    '  directory (every *.json beneath it, recursively); else a glob',
-    '  ("games/*.json").',
-    '- Fetched insights are cached with no expiration in $XDG_CACHE_HOME/pbql',
-    "  (default ~/.cache/pbql); to refetch, delete the game's file (or the",
-    '  whole directory).',
-    '',
+    ...(withCli
+      ? [
+          '## Using the PBQL CLI',
+          '',
+          "    pbql '<query>' [--me N] [--out json|csv|edl|ffmpeg|se]",
+          '',
+          '- Each FROM string resolves by one rule: a pb.vision video id with an',
+          '  optional 1-based session ("83gyqyc10y8f", "83gyqyc10y8f:2") fetched',
+          '  from pb.vision; else an existing file (one insights JSON); else a',
+          '  directory (every *.json beneath it, recursively); else a glob',
+          '  ("games/*.json").',
+          '- Fetched insights are cached with no expiration in $XDG_CACHE_HOME/pbql',
+          "  (default ~/.cache/pbql); to refetch, delete the game's file (or the",
+          '  whole directory).',
+          ''
+        ]
+      : []),
     '## Data Dictionary',
     ''
   ]
@@ -286,8 +301,10 @@ fs.writeFileSync(path.join(repoRoot, 'docs', 'llms.txt'),
 console.log('wrote docs/data-dictionary.md and docs/llms.txt')
 
 // also emit the guide as an importable module so host apps (e.g. the Shot
-// Explorer's "build with AI" button) can embed it in copyable LLM prompts
-const guide = generateLlmsTxt()
+// Explorer's "build with AI" button) can embed it in copyable LLM prompts.
+// No consumer of it has a shell, and the CLI section measurably costs
+// accuracy, so this copy leaves it out (see generateLlmsTxt).
+const guide = generateLlmsTxt({ withCli: false })
 fs.writeFileSync(path.join(repoRoot, 'src', 'llm', 'guide.js'),
   '// GENERATED FILE — do not edit. Run `yarn docs` to regenerate from the\n' +
   '// property registry and the example corpus.\n' +
