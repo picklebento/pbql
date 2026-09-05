@@ -49,6 +49,15 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   real fault, so count forced faults as shot.errors.unforced = false.
   Subtracting the unforced count from the fault count counts every
   unknown as forced (on one sample game that turns 9 into 19).
+- There is no UNION, no subquery and no FROM-less SELECT. Two ways to
+  chart a comparison, and both beat hand-writing the numbers: when the
+  categories are values of one property, GROUP BY it (GROUP BY
+  shot.errors.unforced returns a row each for true, false and unknown);
+  when they are unrelated conditions, put each in its own aggregate
+  column (SELECT sum(shot.errors.unforced) AS "My errors",
+  sum(shot.winnerType = "forced_fault") AS "Faults I forced").
+  Never SELECT a literal you worked out yourself: a chart is supposed
+  to show what the query found.
 - Durations: `2secs`, `1 shot`, `rally` (= to the rally boundary), or
   min(a, b)/max(a, b) of two durations.
   `N shots` also adds those shots to the results as context.
