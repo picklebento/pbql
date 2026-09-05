@@ -253,8 +253,19 @@ const SHOT_PROPS = [
     path: 'winnerType',
     type: 'string',
     unit: '"clean"|"forced_fault"',
-    doc: 'how this shot won the rally ("clean" = fault-free final shot, ' +
-      '"forced_fault" = the opponents faulted on their reply); unknown if it did not win',
+    // "forced_fault" here and errors.unforced below use the same
+    // forced/unforced vocabulary for OPPOSITE players, and readers walk
+    // into it: a coaching model asked whether a player lost more points
+    // to his own errors or to opponent pressure grouped by this field,
+    // read the forced_fault rows as faults he committed, and reported
+    // the reverse of the truth. Say whose shot this is, in the doc the
+    // reader actually sees.
+    doc: 'set only on a shot that WON the rally, and never on a fault: ' +
+      '"clean" = the winning shot was fault-free, "forced_fault" = the ' +
+      'OPPONENTS faulted replying to it. Both values mean the hitter won ' +
+      'the rally. For faults the hitter committed use hasFault and ' +
+      'errors.unforced instead; "forced_fault" here is not the opposite ' +
+      'of errors.unforced, which describes the player who missed',
     extract: ctx => ctx.shot.winner_type
   },
   {
@@ -380,8 +391,10 @@ const SHOT_PROPS = [
   {
     path: 'errors.unforced',
     type: 'boolean',
-    doc: 'whether the fault on this shot was an unforced error; only ' +
-      'assessed on actual faults with a confidently-known rally winner',
+    doc: 'whether the fault on this shot was an unforced error, i.e. the ' +
+      'hitter MISSED without being put under pressure; only assessed on ' +
+      'actual faults with a confidently-known rally winner. Not related ' +
+      'to winnerType "forced_fault", which is set on a shot that WON',
     extract: ctx => ctx.shot.errors?.unforced
   },
   {

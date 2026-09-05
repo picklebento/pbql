@@ -38,6 +38,13 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   are never unknown (a fault is recorded only when it happened, so
   absent means false). NOT shot.errors.faults.net simply selects every
   shot the net didn't stop — no exists() guard needed.
+- Who won and who missed are different properties, and they share a
+  vocabulary. shot.winnerType is set only on a shot that WON the
+  rally: "forced_fault" there means the OPPONENTS faulted replying to
+  it. Faults the hitter committed are shot.hasFault and
+  shot.errors.unforced. So "points lost to my own errors" is
+  shot.errors.unforced, never winnerType = "forced_fault", and
+  grouping faults by winnerType counts rallies the hitter won.
 - Durations: `2secs`, `1 shot`, `rally` (= to the rally boundary), or
   min(a, b)/max(a, b) of two durations.
   `N shots` also adds those shots to the results as context.
@@ -169,7 +176,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - shot.verticalType (string ["dig"|"neutral"|"overhead"]): the vertical character of the stroke, from strike height (dig ≤ 2.5ft, overhead ≥ 6ft)
 - shot.strokeSide (string ["left"|"right"]): which side of the body the stroke was made on
 - shot.strokeType (string ["forehand"|"backhand"]): forehand or backhand, from strokeSide and the hitter's handedness; needs augmented insights carrying handedness (strokeSide always works)
-- shot.winnerType (string ["clean"|"forced_fault"]): how this shot won the rally ("clean" = fault-free final shot, "forced_fault" = the opponents faulted on their reply); unknown if it did not win
+- shot.winnerType (string ["clean"|"forced_fault"]): set only on a shot that WON the rally, and never on a fault: "clean" = the winning shot was fault-free, "forced_fault" = the OPPONENTS faulted replying to it. Both values mean the hitter won the rally. For faults the hitter committed use hasFault and errors.unforced instead; "forced_fault" here is not the opposite of errors.unforced, which describes the player who missed
 - shot.quality.overall (number [0-1]): the overall quality of the shot, derived from the execution quality (1 is best)
 - shot.quality.execution (number [0-1]): how well the shot was executed
 - shot.quality.pressure (number [0-1]): positional pressure faced and imposed by this shot (1 = most pressure); unknown for singles, serves, and returns
@@ -187,7 +194,7 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
 - shot.hitTime (number [seconds]): when in the video the ball was struck
 - shot.endTime (number [seconds]): when in the video the shot's flight ended
 - shot.hasError (boolean): whether any error was detected on this shot
-- shot.errors.unforced (boolean): whether the fault on this shot was an unforced error; only assessed on actual faults with a confidently-known rally winner
+- shot.errors.unforced (boolean): whether the fault on this shot was an unforced error, i.e. the hitter MISSED without being put under pressure; only assessed on actual faults with a confidently-known rally winner. Not related to winnerType "forced_fault", which is set on a shot that WON
 - shot.errors.popup (string ["exploited"|"potential"]): whether a dink or drop popped the ball up ("exploited" = the opponents attacked it out of the air, "potential" = they did not)
 - shot.hasFault (boolean): whether this shot committed a rule fault, actual or potential — e.g. a ball headed out that an opponent played anyway
 - shot.errors.faults.net (boolean): whether the net stopped the ball

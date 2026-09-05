@@ -27,7 +27,7 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.verticalType` | the vertical character of the stroke, from strike height (dig ≤ 2.5ft, overhead ≥ 6ft) | string | "dig"\|"neutral"\|"overhead" |
 | `shot.strokeSide` | which side of the body the stroke was made on | string | "left"\|"right" |
 | `shot.strokeType` | forehand or backhand, from strokeSide and the hitter's handedness; needs augmented insights carrying handedness (strokeSide always works) | string | "forehand"\|"backhand" |
-| `shot.winnerType` | how this shot won the rally ("clean" = fault-free final shot, "forced_fault" = the opponents faulted on their reply); unknown if it did not win | string | "clean"\|"forced_fault" |
+| `shot.winnerType` | set only on a shot that WON the rally, and never on a fault: "clean" = the winning shot was fault-free, "forced_fault" = the OPPONENTS faulted replying to it. Both values mean the hitter won the rally. For faults the hitter committed use hasFault and errors.unforced instead; "forced_fault" here is not the opposite of errors.unforced, which describes the player who missed | string | "clean"\|"forced_fault" |
 | `shot.quality.overall` | the overall quality of the shot, derived from the execution quality (1 is best) | number | 0-1 |
 | `shot.quality.execution` | how well the shot was executed | number | 0-1 |
 | `shot.quality.pressure` | positional pressure faced and imposed by this shot (1 = most pressure); unknown for singles, serves, and returns | number | 0-1 |
@@ -45,7 +45,7 @@ The shot being tested. `shot[k]` addresses the shot k earlier/later in the same 
 | `shot.hitTime` | when in the video the ball was struck | number | seconds |
 | `shot.endTime` | when in the video the shot's flight ended | number | seconds |
 | `shot.hasError` | whether any error was detected on this shot | boolean |  |
-| `shot.errors.unforced` | whether the fault on this shot was an unforced error; only assessed on actual faults with a confidently-known rally winner | boolean |  |
+| `shot.errors.unforced` | whether the fault on this shot was an unforced error, i.e. the hitter MISSED without being put under pressure; only assessed on actual faults with a confidently-known rally winner. Not related to winnerType "forced_fault", which is set on a shot that WON | boolean |  |
 | `shot.errors.popup` | whether a dink or drop popped the ball up ("exploited" = the opponents attacked it out of the air, "potential" = they did not) | string | "exploited"\|"potential" |
 | `shot.hasFault` | whether this shot committed a rule fault, actual or potential — e.g. a ball headed out that an opponent played anyway | boolean |  |
 | `shot.errors.faults.net` | whether the net stopped the ball | boolean |  |
