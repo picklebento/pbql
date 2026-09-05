@@ -391,9 +391,18 @@ const SHOT_PROPS = [
   {
     path: 'errors.unforced',
     type: 'boolean',
+    // Three-valued, and the unknowns are not a rounding error: on a
+    // sample game, 29 faults split 10 true / 9 false / 10 unknown. A
+    // reader who counts forced faults as (all faults - unforced) gets 19
+    // instead of 9, which is the mistake a coaching model made after the
+    // previous wording sent it to the right field without saying the
+    // field is often absent.
     doc: 'whether the fault on this shot was an unforced error, i.e. the ' +
       'hitter MISSED without being put under pressure; only assessed on ' +
-      'actual faults with a confidently-known rally winner. Not related ' +
+      'actual faults with a confidently-known rally winner, so it is ' +
+      'often unknown even on a real fault. Count forced faults as ' +
+      'errors.unforced = false; do NOT subtract the unforced count from ' +
+      'the fault count, which counts every unknown as forced. Not related ' +
       'to winnerType "forced_fault", which is set on a shot that WON',
     extract: ctx => ctx.shot.errors?.unforced
   },
