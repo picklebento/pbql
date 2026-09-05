@@ -44,6 +44,36 @@
 @lexer pbqlLexer
 @preprocessor module
 
+# A query is one SELECT, or several joined by UNION. The branches stay
+# whole queries rather than becoming a special kind of clause, because
+# what the model wants from UNION is precisely the per-branch parts: its
+# own FROM, its own WHERE, its own LIMIT. "one net fault from game 1 and
+# one long fault from game 2" is not expressible any other way -- an OR
+# over both sources shares a single LIMIT and can return two from the
+# same game.
+main -> query {% d => d[0] %}
+      | unionQuery {% d => d[0] %}
+
+unionQuery -> query unionTail:+
+  {% d => {
+       const branches = [
+         { query: d[0], all: true },
+         ...d[1].map(([all, query]) => ({ query, all }))
+       ]
+       return {
+         kind: 'union',
+         // UNION dedupes, UNION ALL keeps duplicates; a mix of spellings
+         // dedupes only where ALL was left out, branch by branch
+         branches,
+         // every host reads ast.sources to decide which games to load, so
+         // a union carries the union of its branches' sources (in order,
+         // without repeats) and hosts need to know nothing about branches
+         sources: [...new Set(branches.flatMap(b => b.query.sources))]
+       }
+     } %}
+
+unionTail -> %kw_union %kw_all:? query {% d => [d[1] !== null, d[2]] %}
+
 query -> select:? from where groupBy:? having:? ctxBefore:? ctxAfter:? orderBy:? limit:?
   {% d => ({
        kind: 'query',

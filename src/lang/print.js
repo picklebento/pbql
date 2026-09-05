@@ -122,6 +122,14 @@ function isOneShot (dur) {
 }
 
 export function print (query) {
+  // A union prints as its branches, joined by the keyword that produced
+  // them. The first branch carries no UNION of its own, so its `all` flag
+  // is meaningless and is not printed.
+  if (query.kind === 'union') {
+    return query.branches.map(({ query: branch, all }, at) =>
+      (at === 0 ? '' : (all ? 'UNION ALL\n' : 'UNION\n')) + print(branch)
+    ).join('\n')
+  }
   const lines = []
   if (query.select === 'star') {
     lines.push('SELECT *')

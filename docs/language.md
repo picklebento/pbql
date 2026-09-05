@@ -15,6 +15,8 @@ WHERE condition
 [CONTEXT AFTER duration]
 [ORDER BY expr [ASC|DESC] [, ...]]
 [LIMIT n]
+
+[UNION [ALL] <another whole query>] ...
 ```
 
 A query conceptually builds one row per **shot** across all games named by
@@ -27,6 +29,39 @@ or a single row if any selected expression uses an aggregate. A projection
 returns rows, not clips, so `CONTEXT` applies only to shot-list queries.
 `GROUP BY` (§6.7) changes the output to one row per group; it requires
 `SELECT` and, like any projection, excludes `CONTEXT`.
+
+
+### 1.1 UNION
+
+Two or more whole queries joined by `UNION` produce one result. Each branch
+keeps its own `SELECT`, `FROM`, `WHERE`, `ORDER BY` and `LIMIT`; the branches
+are evaluated independently and their outputs concatenated in order.
+
+- Every branch must be the same **shape**: all of them project with `SELECT`,
+  or none of them do. Mixing rows and clips is an error
+  (`PBQL_UNION_SHAPE`).
+- Projecting branches must select the same **number of columns**
+  (`PBQL_UNION_WIDTH`). Column names come from the first branch, so later
+  branches need no aliases.
+- `UNION ALL` keeps duplicates. A bare `UNION` drops rows (or shots) already
+  produced by an earlier branch.
+- A branch is restricted to the games its own `FROM` names. A branch naming a
+  directory or glob is not restricted, because those expand outside the engine
+  into games it cannot name.
+
+`UNION` earns its place when the branches genuinely differ. One example shot
+from each of two games is not expressible any other way, because a single
+query has one `LIMIT` over the whole result:
+
+```sql
+FROM "gameA" WHERE shot.errors.faults.net LIMIT 1
+UNION ALL
+FROM "gameB" WHERE shot.errors.faults.out.direction = "long" LIMIT 1
+```
+
+When the branches differ only by a predicate over the same sources, a single
+query says it better: `GROUP BY` the property whose values are the categories,
+or give each condition its own aggregate column.
 
 ## 2. Lexical structure
 

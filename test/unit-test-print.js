@@ -240,3 +240,27 @@ describe('default vs explicit CONTEXT printing', () => {
       .toBe('SELECT count()\nFROM "f"\nWHERE true\nGROUP BY shot.type\nCONTEXT AFTER 3secs')
   })
 })
+
+describe('print: UNION', () => {
+  test('prints each branch, joined by the keyword that made it', () => {
+    const text = 'SELECT count() AS "n" FROM "a" WHERE true ' +
+      'UNION ALL SELECT count() FROM "b" WHERE true ' +
+      'UNION SELECT count() FROM "c" WHERE true'
+    expect(print(parse(text).ast)).toBe([
+      'SELECT count() AS "n"', 'FROM "a"', 'WHERE true',
+      'UNION ALL',
+      'SELECT count()', 'FROM "b"', 'WHERE true',
+      'UNION',
+      'SELECT count()', 'FROM "c"', 'WHERE true'
+    ].join('\n'))
+  })
+
+  test('a union round-trips, keeping each branch whole', () => {
+    // the per-branch LIMIT is the point of the feature, so it is the
+    // thing most worth knowing survives a print/parse cycle
+    roundtrips('FROM "a" WHERE shot.isVolley LIMIT 1 ' +
+      'UNION FROM "b" WHERE shot.isDink LIMIT 2')
+    roundtrips('SELECT sum(shot.speed) FROM "a" WHERE true ' +
+      'UNION ALL SELECT sum(shot.speed) FROM "b" WHERE true')
+  })
+})

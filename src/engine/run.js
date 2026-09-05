@@ -7,6 +7,7 @@ import { parse } from '../lang/parse.js'
 import { printExpr } from '../lang/print.js'
 import { Game, InvalidInsightsError, UnsupportedInsightsError } from '../model/game.js'
 import { playerMatchesTag, REGISTRY } from '../model/registry.js'
+import { parseVidSource } from '../sources/vid.js'
 
 import { UNKNOWN, asNumber, evalExpr } from './evaluate.js'
 import { computeWindow } from './window.js'
@@ -272,6 +273,76 @@ function playerWarnings (facts, game) {
 }
 
 /**
+ * The games a UNION branch's own FROM names, out of everything the host
+ * resolved for the whole query.
+ *
+ * A branch is semantically "FROM everything WHERE it came from my
+ * sources AND <my where>", so its FROM acts as an implicit filter. Only
+ * vid-shaped and file-shaped sources can be matched here: a directory or
+ * glob expands host-side into games this layer never sees the names of,
+ * so a branch naming one keeps every game rather than silently losing
+ * rows.
+ */
+export function gamesForBranch (query, wrapped) {
+  const wanted = []
+  for (const source of query.sources) {
+    const ref = parseVidSource(source)
+    if (ref !== null) {
+      wanted.push(`${ref.vid}:${ref.sessionIdx}`)
+      continue
+    }
+    // a glob or a directory expands host-side into games whose names
+    // this layer never sees, so narrowing would silently drop rows
+    const file = /[*?[\]]/.test(source)
+      ? null
+      : source.match(/([^/\\]+)\.json$/)
+    if (file === null) {
+      return wrapped
+    }
+    wanted.push(`${file[1]}:0`)
+  }
+  const keep = new Set(wanted)
+  return wrapped.filter(game => keep.has(`${game.vid}:${game.sessionIdx}`))
+}
+
+/**
+ * Rows and shots of every branch, in order, with UNION's de-duplication.
+ *
+ * Branch shapes must agree: rows unioned with rows, clips with clips.
+ * Mixing them has no meaningful answer, so it is an error rather than a
+ * guess.
+ */
+export function combineBranches (results) {
+  const projected = results.map(r => r.columns !== undefined)
+  if (new Set(projected).size > 1) {
+    return {
+      errors: [{
+        code: 'PBQL_UNION_SHAPE',
+        message: 'UNION needs every branch to be the same shape: either ' +
+          'all of them SELECT columns, or none of them do',
+        line: 1,
+        col: 1,
+        length: 0
+      }]
+    }
+  }
+  const widths = new Set(results.map(r => r.columns?.length).filter(Boolean))
+  if (widths.size > 1) {
+    return {
+      errors: [{
+        code: 'PBQL_UNION_WIDTH',
+        message: 'UNION needs every branch to select the same number of ' +
+          `columns (got ${[...widths].sort().join(' and ')})`,
+        line: 1,
+        col: 1,
+        length: 0
+      }]
+    }
+  }
+  return { ok: true }
+}
+
+/**
  * Runs a PBQL query over the given games.
  * @param {object} args
  * @param {string} args.text the query text
@@ -287,10 +358,12 @@ export function runQuery ({ text, games }) {
   if (parsed.errors) {
     return { errors: parsed.errors }
   }
-  const query = parsed.ast
-  const analysis = analyze(query)
-  if (analysis.errors.length > 0) {
-    return { errors: analysis.errors }
+  const branches = parsed.ast.kind === 'union'
+    ? parsed.ast.branches
+    : [{ query: parsed.ast, all: true }]
+  const errors = branches.flatMap(b => analyze(b.query).errors)
+  if (errors.length > 0) {
+    return { errors }
   }
 
   const warnings = []
@@ -313,6 +386,23 @@ export function runQuery ({ text, games }) {
     }
   }
 
+  // Only a union narrows games per branch. A single query keeps the old
+  // contract exactly: the host resolved FROM and passed the games it
+  // meant, and second-guessing that here would change every existing
+  // caller's results, not just the new ones.
+  const results = branches.map(({ query }) => runBranch(
+    query,
+    branches.length > 1 ? gamesForBranch(query, wrapped) : wrapped,
+    warnings))
+  const shape = combineBranches(results)
+  if (shape.errors) {
+    return { errors: shape.errors }
+  }
+  return mergeResults(branches, results, warnings)
+}
+
+/** One branch's own selection, projection and window, over its own games. */
+function runBranch (query, wrapped, warnings) {
   // warn per game about player references that cannot resolve there (the
   // conditions themselves still evaluate to unknown — see playerWarnings)
   const facts = { referencesMe: false, tagPatterns: new Set() }
@@ -357,10 +447,7 @@ export function runQuery ({ text, games }) {
     }
   })
 
-  // the resolved context durations ride along so hosts can see the effective
-  // window settings (a bare shot-list defaults to a ±1-shot lead-in/lead-out;
-  // projections and a written-but-one-sided clause default the rest to 0secs)
-  const result = { shots, warnings, context: query.context }
+  const result = { shots, context: query.context }
   if (query.groupBy) {
     const { columns, rows } = projectGrouped(query, selected)
     result.columns = columns
@@ -371,4 +458,46 @@ export function runQuery ({ text, games }) {
     result.rows = rows
   }
   return result
+}
+
+/**
+ * The branches as one result.
+ *
+ * Column NAMES come from the first branch, the way SQL does it: later
+ * branches supply rows, not headings, so a second branch that forgot its
+ * aliases still lines up. A branch written without ALL de-duplicates its
+ * own rows against everything already accumulated.
+ */
+function mergeResults (branches, results, warnings) {
+  // the resolved context durations ride along so hosts can see the effective
+  // window settings (a bare shot-list defaults to a ±1-shot lead-in/lead-out;
+  // projections and a written-but-one-sided clause default the rest to 0secs)
+  const merged = { shots: [], warnings, context: results[0].context }
+  const projected = results[0].columns !== undefined
+  if (projected) {
+    merged.columns = results[0].columns
+    merged.rows = []
+  }
+  const seenRows = new Set()
+  const seenShots = new Set()
+  results.forEach((result, at) => {
+    const all = branches[at].all
+    for (const row of result.rows ?? []) {
+      const key = JSON.stringify(row)
+      if (!all && seenRows.has(key)) {
+        continue
+      }
+      seenRows.add(key)
+      merged.rows.push(row)
+    }
+    for (const shot of result.shots) {
+      const key = `${shot.vid}:${shot.sessionIdx}:${shot.rallyIdx}:${shot.shotIdx}`
+      if (!all && seenShots.has(key)) {
+        continue
+      }
+      seenShots.add(key)
+      merged.shots.push(shot)
+    }
+  })
+  return merged
 }

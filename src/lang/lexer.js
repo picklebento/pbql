@@ -16,6 +16,8 @@ const KEYWORDS = {
   kw_limit: 'limit',
   kw_as: 'as',
   kw_having: 'having',
+  kw_union: 'union',
+  kw_all: 'all',
   kw_in: 'in',
   kw_and: 'and',
   kw_or: 'or',

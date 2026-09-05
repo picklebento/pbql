@@ -49,15 +49,19 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
   real fault, so count forced faults as shot.errors.unforced = false.
   Subtracting the unforced count from the fault count counts every
   unknown as forced (on one sample game that turns 9 into 19).
-- There is no UNION, no subquery and no FROM-less SELECT. Two ways to
-  chart a comparison, and both beat hand-writing the numbers: when the
-  categories are values of one property, GROUP BY it (GROUP BY
-  shot.errors.unforced returns a row each for true, false and unknown);
-  when they are unrelated conditions, put each in its own aggregate
-  column (SELECT sum(shot.errors.unforced) AS "My errors",
-  sum(shot.winnerType = "forced_fault") AS "Faults I forced").
-  Never SELECT a literal you worked out yourself: a chart is supposed
-  to show what the query found.
+- UNION joins whole queries: each branch keeps its own SELECT, FROM,
+  WHERE and LIMIT, every branch must select the same number of columns
+  (names come from the first), and UNION ALL keeps duplicate rows where
+  a bare UNION drops them. Reach for it when the branches genuinely
+  differ -- a row per game from a different FROM, or one example shot
+  from each of two games (LIMIT 1 UNION ALL ... LIMIT 1, which no
+  single query expresses). When the categories are just values of one
+  property, GROUP BY it instead: GROUP BY shot.errors.unforced returns
+  a row each for true, false and unknown, in one pass.
+- Never SELECT a literal you worked out yourself. A chart is supposed
+  to show what the query found, so put the arithmetic in the query:
+  SELECT sum(<condition A>) AS "A", sum(<condition B>) AS "B".
+  There are still no subqueries and no FROM-less SELECT.
 - Durations: `2secs`, `1 shot`, `rally` (= to the rally boundary), or
   min(a, b)/max(a, b) of two durations.
   `N shots` also adds those shots to the results as context.

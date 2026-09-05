@@ -1117,3 +1117,100 @@ describe('default "Player N" names', () => {
     expect(singles.warnings[0].code).toBe('PBQL_TAG_NOT_FOUND')
   })
 })
+
+describe('runQuery: UNION', () => {
+  const both = () => [makeDoublesGame(), makeSinglesGame()]
+  const run = text => runQuery({ text, games: both() })
+
+  test('joins rows from branches, naming columns from the first', () => {
+    // the second branch supplies rows, not headings: SQL takes names from
+    // the first branch, so a branch that forgot its aliases still lines up
+    const result = run(
+      'SELECT "serves" AS "what", count() AS "n" ' +
+      'FROM "testvid00001" WHERE shot.num = 1 ' +
+      'UNION ALL ' +
+      'SELECT "drops", count() FROM "testvid00001" WHERE shot.type = "drop"')
+    expect(result.errors).toBeUndefined()
+    expect(result.columns).toEqual(['what', 'n'])
+    expect(result.rows).toEqual([['serves', 3], ['drops', 1]])
+  })
+
+  test('each branch keeps its own FROM, WHERE and LIMIT', () => {
+    // the whole reason UNION earns its place: one shot from each game.
+    // An OR over both sources shares a single LIMIT and can return two
+    // from the same game, which is a different question.
+    const result = run(
+      'FROM "testvid00001" WHERE shot.num = 1 LIMIT 1 ' +
+      'UNION ALL ' +
+      'FROM "testvid00002" WHERE shot.num = 1 LIMIT 1')
+    expect(result.errors).toBeUndefined()
+    expect(result.shots.map(s => s.vid))
+      .toEqual(['testvid00001', 'testvid00002'])
+  })
+
+  test('a branch sees only the games its own FROM names', () => {
+    // deliberately asymmetric. A LONE query does not narrow: the host
+    // resolved FROM and passed the games it meant, and second-guessing
+    // that would change every existing caller's results. Only a union
+    // narrows, because there its branches disagree about FROM and
+    // something has to decide which rows came from where.
+    const lone = run('FROM "testvid00002" WHERE shot.num = 1')
+    expect(new Set(lone.shots.map(s => s.vid)))
+      .toEqual(new Set(['testvid00001', 'testvid00002']))
+
+    const branch = run('FROM "testvid00002" WHERE shot.num = 1 ' +
+      'UNION ALL FROM "testvid00002" WHERE shot.num = 2')
+    expect(branch.shots.every(s => s.vid === 'testvid00002')).toBe(true)
+  })
+
+  test('UNION de-duplicates, UNION ALL does not', () => {
+    const q = 'SELECT count() AS "n" FROM "testvid00001" WHERE shot.num = 1'
+    expect(run(`${q} UNION ALL ${q}`).rows).toEqual([[3], [3]])
+    expect(run(`${q} UNION ${q}`).rows).toEqual([[3]])
+  })
+
+  test('UNION de-duplicates shots too', () => {
+    const q = 'FROM "testvid00001" WHERE shot.num = 1'
+    expect(run(`${q} UNION ALL ${q}`).shots).toHaveLength(6)
+    expect(run(`${q} UNION ${q}`).shots).toHaveLength(3)
+  })
+
+  test('branches must agree on shape and width', () => {
+    expect(run('SELECT count() FROM "testvid00001" WHERE true ' +
+      'UNION ALL FROM "testvid00002" WHERE true').errors[0].code)
+      .toBe('PBQL_UNION_SHAPE')
+    expect(run('SELECT count() FROM "testvid00001" WHERE true UNION ALL ' +
+      'SELECT count(), count() FROM "testvid00002" WHERE true').errors[0])
+      .toMatchObject({ code: 'PBQL_UNION_WIDTH', message: /1 and 2/ })
+  })
+
+  test('every branch is analyzed, not just the first', () => {
+    const result = run('SELECT count() FROM "testvid00001" WHERE true ' +
+      'UNION ALL SELECT count() FROM "testvid00002" WHERE shot.nope = 1')
+    expect(result.errors).toHaveLength(1)
+    expect(result.rows).toBeUndefined()
+  })
+
+  test('a branch naming a glob keeps every game rather than none', () => {
+    // a glob expands host-side into games this layer never sees the names
+    // of, so narrowing would silently drop every row
+    const result = runQuery({
+      text: 'FROM "games/*.json" WHERE shot.num = 1 ' +
+        'UNION ALL FROM "testvid00002" WHERE shot.num = 1',
+      games: both()
+    })
+    expect(result.errors).toBeUndefined()
+    expect(result.shots.length).toBeGreaterThan(3)
+  })
+
+  test('a branch may name a file path', () => {
+    const result = runQuery({
+      text: 'FROM "/tmp/testvid00001.json" WHERE shot.num = 1 ' +
+        'UNION ALL FROM "testvid00002" WHERE shot.num = 1',
+      games: both()
+    })
+    expect(result.errors).toBeUndefined()
+    expect(new Set(result.shots.map(s => s.vid)))
+      .toEqual(new Set(['testvid00001', 'testvid00002']))
+  })
+})
