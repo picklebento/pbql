@@ -11,6 +11,20 @@ function shotsWhere (expr) {
   return result.shots.map(s => [s.rallyIdx, s.shotIdx])
 }
 
+describe('explore links for a UNION', () => {
+  test('the encoded body stays a query that parses', async () => {
+    const { parse } = await import('../src/index.js')
+    // stripping every FROM line would leave "WHERE ... UNION WHERE ...",
+    // which is not a PBQL query; a union keeps its branches whole
+    const q = 'FROM "83gyqyc10y8f" WHERE shot.isVolley ' +
+      'UNION FROM "83gyqyc10y8f:2" WHERE shot.isFinal'
+    const [url] = toShotExplorerURLs(q, ['83gyqyc10y8f'])
+    const body = decodeURIComponent(new URL(url).searchParams.get('q'))
+    expect(body).toContain('FROM "83gyqyc10y8f:2"')
+    expect(parse(body).errors).toBeUndefined()
+  })
+})
+
 describe('validate()', () => {
   test('valid queries return no errors plus the AST', () => {
     const { errors, ast } = validate('FROM "f" WHERE shot.taggedWith("A*")')
