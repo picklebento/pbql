@@ -358,13 +358,13 @@ export function runQuery ({ text, games }) {
   if (parsed.errors) {
     return { errors: parsed.errors }
   }
-  const branches = parsed.ast.kind === 'union'
-    ? parsed.ast.branches
-    : [{ query: parsed.ast, all: true }]
-  const errors = branches.flatMap(b => analyze(b.query).errors)
+  const { errors } = analyze(parsed.ast) // union-aware: branch by branch
   if (errors.length > 0) {
     return { errors }
   }
+  const branches = parsed.ast.kind === 'union'
+    ? parsed.ast.branches
+    : [{ query: parsed.ast, all: true }]
 
   const warnings = []
   const wrapped = []

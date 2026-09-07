@@ -187,7 +187,29 @@ function isDefaultContext ({ before, after }) {
   return isZero(before) && isZero(after)
 }
 
+/**
+ * Semantically validates a parsed query.
+ *
+ * A UNION is analyzed branch by branch: every branch is a whole query with
+ * its own clauses and there are no cross-branch rules here (branch shapes
+ * are compared by the engine, which alone knows each branch's columns).
+ * Every caller — validate(), the CLI, the playground, runQuery — hands
+ * whatever parse() returned straight to this function, so the union case
+ * has to live here rather than in each of them.
+ *
+ * @param {object} query a `query` or `union` AST node from parse()
+ * @returns {{errors: Array}} every semantic error found, in source order
+ */
 export function analyze (query) {
+  if (query.kind === 'union') {
+    return {
+      errors: query.branches.flatMap(branch => analyzeQuery(branch.query).errors)
+    }
+  }
+  return analyzeQuery(query)
+}
+
+function analyzeQuery (query) {
   const errors = []
   const err = (node, code, message, hint) => {
     errors.push({

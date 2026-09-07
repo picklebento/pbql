@@ -462,6 +462,19 @@ describe('analyze()', () => {
       .toBe('PBQL_UNKNOWN_FUNCTION')
   })
 
+  test('a union is analyzed branch by branch', () => {
+    expect(analyzeQuery('FROM "a" WHERE shot.isVolley ' +
+      'UNION ALL FROM "b" WHERE shot.isFinal')).toEqual([])
+    // every branch is checked, and each error keeps its own position
+    const errors = analyzeQuery('FROM "a" WHERE shot.isVoley ' +
+      'UNION FROM "b" WHERE shot.speeed > 30')
+    expect(errors.map(e => e.message)).toEqual([
+      'shot has no property "isVoley"',
+      'shot has no property "speeed"'
+    ])
+    expect(errors[0].col).toBeLessThan(errors[1].col)
+  })
+
   test('handmade nodes without positions default to 1:1', () => {
     const { errors } = analyze({
       select: null,
