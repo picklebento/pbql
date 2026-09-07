@@ -24,6 +24,14 @@ describe('validate()', () => {
     expect(analyzed.errors[0].code).toBe('PBQL_UNKNOWN_PROPERTY')
     expect(analyzed.ast).toBeDefined() // parsed fine, still returned
   })
+
+  test('a UNION validates instead of throwing', () => {
+    const q = 'FROM "a" WHERE shot.isVolley UNION ALL FROM "b" WHERE shot.isFinal'
+    expect(validate(q).errors).toEqual([])
+    expect(validate(q).ast.kind).toBe('union')
+    expect(validate('FROM "a" WHERE shot.isVoley UNION FROM "b" WHERE true')
+      .errors[0].code).toBe('PBQL_UNKNOWN_PROPERTY')
+  })
 })
 
 describe('built-ins', () => {
