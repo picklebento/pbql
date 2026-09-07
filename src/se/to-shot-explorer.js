@@ -10,14 +10,21 @@ import { parseVidSource } from '../sources/vid.js'
 // carries only the body: the app substitutes its own FROM for whatever the
 // page shows. Canonical form puts FROM alone on its own line, so it drops
 // out cleanly; unparseable text is encoded as-is.
+//
+// A UNION is the exception and keeps its FROMs. Its branches are whole
+// queries that each name their own sources — that is the entire point of
+// UNION — so dropping every FROM line would leave `WHERE … UNION WHERE …`,
+// which is not a PBQL query at all. Whatever the page does with the
+// branches' sources, the ?q= text always parses.
 function queryBody (queryText) {
   const { ast, errors } = parse(queryText)
   if (errors) {
     return queryText
   }
-  return print(ast).split('\n')
-    .filter(line => !line.startsWith('FROM '))
-    .join('\n')
+  const printed = print(ast)
+  return ast.kind === 'union'
+    ? printed
+    : printed.split('\n').filter(line => !line.startsWith('FROM ')).join('\n')
 }
 
 /**

@@ -311,6 +311,14 @@ describe('CLI main()', () => {
     expect(err[2]).toContain('session numbers are 1-based')
   })
 
+  test('se handles a UNION query', async () => {
+    // validate() used to throw a TypeError on any union, crashing the CLI
+    expect(await main(['FROM "83gyqyc10y8f" WHERE shot.isVolley ' +
+      'UNION FROM "83gyqyc10y8f:2" WHERE shot.isFinal', '--out', 'se'], io))
+      .toBe(0)
+    expect(out[0].split('\n')).toHaveLength(2)
+  })
+
   test('--host is no longer a flag; it fails as an unknown option', async () => {
     expect(await main([QUERY, '--out', 'se',
       '--host', 'https://pbv-dev.web.app'], io)).toBe(1)

@@ -24,6 +24,25 @@ describe('validate()', () => {
     expect(analyzed.errors[0].code).toBe('PBQL_UNKNOWN_PROPERTY')
     expect(analyzed.ast).toBeDefined() // parsed fine, still returned
   })
+
+  test('a UNION explore link stays a parseable query', () => {
+    // stripping every FROM line would leave "WHERE ... UNION WHERE ...",
+    // which is not a query; a union keeps its branches whole
+    const q = 'FROM "83gyqyc10y8f" WHERE shot.isVolley ' +
+      'UNION FROM "83gyqyc10y8f:2" WHERE shot.isFinal'
+    const [url] = toShotExplorerURLs(q, ['83gyqyc10y8f'])
+    const body = decodeURIComponent(new URL(url).searchParams.get('q'))
+    expect(body).toContain('FROM "83gyqyc10y8f:2"')
+    expect(validate(body).errors).toEqual([])
+  })
+
+  test('a UNION validates instead of throwing', () => {
+    const q = 'FROM "a" WHERE shot.isVolley UNION ALL FROM "b" WHERE shot.isFinal'
+    expect(validate(q).errors).toEqual([])
+    expect(validate(q).ast.kind).toBe('union')
+    expect(validate('FROM "a" WHERE shot.isVoley UNION FROM "b" WHERE true')
+      .errors[0].code).toBe('PBQL_UNKNOWN_PROPERTY')
+  })
 })
 
 describe('built-ins', () => {

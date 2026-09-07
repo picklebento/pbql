@@ -126,10 +126,12 @@ function generateLlmsTxt ({ withCli = true } = {}) {
     '      -- *.json beneath it), or a glob ("games/*.json")',
     '    WHERE condition                      -- required',
     '    [GROUP BY expr, ...]            -- one output row per group',
+    '    [HAVING condition]              -- filters those grouped rows',
     '    [CONTEXT BEFORE duration]      -- omit for the default 1-shot lead-in; write to override',
     '    [CONTEXT AFTER duration]       -- omit for the default 1-shot lead-out; write to override',
     '    [ORDER BY expr [ASC|DESC], ...]',
     '    [LIMIT n]',
+    '    [UNION [ALL] <another whole query>] ...',
     '',
     '## Rules that matter',
     '',
@@ -308,7 +310,7 @@ function generateLlmsTxt ({ withCli = true } = {}) {
     }
     for (const m of entry.methodList) {
       const args = m.args.map(a => a.name).join(', ')
-      parts.push(`- ${objName}.${m.name}(${args}) (boolean): ${m.doc}`)
+      parts.push(`- ${objName}.${m.name}(${args}) (${m.type ?? 'boolean'}): ${m.doc}`)
     }
   }
   parts.push('', '## Examples', '')

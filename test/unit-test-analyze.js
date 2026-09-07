@@ -195,8 +195,8 @@ describe('analyze()', () => {
     expect(analyzeWhere('timecode() = "0:00"')[0].code).toBe('PBQL_BAD_ARITY')
     expect(analyzeWhere('timecode(1, true, 2) = "x"')[0].code)
       .toBe('PBQL_BAD_ARITY')
-    // aggregates don't exist in WHERE...
-    expect(analyzeWhere('count() = 1')[0].code).toBe('PBQL_UNKNOWN_FUNCTION')
+    // aggregates are misplaced in WHERE, not unknown...
+    expect(analyzeWhere('count() = 1')[0].code).toBe('PBQL_AGGREGATE_NOT_ALLOWED')
     // ...but do in SELECT, where min() is also a 1-arg aggregate
     expect(analyzeQuery('SELECT count(), min(shot.speed) FROM "f" WHERE true'))
       .toEqual([])
@@ -369,11 +369,38 @@ describe('analyze()', () => {
     // WHERE, GROUP BY keys and an ungrouped ORDER BY reject them, and
     // arithmetic around one changes nothing
     expect(analyzeWhere('avg(shot.speed) * 100 > 20')[0].code)
-      .toBe('PBQL_UNKNOWN_FUNCTION')
+      .toBe('PBQL_AGGREGATE_NOT_ALLOWED')
     expect(analyzeQuery('SELECT count() FROM "f" WHERE true ' +
-      'GROUP BY count() * 2')[0].code).toBe('PBQL_UNKNOWN_FUNCTION')
+      'GROUP BY count() * 2')[0].code).toBe('PBQL_AGGREGATE_NOT_ALLOWED')
     expect(analyzeQuery('FROM "f" WHERE true ORDER BY count() * 2')[0].code)
-      .toBe('PBQL_UNKNOWN_FUNCTION')
+      .toBe('PBQL_AGGREGATE_NOT_ALLOWED')
+  })
+
+  test('a misplaced aggregate says so instead of guessing a spelling', () => {
+    // the whole point: "unknown function avg — did you mean abs?" pointed
+    // repair loops at abs(), a valid query that answers a different question
+    expect(analyzeWhere('avg(shot.speed) > 30')[0]).toEqual({
+      code: 'PBQL_AGGREGATE_NOT_ALLOWED',
+      message: 'avg() is an aggregate: it belongs in SELECT, HAVING, or a ' +
+        'grouped ORDER BY, not in WHERE, GROUP BY or an ungrouped ORDER BY',
+      line: 1,
+      col: 16,
+      length: 0
+    })
+    expect(analyzeWhere('sum(shot.speed) > 30')[0].hint).toBeUndefined()
+    // an aggregate at the wrong arity inside another aggregate is still
+    // reported as nesting, which is the error the author has to fix first
+    expect(analyzeQuery('SELECT avg(count(1)) FROM "f" WHERE true')[0])
+      .toMatchObject({
+        code: 'PBQL_NESTED_AGGREGATE',
+        message: 'count() cannot appear inside another aggregate'
+      })
+    // a genuinely unknown name keeps its spelling hint -- and the hint
+    // spans aggregates too, so a typo'd one is not sent to a scalar
+    expect(analyzeWhere('avgg(shot.speed) > 30')[0]).toMatchObject({
+      code: 'PBQL_UNKNOWN_FUNCTION',
+      hint: 'did you mean "avg"?'
+    })
   })
 
   test('aggregates never nest', () => {
@@ -454,12 +481,25 @@ describe('analyze()', () => {
     expect(analyzeQuery('SELECT count() FROM "f" WHERE true GROUP BY shot.tpye')[0])
       .toMatchObject({ code: 'PBQL_UNKNOWN_PROPERTY', hint: 'did you mean "type"?' })
     expect(analyzeQuery('SELECT count() FROM "f" WHERE true GROUP BY count()')[0].code)
-      .toBe('PBQL_UNKNOWN_FUNCTION')
+      .toBe('PBQL_AGGREGATE_NOT_ALLOWED')
   })
 
   test('ORDER BY aggregates stay invalid without GROUP BY', () => {
     expect(analyzeQuery('FROM "f" WHERE true ORDER BY count()')[0].code)
-      .toBe('PBQL_UNKNOWN_FUNCTION')
+      .toBe('PBQL_AGGREGATE_NOT_ALLOWED')
+  })
+
+  test('a union is analyzed branch by branch', () => {
+    expect(analyzeQuery('FROM "a" WHERE shot.isVolley ' +
+      'UNION ALL FROM "b" WHERE shot.isFinal')).toEqual([])
+    // every branch is checked, and each error keeps its own position
+    const errors = analyzeQuery('FROM "a" WHERE shot.isVoley ' +
+      'UNION FROM "b" WHERE shot.speeed > 30')
+    expect(errors.map(e => e.message)).toEqual([
+      'shot has no property "isVoley"',
+      'shot has no property "speeed"'
+    ])
+    expect(errors[0].col).toBeLessThan(errors[1].col)
   })
 
   test('handmade nodes without positions default to 1:1', () => {
