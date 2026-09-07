@@ -13,10 +13,12 @@ PBQL selects shots from pickleball games analyzed by PB Vision.
       -- *.json beneath it), or a glob ("games/*.json")
     WHERE condition                      -- required
     [GROUP BY expr, ...]            -- one output row per group
+    [HAVING condition]              -- filters those grouped rows
     [CONTEXT BEFORE duration]      -- omit for the default 1-shot lead-in; write to override
     [CONTEXT AFTER duration]       -- omit for the default 1-shot lead-out; write to override
     [ORDER BY expr [ASC|DESC], ...]
     [LIMIT n]
+    [UNION [ALL] <another whole query>] ...
 
 ## Rules that matter
 

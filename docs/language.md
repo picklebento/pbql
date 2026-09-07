@@ -11,6 +11,7 @@ is the normative spec. Property-by-property details live in the generated
 FROM "source" [, ...]
 WHERE condition
 [GROUP BY expr [, ...]]
+[HAVING condition]
 [CONTEXT BEFORE duration]
 [CONTEXT AFTER duration]
 [ORDER BY expr [ASC|DESC] [, ...]]
