@@ -1203,6 +1203,19 @@ describe('runQuery: UNION', () => {
     expect(result.shots.length).toBeGreaterThan(3)
   })
 
+  test('a branch naming an out-of-range session does not throw', () => {
+    // parseVidSource rejects ":0"; the host reports that when it resolves
+    // FROM. Narrowing must not be what raises it -- runQuery answers with
+    // errors or results, never an exception
+    const result = runQuery({
+      text: 'FROM "ab12cd34ef56:0" WHERE shot.num = 1 ' +
+        'UNION ALL FROM "testvid00002" WHERE shot.num = 1',
+      games: both()
+    })
+    expect(result.errors).toBeUndefined()
+    expect(result.shots.length).toBeGreaterThan(0)
+  })
+
   test('a branch may name a file path', () => {
     const result = runQuery({
       text: 'FROM "/tmp/testvid00001.json" WHERE shot.num = 1 ' +

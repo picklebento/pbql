@@ -272,6 +272,18 @@ function playerWarnings (facts, game) {
   return warnings
 }
 
+// parseVidSource throws on an out-of-range session (":0"), which the host
+// reports when it resolves FROM. Narrowing must not be the thing that
+// raises it: a source this layer cannot pin down keeps every game, exactly
+// as a glob or directory does below.
+function vidRef (source) {
+  try {
+    return parseVidSource(source)
+  } catch {
+    return null
+  }
+}
+
 /**
  * The games a UNION branch's own FROM names, out of everything the host
  * resolved for the whole query.
@@ -286,7 +298,7 @@ function playerWarnings (facts, game) {
 export function gamesForBranch (query, wrapped) {
   const wanted = []
   for (const source of query.sources) {
-    const ref = parseVidSource(source)
+    const ref = vidRef(source)
     if (ref !== null) {
       wanted.push(`${ref.vid}:${ref.sessionIdx}`)
       continue
