@@ -377,11 +377,29 @@ export function analyze (query) {
       return
     }
     if (scalar === undefined && aggregate === undefined) {
+      // A known aggregate in a clause that has no set of shots to fold is
+      // MISPLACED, not unknown. Saying "unknown function" here sent readers
+      // (and the LLM repair loops this package exists for) to the spelling
+      // hint instead: WHERE avg(shot.speed) > 30 suggested "abs", which is
+      // a valid query with a completely different meaning.
+      if (AGGREGATE_FNS.has(node.name)) {
+        if (aggregates === 'nested') {
+          err(node, 'PBQL_NESTED_AGGREGATE',
+            `${node.name}() cannot appear inside another aggregate`)
+        } else {
+          err(node, 'PBQL_AGGREGATE_NOT_ALLOWED',
+            `${node.name}() is an aggregate: it belongs in SELECT, HAVING, ` +
+            'or a grouped ORDER BY, not in WHERE, GROUP BY or an ungrouped ' +
+            'ORDER BY')
+        }
+        return
+      }
+      // Spelling hints span every function name, aggregates included even
+      // where aggregates are not allowed: "avgg" in WHERE must suggest
+      // "avg" (which then reports the placement rule above), never "abs",
+      // which is a valid query answering a different question.
       err(node, 'PBQL_UNKNOWN_FUNCTION', `unknown function "${node.name}"`,
-        hintFor(node.name, [
-          ...SCALAR_FNS.keys(),
-          ...(aggregates === true ? AGGREGATE_FNS.keys() : [])
-        ]))
+        hintFor(node.name, [...SCALAR_FNS.keys(), ...AGGREGATE_FNS.keys()]))
     } else {
       err(node, 'PBQL_BAD_ARITY',
         `${node.name}() cannot take ${node.args.length} argument(s) here`)
