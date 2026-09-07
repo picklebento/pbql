@@ -1,8 +1,7 @@
 // Semantic validation of a parsed query against the property registry:
 // unknown properties/methods/functions (with nearest-match suggestions),
-// arity problems, obvious type mismatches, and the GROUP BY rules. Also
-// provides normalize(), which rewrites accepted alias forms into canonical
-// ones.
+// arity problems, obvious type mismatches, and the GROUP BY rules. Alias
+// spellings are canonicalized earlier, by the grammar itself.
 import { printExpr } from '../lang/print.js'
 import { REGISTRY, walkRelations } from '../model/registry.js'
 
