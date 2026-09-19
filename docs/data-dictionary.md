@@ -138,5 +138,12 @@ A player value, reached from the root `me` or a shot's `hitter` (e.g. `shot.hitt
 | `player.feetToNet` | distance to the net plane at the current shot | number | feet |
 | `player.forwardPressure` | how actively the player's team pushed shots toward positional advantage over the whole game (team-level: teammates share it); unknown in singles | number | 0-1 |
 | `player.finishingAbility` | how efficiently the player's team converted positional advantage into ending rallies over the whole game (team-level: teammates share it); unknown in singles | number | 0-1 |
+| `player.rating.overall` | the player's overall rating for THIS game (not their career rating); one value per game, so it repeats on every shot of it and is unknown for a player the game did not rate | number | DUPR |
+| `player.rating.serve` | the player's serving rating for THIS game (not their career rating); one value per game, so it repeats on every shot of it and is unknown for a player the game did not rate | number | DUPR |
+| `player.rating.return` | the player's returning rating for THIS game (not their career rating); one value per game, so it repeats on every shot of it and is unknown for a player the game did not rate | number | DUPR |
+| `player.rating.offense` | the player's offense rating for THIS game (not their career rating); one value per game, so it repeats on every shot of it and is unknown for a player the game did not rate | number | DUPR |
+| `player.rating.defense` | the player's defense rating for THIS game (not their career rating); one value per game, so it repeats on every shot of it and is unknown for a player the game did not rate | number | DUPR |
+| `player.rating.agility` | the player's movement and court coverage rating for THIS game (not their career rating); one value per game, so it repeats on every shot of it and is unknown for a player the game did not rate | number | DUPR |
+| `player.rating.consistency` | the player's consistency rating for THIS game (not their career rating); one value per game, so it repeats on every shot of it and is unknown for a player the game did not rate | number | DUPR |
 | `player.taggedWith(pattern)` | whether this player matches this name pattern (case-insensitive, * wildcard; untagged players match their default "Player N" name) or exact email | boolean | |
 

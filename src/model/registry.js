@@ -638,6 +638,34 @@ const GAME_PROPS = [
   }
 ]
 
+// The skill areas the engine rates a player on for a single game, named as
+// the insights name them so a chart's labels match what the app already
+// calls them. They are the whole point of "which part of my game should I
+// work on": a question that can only be answered by naming an area.
+//
+// Each is constant across the game's shots, so avg() over a game returns
+// the rating itself and `GROUP BY game.vid, game.sessionNum, game.name`
+// gives one point per game -- a rating chart in one line of PBQL.
+const RATING_AREAS = {
+  overall: 'overall',
+  serve: 'serving',
+  return: 'returning',
+  offense: 'offense',
+  defense: 'defense',
+  agility: 'movement and court coverage',
+  consistency: 'consistency'
+}
+
+const RATING_PROPS = Object.entries(RATING_AREAS).map(([key, area]) => ({
+  path: `rating.${key}`,
+  type: 'number',
+  unit: 'DUPR',
+  doc: `the player's ${area} rating for THIS game (not their career ` +
+    'rating); one value per game, so it repeats on every shot of it and ' +
+    'is unknown for a player the game did not rate',
+  extract: (ctx, playerIdx) => ctx.game.playerRating(playerIdx, key)
+}))
+
 // Player properties receive the player's index as well. Position-derived
 // properties are measured at the moment of the shot the player was reached
 // through (shot[k] for a `shot[k].hitter…` path, else the current shot), in
@@ -780,7 +808,8 @@ const PLAYER_PROPS = [
     unit: '0-1',
     doc: 'how efficiently the player\'s team converted positional advantage into ending rallies over the whole game (team-level: teammates share it); unknown in singles',
     extract: (ctx, playerIdx) => positionalPerformance(ctx, playerIdx)?.finishing_ability
-  }
+  },
+  ...RATING_PROPS
 ]
 
 function positionalPerformance (ctx, playerIdx) {

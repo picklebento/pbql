@@ -202,6 +202,35 @@ describe('registry', () => {
     expect(props.get('finishingAbility').extract(sctx, 2)).toBeUndefined()
   })
 
+  test('per-game ratings come from trends, and never read as zero', () => {
+    const props = REGISTRY.player.props
+    // p0 is rated on every area
+    expect(props.get('rating.overall').extract(farShotCtx, 0)).toBe(3.75)
+    expect(props.get('rating.offense').extract(farShotCtx, 0)).toBe(4)
+    expect(props.get('rating.defense').extract(farShotCtx, 0)).toBe(3)
+    expect(props.get('rating.agility').extract(farShotCtx, 0)).toBe(3.6)
+    expect(props.get('rating.consistency').extract(farShotCtx, 0)).toBe(3.9)
+    expect(props.get('rating.serve').extract(farShotCtx, 0)).toBe(3.5)
+    expect(props.get('rating.return').extract(farShotCtx, 0)).toBe(3.25)
+
+    // An unrated area is UNKNOWN, not 0: charting a missing rating as zero
+    // would tell a player their defense collapsed when it was never scored.
+    expect(props.get('rating.overall').extract(farShotCtx, 1)).toBe(2.5)
+    expect(props.get('rating.defense').extract(farShotCtx, 1)).toBeUndefined()
+    expect(props.get('rating.overall').extract(farShotCtx, 2)).toBeUndefined()
+    expect(props.get('rating.overall').extract(farShotCtx, 3)).toBeUndefined()
+
+    // a rating is one value per game, so it reads the same on every shot
+    const smashCtx = { ...farShotCtx, shot: game.rallies[0].shots[2], shotIdx: 2 }
+    expect(props.get('rating.overall').extract(smashCtx, 0)).toBe(3.75)
+
+    // the slots singles does not have are unknown, never a phantom rating
+    const singles = new Game(makeSinglesGame())
+    const sctx = { game: singles, rally: singles.rallies[0], rallyIdx: 0, shot: singles.rallies[0].shots[0], shotIdx: 0 }
+    expect(props.get('rating.overall').extract(sctx, 1)).toBeUndefined()
+    expect(props.get('rating.overall').extract(sctx, 3)).toBeUndefined()
+  })
+
   test('rally properties', () => {
     const props = REGISTRY.rally.props
     expect(props.get('num').extract(farShotCtx)).toBe(1)

@@ -520,6 +520,33 @@ describe('runQuery: SELECT', () => {
     expect(result.rows).toEqual([[null], [null]])
   })
 
+  test('a rating breakdown is one row of areas, ready to chart', () => {
+    // the shape make_chart needs for "which part of my game should I work
+    // on": a column per skill area, so x is the area and y the rating
+    const result = runQuery({
+      text: 'SELECT avg(shot.hitter.rating.offense) AS "offense", ' +
+        'avg(shot.hitter.rating.defense) AS "defense", ' +
+        'avg(shot.hitter.rating.consistency) AS "consistency" ' +
+        'FROM "x" WHERE shot.hitter.id = 0',
+      games: [makeDoublesGame()]
+    })
+    expect(result.columns).toEqual(['offense', 'defense', 'consistency'])
+    // a rating repeats on every shot of the game, so its average IS the
+    // rating -- which is what makes this a one-line query
+    expect(result.rows).toEqual([[4, 3, 3.9]])
+  })
+
+  test('an unrated area averages to unknown, never to zero', () => {
+    // p2 is rated on nothing; folding that to 0 would tell the player their
+    // game collapsed when it was simply never scored
+    const result = runQuery({
+      text: 'SELECT avg(shot.hitter.rating.overall) AS "r" ' +
+        'FROM "x" WHERE shot.hitter.id = 2',
+      games: [makeDoublesGame()]
+    })
+    expect(result.rows).toEqual([[null]])
+  })
+
   test('aggregates collapse to one row and skip unknowns', () => {
     const result = runQuery({
       text: 'SELECT count(), avg(shot.speed), min(shot.speed), max(shot.speed), sum(shot.num) ' +
