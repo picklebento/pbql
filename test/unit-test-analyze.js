@@ -1,5 +1,5 @@
 import { analyze, enumValuesOf } from '../src/analyze/analyze.js'
-import { parse } from '../src/index.js'
+import { parse, validate } from '../src/index.js'
 import { REGISTRY } from '../src/model/registry.js'
 
 function analyzeQuery (text) {
@@ -494,5 +494,34 @@ describe('methods have exactly one spelling', () => {
       .toContain('PBQL_UNKNOWN_FUNCTION')
     expect(analyzeWhere('taggedWith(me.teammate, "A*")')[0].code)
       .toBe('PBQL_UNKNOWN_FUNCTION')
+  })
+})
+
+describe('UNION', () => {
+  // 0.12.0 taught the grammar and the engine UNION but not the analyzer,
+  // and validate() handed it the union node whole: every UNION query a
+  // client wrote threw out of its PBQL tool.
+  test('analyzes each branch as a whole query', () => {
+    expect(analyzeQuery(
+      'FROM "f" WHERE shot.isVolley UNION FROM "g" WHERE shot.num = 2'))
+      .toEqual([])
+    expect(analyzeQuery(
+      'SELECT count() FROM "f" WHERE shot.isVolley UNION ALL ' +
+      'SELECT count() FROM "g" WHERE shot.num = 2')).toEqual([])
+  })
+
+  test('reports a branch error where it sits in the whole text', () => {
+    const errors = analyzeQuery(
+      'FROM "f" WHERE shot.isVolley\nUNION\nFROM "g" WHERE shot.isVoley')
+    expect(errors).toHaveLength(1)
+    expect(errors[0].code).toBe('PBQL_UNKNOWN_PROPERTY')
+    expect(errors[0].line).toBe(3)
+  })
+
+  test('validate() takes a UNION without throwing', () => {
+    const { errors, ast } = validate(
+      'FROM "f" WHERE shot.isVolley UNION FROM "g" WHERE shot.num = 2')
+    expect(errors).toEqual([])
+    expect(ast.kind).toBe('union')
   })
 })

@@ -361,7 +361,7 @@ export function runQuery ({ text, games }) {
   const branches = parsed.ast.kind === 'union'
     ? parsed.ast.branches
     : [{ query: parsed.ast, all: true }]
-  const errors = branches.flatMap(b => analyze(b.query).errors)
+  const errors = analyze(parsed.ast).errors
   if (errors.length > 0) {
     return { errors }
   }
