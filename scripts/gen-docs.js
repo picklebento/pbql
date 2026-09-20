@@ -103,11 +103,10 @@ function readExamples () {
  *
  * `withCli` keeps the CLI section: docs/llms.txt is read by people (and
  * their own LLMs) who run `pbql` in a shell. LLM_GUIDE is not -- every
- * consumer of it drives PBQL through tools (the AI Coach, /video/nl_to_pbql,
- * the MCP server, the app's "build with AI" prompt), none of which has a
- * shell. Measured on the NL->PBQL gate, 84 cases, gemini-2.5-flash: with
- * the section 82/84 exact in all of 6 runs, without it 84/84 in all of 3.
- * The section is not merely unused, it costs two cases.
+ * consumer of it drives PBQL through tools, none of which has a shell.
+ * Measured on a natural language to PBQL gate of 84 cases: with the section
+ * 82/84 exact in all of 6 runs, without it 84/84 in all of 3. The section is
+ * not merely unused, it costs two cases.
  */
 function generateLlmsTxt ({ withCli = true } = {}) {
   const parts = [
@@ -324,8 +323,8 @@ fs.writeFileSync(path.join(repoRoot, 'docs', 'llms.txt'),
   generateLlmsTxt() + '\n')
 console.log('wrote docs/data-dictionary.md and docs/llms.txt')
 
-// also emit the guide as an importable module so host apps (e.g. the Shot
-// Explorer's "build with AI" button) can embed it in copyable LLM prompts.
+// also emit the guide as an importable module so a host app can embed it in
+// copyable LLM prompts.
 // No consumer of it has a shell, and the CLI section measurably costs
 // accuracy, so this copy leaves it out (see generateLlmsTxt).
 const guide = generateLlmsTxt({ withCli: false })

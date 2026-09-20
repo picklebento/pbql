@@ -680,7 +680,7 @@ describe('runQuery: GROUP BY', () => {
   })
 
   test('scaled aggregates: a rate as a percentage, per group', () => {
-    // the AI Coach case: my rallies by shot type — rallies 0 and 2 (both my
+    // the charting case: my rallies by shot type — rallies 0 and 2 (both my
     // drives) went to my team, rally 1 (my sparse, type-less shot) did not
     const result = group('SELECT shot.type, ' +
       'avg(rally.winner = me.team) * 100 AS "win %" FROM "x" ' +
