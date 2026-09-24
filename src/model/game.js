@@ -146,6 +146,23 @@ export class Game {
     return handedness === 'left' || handedness === 'right' ? handedness : undefined
   }
 
+  // One of the player's ratings for THIS game
+  // (player_data[p].trends.ratings — the single-game summary, not a career
+  // rating). It is constant across every shot of the game, like a game
+  // property, so avg() over a game returns the rating itself and GROUP BY
+  // game gives one point per game.
+  //
+  // Unknown for a slot the game does not have, for a player the engine did
+  // not rate, and for insights carrying no trends at all — never coerced,
+  // since an unrated game must not read as a rating of zero.
+  playerRating (playerIdx, key) {
+    if (!this.playerExists(playerIdx)) {
+      return undefined
+    }
+    const rating = this.insights.player_data?.[playerIdx]?.trends?.ratings?.[key]
+    return Number.isFinite(rating) ? rating : undefined
+  }
+
   // The host's "me" slot, when it names a player at all: anything else (no
   // tag, or a null one) reads as untagged, so `me` conditions are unknown
   // and the query reports why (PBQL_ME_NOT_TAGGED).

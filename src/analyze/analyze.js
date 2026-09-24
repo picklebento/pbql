@@ -1,8 +1,7 @@
 // Semantic validation of a parsed query against the property registry:
 // unknown properties/methods/functions (with nearest-match suggestions),
-// arity problems, obvious type mismatches, and the GROUP BY rules. Also
-// provides normalize(), which rewrites accepted alias forms into canonical
-// ones.
+// arity problems, obvious type mismatches, and the GROUP BY rules. Alias
+// spellings are canonicalized earlier, by the grammar itself.
 import { printExpr } from '../lang/print.js'
 import { REGISTRY, walkRelations } from '../model/registry.js'
 
@@ -189,6 +188,13 @@ function isDefaultContext ({ before, after }) {
 }
 
 export function analyze (query) {
+  // A UNION is its branches, each a whole query analyzed on its own; their
+  // positions already point into the shared text. Whether the branches'
+  // shapes agree is a property of their results, which the engine checks
+  // once it has them.
+  if (query.kind === 'union') {
+    return { errors: query.branches.flatMap(b => analyze(b.query).errors) }
+  }
   const errors = []
   const err = (node, code, message, hint) => {
     errors.push({
