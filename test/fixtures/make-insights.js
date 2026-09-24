@@ -56,25 +56,41 @@ export function makeDoublesInsights () {
       // right, p1 left, p2 untagged, p3 "both" (unusable for strokeType).
       // positional_performance is team-level: teammates share the value and
       // team 1's is the complement of team 0's.
+      // trends.ratings is the single-game rating: p0 rated on every area,
+      // p1 on one only, p2 rated nothing at all, p3 carries no trends -- so
+      // every way a rating can go unknown is represented.
       {
         team: 0,
         name: 'Player 1',
         avatar_id: 0,
         handedness: 'right',
-        positional_performance: { forward_pressure: 0.6, finishing_ability: 0.4 }
+        positional_performance: { forward_pressure: 0.6, finishing_ability: 0.4 },
+        trends: {
+          ratings: {
+            overall: 3.75,
+            serve: 3.5,
+            return: 3.25,
+            offense: 4,
+            defense: 3,
+            agility: 3.6,
+            consistency: 3.9
+          }
+        }
       },
       {
         team: 0,
         name: 'Player 2',
         avatar_id: 1,
         handedness: 'left',
-        positional_performance: { forward_pressure: 0.6, finishing_ability: 0.4 }
+        positional_performance: { forward_pressure: 0.6, finishing_ability: 0.4 },
+        trends: { ratings: { overall: 2.5 } }
       },
       {
         team: 1,
         name: 'Player 3',
         avatar_id: 2,
-        positional_performance: { forward_pressure: 0.4, finishing_ability: 0.6 }
+        positional_performance: { forward_pressure: 0.4, finishing_ability: 0.6 },
+        trends: { ratings: {} }
       },
       {
         team: 1,

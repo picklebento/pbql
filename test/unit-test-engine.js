@@ -520,6 +520,33 @@ describe('runQuery: SELECT', () => {
     expect(result.rows).toEqual([[null], [null]])
   })
 
+  test('a rating breakdown is one row of areas, ready to chart', () => {
+    // the shape make_chart needs for "which part of my game should I work
+    // on": a column per skill area, so x is the area and y the rating
+    const result = runQuery({
+      text: 'SELECT avg(shot.hitter.rating.offense) AS "offense", ' +
+        'avg(shot.hitter.rating.defense) AS "defense", ' +
+        'avg(shot.hitter.rating.consistency) AS "consistency" ' +
+        'FROM "x" WHERE shot.hitter.id = 0',
+      games: [makeDoublesGame()]
+    })
+    expect(result.columns).toEqual(['offense', 'defense', 'consistency'])
+    // a rating repeats on every shot of the game, so its average IS the
+    // rating -- which is what makes this a one-line query
+    expect(result.rows).toEqual([[4, 3, 3.9]])
+  })
+
+  test('an unrated area averages to unknown, never to zero', () => {
+    // p2 is rated on nothing; folding that to 0 would tell the player their
+    // game collapsed when it was simply never scored
+    const result = runQuery({
+      text: 'SELECT avg(shot.hitter.rating.overall) AS "r" ' +
+        'FROM "x" WHERE shot.hitter.id = 2',
+      games: [makeDoublesGame()]
+    })
+    expect(result.rows).toEqual([[null]])
+  })
+
   test('aggregates collapse to one row and skip unknowns', () => {
     const result = runQuery({
       text: 'SELECT count(), avg(shot.speed), min(shot.speed), max(shot.speed), sum(shot.num) ' +
@@ -653,7 +680,7 @@ describe('runQuery: GROUP BY', () => {
   })
 
   test('scaled aggregates: a rate as a percentage, per group', () => {
-    // the AI Coach case: my rallies by shot type — rallies 0 and 2 (both my
+    // the charting case: my rallies by shot type — rallies 0 and 2 (both my
     // drives) went to my team, rally 1 (my sparse, type-less shot) did not
     const result = group('SELECT shot.type, ' +
       'avg(rally.winner = me.team) * 100 AS "win %" FROM "x" ' +

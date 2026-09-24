@@ -230,8 +230,25 @@ through:
 - position: `pos.x`/`pos.y` in the player's own frame, `pos.absX`/`pos.absY`
   raw
 - derived distances: `feetToKitchen`, `feetToNet`, …
+- ratings for **this game**: `rating.overall`, `rating.serve`,
+  `rating.return`, `rating.offense`, `rating.defense`, `rating.agility`,
+  `rating.consistency`
 
 `taggedWith(pattern)` is a method (§5.6).
+
+A rating is one value per game rather than per shot, so it repeats on every
+shot of that game and `avg()` over a game returns the rating itself. That is
+what makes an area-by-area breakdown a single query:
+
+```sql
+SELECT game.name AS "game", avg(me.rating.offense) AS "offense"
+FROM "83gyqyc10y8f"
+WHERE true
+GROUP BY game.vid, game.sessionNum, game.name
+```
+
+A game the engine did not rate is unknown, never 0 (§4), so an unrated area
+is skipped by `avg()` rather than reading as a collapse to zero.
 
 ### 5.5 Calling conventions
 
